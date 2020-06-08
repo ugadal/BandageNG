@@ -103,6 +103,7 @@ void getSettingsUsage(QStringList * text)
     *text << "";
     *text << "Node labels";
     *text << dashes;
+    *text << "--csv <csv file>    A CSV file with additional info (default: none)";
     *text << "--names             Label nodes with name (default: off)";
     *text << "--lengths           Label nodes with length (default: off)";
     *text << "--depth         Label nodes with depth (default: off)";
@@ -243,6 +244,8 @@ QString checkForInvalidOrExcessSettings(QStringList * arguments)
     error = checkOptionForFloat("--maxdepth", arguments, g_settings->maxDepthRange, false); if (error.length() > 0) return error;
     if (isOptionPresent("--query", arguments) && g_memory->commandLineCommand == NO_COMMAND) return "A graph must be given (e.g. via Bandage load) to use the --query option";
     error = checkOptionForFile("--query", arguments); if (error.length() > 0) return error;
+    if (isOptionPresent("--csv", arguments) && g_memory->commandLineCommand == NO_COMMAND) return "A graph must be given (e.g. via Bandage load) to use the --csv option";
+    error = checkOptionForFile("--csv", arguments); if (error.length() > 0) return error;
     error = checkOptionForString("--blastp", arguments, QStringList(), "blastn/tblastn parameters"); if (error.length() > 0) return error;
     checkOptionWithoutValue("--double", arguments);
     error = checkOptionForFloat("--nodelen", arguments, g_settings->manualNodeLengthPerMegabase, false); if (error.length() > 0) return error;
@@ -418,6 +421,9 @@ void parseSettings(QStringList arguments)
         g_settings->blastQueryFilename = getStringOption("--query", &arguments);
     if (isOptionPresent("--blastp", &arguments))
         g_settings->blastSearchParameters = getStringOption("--blastp", &arguments);
+
+    if (isOptionPresent("--csv", &arguments))
+        g_settings->csvFilename = getStringOption("--csv", &arguments);
 
     g_settings->doubleMode = isOptionPresent("--double", &arguments);
 

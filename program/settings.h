@@ -105,6 +105,7 @@ public:
     bool startingNodesExactMatch;
     QString startingNodes;
     QString blastQueryFilename;
+    QString csvFilename;
     QString unnamedQueryDefaultName;
 
     double minZoom;

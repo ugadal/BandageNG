@@ -228,6 +228,12 @@ void MainWindow::afterMainWindowShow()
     if (m_fileToLoadOnStartup != "" && m_drawGraphAfterLoad && g_assemblyGraph->m_deBruijnGraphNodes.size() > 0)
         drawGraph();
 
+    //If a csv query filename is present, pull the info automatically.
+    if (g_settings->csvFilename != "")
+    {
+        loadCSV(g_settings->csvFilename);
+    }
+
     m_alreadyShown = true;
 }
 
