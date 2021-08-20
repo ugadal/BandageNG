@@ -875,8 +875,8 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
 
 bool AssemblyGraph::cigarContainsOnlyM(QString cigar)
 {
-    QRegExp rx("\\d+M");
-    return (rx.indexIn(cigar) != -1);
+    QRegularExpression rx("\\d+M");
+    return rx.match(cigar).hasMatch();
 }
 
 
@@ -1539,9 +1539,9 @@ bool AssemblyGraph::checkFirstLineOfFile(QString fullFileName, QString regExp)
         QTextStream in(&inputFile);
         if (in.atEnd())
             return false;
-        QRegExp rx(regExp);
+        QRegularExpression rx(regExp);
         QString line = in.readLine();
-        if (rx.indexIn(line) != -1)
+        if (rx.match(line).hasMatch())
             return true;
     }
     return false;
