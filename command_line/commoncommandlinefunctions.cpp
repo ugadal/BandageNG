@@ -21,6 +21,7 @@
 #include <QDir>
 #include "../blast/blastsearch.h"
 #include <QApplication>
+#include <QRegExp>
 #include "../program/memory.h"
 #include <limits>
 
