@@ -601,7 +601,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
                     if (part.left(5) != "bn:Z:")
                         continue;
                     QString bandageOptionsString = part.right(part.length() - 5);
-                    QStringList bandageOptions = bandageOptionsString.split(' ', QString::SkipEmptyParts);
+                    QStringList bandageOptions = bandageOptionsString.split(' ', Qt::SkipEmptyParts);
                     QStringList bandageOptionsCopy = bandageOptions;
                     *bandageOptionsError = checkForInvalidOrExcessSettings(&bandageOptionsCopy);
                     if (bandageOptionsError->length() == 0)
@@ -2408,7 +2408,7 @@ void AssemblyGraph::readFastaFile(QString filename, std::vector<QString> * names
             }
 
             else //It's a sequence line
-                sequence += line.simplified();
+                sequence += line.simplified().toLatin1();
         }
 
         //Add the last target to the results now.

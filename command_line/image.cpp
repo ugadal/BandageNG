@@ -110,7 +110,7 @@ int bandageImage(QStringList arguments)
     {
         if (!createBlastTempDirectory())
         {
-            err << "Error creating temporary directory for BLAST files" << endl;
+            err << "Error creating temporary directory for BLAST files" << Qt::endl;
             return 1;
         }
 
@@ -118,7 +118,7 @@ int bandageImage(QStringList arguments)
 
         if (blastError != "")
         {
-            err << blastError << endl;
+            err << blastError << Qt::endl;
             return 1;
         }
     }
@@ -132,7 +132,7 @@ int bandageImage(QStringList arguments)
 
     if (errorMessage != "")
     {
-        err << errorMessage << endl;
+        err << errorMessage << Qt::endl;
         return 1;
     }
 
@@ -185,7 +185,7 @@ int bandageImage(QStringList arguments)
     int returnCode;
     if (!success)
     {
-        out << "There was an error writing the image to file." << endl;
+        out << "There was an error writing the image to file." << Qt::endl;
         returnCode = 1;
     }
     else
