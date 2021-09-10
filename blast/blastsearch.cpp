@@ -196,6 +196,8 @@ bool BlastSearch::findProgram(QString programName, QString * command)
                                                                    "/opt/local/bin:"
                                                                    "/usr/local/bin:"
                                                                    "$HOME/bin:"
+                                                                   "$HOME/.local/bin:"
+                                                                   "$HOME/miniconda3/bin:"
                                                                    "/usr/local/ncbi/blast/bin:"
                                                                    "\\1");
     find.setEnvironment(envlist);
@@ -295,7 +297,7 @@ int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName)
 
     std::vector<QString> queryNames;
     std::vector<QByteArray> querySequences;
-    AssemblyGraph::readFastaFile(fullFileName, &queryNames, &querySequences);
+    AssemblyGraph::readFastaOrFastqFile(fullFileName, &queryNames, &querySequences);
 
     for (size_t i = 0; i < queryNames.size(); ++i)
     {

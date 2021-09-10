@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
-
 !versionAtLeast(QT_VERSION, 6.0) {
     message("Cannot use Qt $${QT_VERSION}")
     error("Use Qt 6.0 or newer")
@@ -262,10 +261,6 @@ FORMS    += \
 
 RESOURCES += \
     images/images.qrc
-
-
-unix:INCLUDEPATH += /usr/include/
-unix:LIBS += -L/usr/lib
 
 # The following settings are compatible with OGDF being built in 64 bit release mode using Visual Studio 2013
 win32:LIBS += -lpsapi

@@ -68,13 +68,26 @@ AssemblyGraph::~AssemblyGraph()
 
 void AssemblyGraph::cleanUp()
 {
-    QMapIterator<QString, DeBruijnNode*> i(m_deBruijnGraphNodes);
-    while (i.hasNext())
     {
-        i.next();
-        delete i.value();
+        QMapIterator<QString, Path*> i(m_deBruijnGraphPaths);
+        while (i.hasNext())
+        {
+            i.next();
+            delete i.value();
+        }
+        m_deBruijnGraphPaths.clear();
     }
-    m_deBruijnGraphNodes.clear();
+
+
+    {
+        QMapIterator<QString, DeBruijnNode*> i(m_deBruijnGraphNodes);
+        while (i.hasNext())
+        {
+            i.next();
+            delete i.value();
+        }
+        m_deBruijnGraphNodes.clear();
+    }
 
     QMapIterator<QPair<DeBruijnNode*, DeBruijnNode*>, DeBruijnEdge*> j(m_deBruijnGraphEdges);
     while (j.hasNext())
@@ -399,6 +412,7 @@ void AssemblyGraph::determineGraphInfo()
     m_edgeCount = edgeCount;
     m_totalLength = totalLength;
     m_meanDepth = getMeanDepth();
+    m_pathCount = m_deBruijnGraphPaths.size();
 
     std::sort(nodeDepths.begin(), nodeDepths.end());
 
@@ -582,6 +596,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
 
         QMap<QString, QColor> colours;
         QMap<QString, QString> labels;
+        QMap<QString, QString> paths;
 
         QTextStream in(&inputFile);
         while (!in.atEnd()) {
@@ -619,7 +634,9 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
 
                 QString nodeName = lineParts.at(1);
                 if (nodeName.isEmpty())
-                    nodeName = "node";
+                    nodeName = getUniqueNodeName("node");
+                if (m_deBruijnGraphNodes.contains(nodeName + "+"))
+                    throw "load error";
 
                 QByteArray sequence = lineParts.at(2).toLocal8Bit();
 
@@ -771,6 +788,14 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
                     *unsupportedCigar = true;
                 }
             }
+
+            // Load paths
+            else if (lineParts.at(0) == "P") {
+                if (lineParts.size() < 4)
+                    continue;
+
+                paths.insert(lineParts.at(1), lineParts.at(2));
+            }
         }
 
         //Pair up reverse complements, creating them if necessary.
@@ -804,6 +829,22 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
             QString node2Name = edgeEndingNodeNames[i];
             int overlap = edgeOverlaps[i];
             createDeBruijnEdge(node1Name, node2Name, overlap, EXACT_OVERLAP);
+        }
+
+        // Create all the paths.
+        QMapIterator<QString, QString> p(paths);
+        while (p.hasNext()) {
+            p.next();
+            QString pathName = p.key();
+
+            QString pathStringFailure;
+            Path pp = Path::makeFromString(p.value(), false, &pathStringFailure);
+
+            if (pp.isEmpty()) {
+                std::cout << pathStringFailure.toUtf8().constData() << std::endl;
+            } else {
+                m_deBruijnGraphPaths.insert(pathName, new Path(pp));
+            }
         }
     }
 
@@ -975,6 +1016,8 @@ void AssemblyGraph::buildDeBruijnGraphFromFastg(QString fullFileName)
                     nodeName += "-";
                 else
                     nodeName += "+";
+                if (m_deBruijnGraphNodes.contains(nodeName))
+                    throw "load error";
 
                 QString nodeDepthString = thisNodeDetails.at(5);
                 if (negativeNode)
@@ -1417,6 +1460,16 @@ void AssemblyGraph::buildDeBruijnGraphFromPlainFasta(QString fullFileName)
             m_depthTag = "KC";
         }
 
+        // Check to see if the name matches SKESA format, in which case we can get the depth and node number.
+        else if (thisNodeDetails.size() >= 3 && thisNodeDetails[0] == "Contig" && thisNodeDetails[1].toInt() > 0) {
+            name = thisNodeDetails[1];
+            bool ok;
+            double convertedDepth = thisNodeDetails[2].toDouble(&ok);
+            if (ok)
+                depth = convertedDepth;
+            m_depthTag = "KC";
+        }
+
         // If it doesn't match, then we will use the sequence name up to the first space.
         else {
             QStringList nameParts = name.split(" ");
@@ -1440,6 +1493,10 @@ void AssemblyGraph::buildDeBruijnGraphFromPlainFasta(QString fullFileName)
                 depth = depthFromString;
         }
         if (lowerName.contains("circular=true"))
+            circularNodeNames.push_back(name);
+
+        // SKESA circularity
+        if (thisNodeDetails.size() == 4 and thisNodeDetails[3] == "Circ")
             circularNodeNames.push_back(name);
 
         if (name.length() < 1)
@@ -1695,6 +1752,12 @@ bool AssemblyGraph::loadCSV(QString filename, QStringList * columns, QString * e
 //If the node name it finds does not end in a '+' or '-', it will add '+'.
 QString AssemblyGraph::getNodeNameFromString(QString string)
 {
+    // First check for the most obvious case, where the string is already a node name.
+    if (m_deBruijnGraphNodes.contains(string))
+        return string;
+    if (m_deBruijnGraphNodes.contains(string + "+"))
+        return string + "+";
+
     QStringList parts = string.split("_");
     if (parts.size() == 0)
         return "";
@@ -1981,7 +2044,7 @@ void AssemblyGraph::addGraphicsItemsToScene(MyGraphicsScene * scene)
 
 
 std::vector<DeBruijnNode *> AssemblyGraph::getStartingNodes(QString * errorTitle, QString * errorMessage, bool doubleMode,
-                                                            QString nodesList, QString blastQueryName)
+                                                            QString nodesList, QString blastQueryName, QString pathName)
 {
     std::vector<DeBruijnNode *> startingNodes;
 
@@ -2041,6 +2104,16 @@ std::vector<DeBruijnNode *> AssemblyGraph::getStartingNodes(QString * errorTitle
         }
     }
 
+    else if (g_settings->graphScope == AROUND_PATHS)
+    {
+        if (m_deBruijnGraphPaths.count(pathName) == 0)
+        {
+            *errorTitle = "Invalid path";
+            *errorMessage = "No path with such name is loaded";
+            return startingNodes;
+        }
+    }
+
     g_settings->doubleMode = doubleMode;
     clearOgdfGraphAndResetNodes();
 
@@ -2051,6 +2124,12 @@ std::vector<DeBruijnNode *> AssemblyGraph::getStartingNodes(QString * errorTitle
     else if (g_settings->graphScope == DEPTH_RANGE)
         startingNodes = getNodesInDepthRange(g_settings->minDepthRange,
                                                  g_settings->maxDepthRange);
+    else if (g_settings->graphScope == AROUND_PATHS) {
+        QList<DeBruijnNode *> nodes = m_deBruijnGraphPaths[pathName]->getNodes();
+
+        for (QList<DeBruijnNode *>::iterator i = nodes.begin(); i != nodes.end(); ++i)
+            startingNodes.push_back(*i);
+    }
 
     return startingNodes;
 }
@@ -2378,7 +2457,25 @@ QString AssemblyGraph::getOppositeNodeName(QString nodeName)
 }
 
 
-void AssemblyGraph::readFastaFile(QString filename, std::vector<QString> * names, std::vector<QByteArray> *sequences)
+void AssemblyGraph::readFastaOrFastqFile(QString filename, std::vector<QString> * names,
+                                         std::vector<QByteArray> * sequences) {
+    QChar firstChar;
+    QFile inputFile(filename);
+    if (inputFile.open(QIODevice::ReadOnly)) {
+        QTextStream in(&inputFile);
+        QString firstLine = in.readLine();
+        firstChar = firstLine.at(0);
+        inputFile.close();
+    }
+    if (firstChar == '>')
+        readFastaFile(filename, names, sequences);
+    else if (firstChar == '@')
+        readFastqFile(filename, names, sequences);
+}
+
+
+
+void AssemblyGraph::readFastaFile(QString filename, std::vector<QString> * names, std::vector<QByteArray> * sequences)
 {
     QFile inputFile(filename);
     if (inputFile.open(QIODevice::ReadOnly))
@@ -2421,6 +2518,36 @@ void AssemblyGraph::readFastaFile(QString filename, std::vector<QString> * names
             sequences->push_back(sequence);
         }
 
+        inputFile.close();
+    }
+}
+
+
+void AssemblyGraph::readFastqFile(QString filename, std::vector<QString> * names, std::vector<QByteArray> * sequences)
+{
+    QFile inputFile(filename);
+    if (inputFile.open(QIODevice::ReadOnly))
+    {
+        QTextStream in(&inputFile);
+        while (!in.atEnd())
+        {
+            QApplication::processEvents();
+
+            QString name = in.readLine().simplified();
+            QByteArray sequence = in.readLine().simplified().toLocal8Bit();
+            in.readLine();  // separator
+            in.readLine();  // qualities
+
+            if (name.length() == 0)
+                continue;
+            if (sequence.length() == 0)
+                continue;
+            if (name.at(0) != '@')
+                continue;
+            name.remove(0, 1); //Remove '@' from start
+            names->push_back(name);
+            sequences->push_back(sequence);
+        }
         inputFile.close();
     }
 }
@@ -3470,7 +3597,7 @@ void AssemblyGraph::getGraphComponentCountAndLargestComponentSize(int * componen
 
     QSet<DeBruijnNode *> visitedNodes;
     QList< QList<DeBruijnNode *> > connectedComponents;
-    
+
     //Loop through all positive nodes.
     QMapIterator<QString, DeBruijnNode*> i(m_deBruijnGraphNodes);
     while (i.hasNext())
@@ -3479,12 +3606,12 @@ void AssemblyGraph::getGraphComponentCountAndLargestComponentSize(int * componen
         DeBruijnNode * v = i.value();
         if (v->isNegativeNode())
             continue;
-        
+
         //If the node has not yet been visited, then it must be the start of a new connected component.
         if (!visitedNodes.contains(v))
         {
             QList<DeBruijnNode *> connectedComponent;
-            
+
             QQueue<DeBruijnNode *> q;
             q.enqueue(v);
             visitedNodes.insert(v);
@@ -3507,9 +3634,9 @@ void AssemblyGraph::getGraphComponentCountAndLargestComponentSize(int * componen
             }
 
             connectedComponents.push_back(connectedComponent);
-        }  
+        }
     }
-    
+
     //Now that the list of connected components is built, we look for the
     //largest one (as measured by total node length).
     *componentCount = connectedComponents.size();
