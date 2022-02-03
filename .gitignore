@@ -58,3 +58,7 @@ Bandage.app
 
 # CLion
 .idea
+
+# Misc
+*DS_Store*
+Bandage.pro.user*

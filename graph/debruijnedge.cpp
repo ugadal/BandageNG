@@ -388,18 +388,18 @@ QByteArray DeBruijnEdge::getGfaLinkLine() const
     DeBruijnNode * endingNode = getEndingNode();
 
     QByteArray gfaLinkLine = "L\t";
-    gfaLinkLine += startingNode->getNameWithoutSign().toUtf8() + "\t";
-    gfaLinkLine += startingNode->getSign().toUtf8() + "\t";
-    gfaLinkLine += endingNode->getNameWithoutSign().toUtf8() + "\t";
-    gfaLinkLine += endingNode->getSign().toUtf8() + "\t";
+    gfaLinkLine += startingNode->getNameWithoutSign().toLatin1() + "\t";
+    gfaLinkLine += startingNode->getSign().toLatin1() + "\t";
+    gfaLinkLine += endingNode->getNameWithoutSign().toLatin1() + "\t";
+    gfaLinkLine += endingNode->getSign().toLatin1() + "\t";
 
     //When Velvet graphs are saved to GFA, the sequences are extended to include
     //the overlap.  So even though this edge might have no overlap, the GFA link
     //line should.
     if (g_assemblyGraph->m_graphFileType == LAST_GRAPH)
-        gfaLinkLine += QString::number(g_assemblyGraph->m_kmer - 1).toUtf8() + "M";
+        gfaLinkLine += QString::number(g_assemblyGraph->m_kmer - 1).toLatin1() + "M";
     else
-        gfaLinkLine += QString::number(getOverlap()).toUtf8() + "M";
+        gfaLinkLine += QString::number(getOverlap()).toLatin1() + "M";
 
     gfaLinkLine += "\n";
     return gfaLinkLine;

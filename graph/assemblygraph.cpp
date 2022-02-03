@@ -40,7 +40,6 @@
 #include <QList>
 #include <QMapIterator>
 #include <QQueue>
-#include <QDir>
 #include <QRegularExpression>
 #include <QSet>
 #include <QTextStream>
@@ -2507,7 +2506,7 @@ void AssemblyGraph::readFastaFile(QString filename, std::vector<QString> * names
             }
 
             else //It's a sequence line
-                sequence += line.simplified().toUtf8();
+                sequence += line.simplified().toLatin1();
         }
 
         //Add the last target to the results now.
