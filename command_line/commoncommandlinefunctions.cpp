@@ -20,6 +20,8 @@
 
 #include "../graph/assemblygraph.h"
 #include "../blast/blastsearch.h"
+#include <QApplication>
+#include <QRegularExpression>
 #include "../program/memory.h"
 
 #include <QDir>
@@ -1307,4 +1309,3 @@ void getOnlineHelpMessage(QStringList * text)
     *text << "Online Bandage help: https://github.com/rrwick/Bandage/wiki";
     *text << "";
 }
-

@@ -956,7 +956,6 @@ int AssemblyGraph::getLengthFromCigar(QString cigar)
 int AssemblyGraph::getCigarCount(QString cigarCode, QString cigar)
 {
     QRegularExpression re("(\\d+)" + cigarCode);
-    QStringList list;
 
     auto it = re.globalMatch(cigar);
     int sum = 0;
@@ -2458,7 +2457,7 @@ QString AssemblyGraph::getOppositeNodeName(QString nodeName)
 
 void AssemblyGraph::readFastaOrFastqFile(QString filename, std::vector<QString> * names,
                                          std::vector<QByteArray> * sequences) {
-    QChar firstChar;
+    QChar firstChar = QChar(0);
     QFile inputFile(filename);
     if (inputFile.open(QIODevice::ReadOnly)) {
         QTextStream in(&inputFile);

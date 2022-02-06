@@ -55,5 +55,10 @@ compile_commands.json
 
 # App itself
 Bandage.app
+
+# CLion
+.idea
+
+# Misc
 *DS_Store*
 Bandage.pro.user*

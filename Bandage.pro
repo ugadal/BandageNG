@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
+
 !versionAtLeast(QT_VERSION, 6.0) {
     message("Cannot use Qt $${QT_VERSION}")
     error("Use Qt 6.0 or newer")
@@ -24,6 +25,8 @@ QT += core gui svg widgets core5compat
 
 TARGET = Bandage
 TEMPLATE = app
+VERSION = 0.9.0
+DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 CONFIG += c++11
 
