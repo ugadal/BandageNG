@@ -123,5 +123,12 @@ include_directories(ui)
 add_executable(Bandage program/main.cpp ${LIB_SOURCES} ${FORMS} ${RESOURCES})
 target_link_libraries(Bandage PRIVATE Qt6::Widgets Qt6::Svg)
 
+if (APPLE)
+  set_target_properties(Bandage PROPERTIES
+        MACOSX_BUNDLE ON
+        MACOSX_BUNDLE_BUNDLE_NAME "Bandge"
+        MACOSX_BUNDLE_BUNDLE_IDENTIFIER "org.bandage.app")
+endif()
+
 add_executable(BandageTests tests/bandagetests.cpp ${LIB_SOURCES} ${FORMS} ${RESOURCES})
 target_link_libraries(BandageTests PRIVATE Qt6::Widgets Qt6::Svg Qt6::Test)
