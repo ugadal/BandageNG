@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(Bandage VERSION 0.9.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_AUTOMOC ON)
@@ -123,6 +123,7 @@ include_directories(ui)
 
 add_subdirectory(thirdparty)
 include_directories(thirdparty)
+include_directories(thirdparty/seq)
 
 add_executable(Bandage program/main.cpp ${LIB_SOURCES} ${FORMS} ${RESOURCES})
 target_link_libraries(Bandage PRIVATE Qt6::Widgets Qt6::Svg gfa1)

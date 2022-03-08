@@ -100,7 +100,7 @@ public:
     void buildDeBruijnGraphFromFastg(QString fullFileName);
     void buildDeBruijnGraphFromTrinityFasta(QString fullFileName);
     int buildDeBruijnGraphFromAsqg(QString fullFileName);
-    void buildDeBruijnGraphFromPlainFasta(QString fullFileName);
+    void buildDeBruijnGraphFromPlainFasta(const QString& fullFileName);
     void recalculateAllDepthsRelativeToDrawnMean();
     void recalculateAllNodeWidths();
 

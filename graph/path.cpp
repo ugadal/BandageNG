@@ -23,6 +23,7 @@
 #include "blast/blastquery.h"
 #include <QRegularExpression>
 #include "assemblygraph.h"
+#include "sequenceutils.hpp"
 #include <QStringList>
 #include <QApplication>
 #include <limits>
@@ -446,7 +447,7 @@ QByteArray Path::getPathSequence() const
         return "";
 
     QByteArray sequence;
-    QByteArray firstNodeSequence = m_nodes[0]->getSequence();
+    QByteArray firstNodeSequence = sequenceToQByteArray(m_nodes[0]->getSequence());
 
     //If the path is circular, we trim the overlap from the first node.
     if (isCircular())
@@ -470,7 +471,7 @@ QByteArray Path::getPathSequence() const
     for (int i = 1; i < m_nodes.size(); ++i)
     {
         int overlap = m_edges[i-1]->getOverlap();
-        QByteArray nodeSequence = m_nodes[i]->getSequence();
+        QByteArray nodeSequence = sequenceToQByteArray(m_nodes[i]->getSequence());
         if (overlap != 0)
             nodeSequence = modifySequenceUsingOverlap(nodeSequence, overlap);
         sequence += nodeSequence;
