@@ -43,6 +43,9 @@
 #define APP_VERSION "<unknown version>"
 #endif
 
+#include "graph/debruijnedge.h"
+#include "graph/debruijnnode.h"
+
 void printUsage(QTextStream * out, bool all)
 {
     QStringList text;
@@ -71,6 +74,8 @@ void printUsage(QTextStream * out, bool all)
 
 int main(int argc, char *argv[])
 {
+    std::cout << sizeof(DeBruijnEdge) << " " << sizeof(DeBruijnNode) << std::endl;
+//    return 0;
     QStringList arguments = getArgumentList(argc, argv);
 
     QString first;
