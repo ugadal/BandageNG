@@ -189,6 +189,65 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
         m_deBruijnGraphPaths[path.name()] = new Path(Path::makeFromOrderedNodes(pathNodes, false));
     }
 
+    DeBruijnNode::SizeInfo node_info{};
+    int64_t nodes_map = sizeof(std::map<QString, DeBruijnNode *>::node_type) * m_deBruijnGraphNodes.size();
+
+    for (auto &node: m_deBruijnGraphNodes) {
+        node_info += node->nodeSize();
+    }
+    int64_t nodes_map_keys = 0;
+    for (auto &key: m_deBruijnGraphNodes.keys()) {
+        nodes_map_keys += key.capacity() * sizeof(key[0]);
+    }
+    std::cout << m_deBruijnGraphNodes.size() << " nodes:\n";
+    std::cout << "names: " << node_info.name_symbols / 1024.0 << " KB\n";
+    std::cout << "sequences: " << node_info.sequence / 1024.0 << " KB\n";
+    std::cout << "names capacity: " << node_info.name_memory / 1024.0 << " KB\n";
+    std::cout << "sequences capacity: " << node_info.sequence_memory / 1024.0 << " KB\n";
+    std::cout << "DeBruijnNode structs: " << node_info.type / 1024.0 << " KB\n";
+    std::cout << "edge pointers: " << node_info.edges / 1024.0 << " KB\n";
+    std::cout << "edge pointers vector capacity: " << node_info.edges_capacity / 1024.0 << " KB\n";
+//    std::cout << "other_containers: " << node_info.other_containers / 1024.0 << " KB\n";
+    std::cout << "total memory for all nodes: " << node_info.sum() / 1024.0 << " KB\n";
+    std::cout << "m_deBruijnGraphNodes: " << (nodes_map + nodes_map_keys) / 1024.0 << " KB\n";
+    std::cout << std::endl;
+
+    DeBruijnEdge::SizeInfo edge_info{};
+    int64_t edges_map = sizeof(std::map<QPair<DeBruijnNode *, DeBruijnNode *>, DeBruijnEdge *>::node_type) * m_deBruijnGraphEdges.size();
+    for (auto &edge: m_deBruijnGraphEdges) {
+        edge_info += edge->nodeSize();
+    }
+    std::cout << m_deBruijnGraphEdges.size() << " edges:\n";
+    std::cout << "total memory for all DeBruijnEdge structs: " << edge_info.type / 1024.0 << " KB\n";
+    std::cout << "m_deBruijnGraphEdges: " << edges_map / 1024.0 << " KB\n";
+    std::cout << std::endl;
+
+    Path::SizeInfo path_info{};
+    int64_t paths_map = sizeof(std::map<QString, Path *>::node_type) * m_deBruijnGraphPaths.size();
+    for (auto &path: m_deBruijnGraphPaths) {
+        path_info += path->nodeSize();
+    }
+    int64_t paths_map_keys = 0;
+    for (auto &key: m_deBruijnGraphPaths.keys()) {
+        paths_map_keys += key.capacity() * sizeof(key[0]);
+    }
+    std::cout << m_deBruijnGraphPaths.size() << " paths:\n";
+    std::cout << "Path structs: " << path_info.type / 1024.0 << " KB\n";
+    std::cout << "edge pointers: " << path_info.edges / 1024.0 << " KB\n";
+    std::cout << "edge pointers vector capacity: " << path_info.edges_capacity / 1024.0 << " KB\n";
+    std::cout << "node pointers: " << path_info.nodes / 1024.0 << " KB\n";
+    std::cout << "node pointers vector capacity: " << path_info.nodes_capacity / 1024.0 << " KB\n";
+    std::cout << "total memory for all paths: " << path_info.sum() / 1024.0 << " KB\n";
+    std::cout << "m_deBruijnGraphPaths: " << (paths_map + paths_map_keys) / 1024.0 << " KB\n";
+    std::cout << std::endl;
+
+    auto data_summary = node_info.sum() + edge_info.sum() + path_info.sum();
+    auto maps_summary = nodes_map + nodes_map_keys + edges_map + paths_map + paths_map_keys;
+    std::cout << "All structs summary: " << data_summary / 1024.0 << " KB\n";
+    std::cout << "m_deBruijnGraph* summary: " << maps_summary / 1024.0 << " KB\n";
+    std::cout << "Total: " << (data_summary + maps_summary) / 1024.0 << " KB\n";
+    std::cout << std::endl;
+
     tryUpdateNodeDepthsForCanuGraphs();
 
     m_sequencesLoadedFromFasta = NOT_TRIED;

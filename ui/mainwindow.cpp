@@ -998,7 +998,7 @@ void MainWindow::copySelectedSequencesToClipboard()
 
     for (size_t i = 0; i < selectedNodes.size(); ++i)
     {
-        clipboardText += selectedNodes[i]->getSequence();
+        clipboardText += QString::fromStdString(selectedNodes[i]->getSequence().str());
         if (i != selectedNodes.size() - 1)
             clipboardText += "\n";
     }
