@@ -12,6 +12,7 @@
 #include "utils/sfinae_checks.hpp"
 
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
+#include <llvm/ADT/SparseBitVector.h>
 #include <llvm/Support/TrailingObjects.h>
 
 #include <vector>
@@ -65,17 +66,39 @@ class Sequence {
     size_t from_ : 31;
     bool   rtl_  : 1;  // Right to left + complimentary (?)
     llvm::IntrusiveRefCntPtr<ManagedNuclBuffer> data_;
+    std::shared_ptr<llvm::SparseBitVector<>> empty_nucls_ = nullptr;
 
     static size_t DataSize(size_t size) {
         return (size + STN - 1) >> STNBits;
     }
 
     template<typename S>
+    void InitEmptyNucls(const S &s, bool rc = false) {
+        int int_size = static_cast<int>(size_);
+        int start = rc ? int_size - 1 : 0;
+        int end = rc ? -1 : int_size;
+        int step = rc ? -1 : 1;
+        int cur_index = 0;
+
+        for (int i = start; i != end; i += step) {
+            if (is_N(s[i])) {
+                if (LLVM_UNLIKELY(empty_nucls_ == nullptr)) {
+                    empty_nucls_ = std::make_shared<llvm::SparseBitVector<>>();
+                }
+                empty_nucls_->set(cur_index);
+            }
+            cur_index++;
+        }
+    }
+
+    template<typename S>
     void InitFromNucls(const S &s, bool rc = false) {
+        InitEmptyNucls(s, rc);
+
         size_t bytes_size = DataSize(size_);
         ST *bytes = data_->data();
 
-        VERIFY(is_dignucl(s[0]) || is_nucl(s[0]));
+        VERIFY(is_dignucl(s[0]) || is_nucl(s[0]) || is_N(s[0]));
 
         // Which symbols does our string contain : 0123 or ACGT?
         bool digit_str = is_dignucl(s[0]);
@@ -88,7 +111,7 @@ class Sequence {
 
         if (rc) {
             for (int i = (int) size_ - 1; i >= 0; --i) {
-                //VERIFY(is_dignucl(s[i]) || is_nucl(s[i]));
+                //VERIFY(is_dignucl(s[i]) || is_nucl(s[i]) || is_N(s[0]));
                 char c = complement(digit_str ? s[(unsigned) i] : dignucl(s[(unsigned) i]));
 
                 data = data | (ST(c) << cnt);
@@ -102,7 +125,7 @@ class Sequence {
             }
         } else {
             for (size_t i = 0; i < size_; ++i) {
-                //VERIFY(is_dignucl(s[i]) || is_nucl(s[i]));
+                //VERIFY(is_dignucl(s[i]) || is_nucl(s[i]) || is_N(s[0]));
                 char c = digit_str ? s[i] : dignucl(s[i]);
 
                 data = data | (ST(c) << cnt);
@@ -123,12 +146,31 @@ class Sequence {
             bytes[cur] = 0;
     }
 
+    bool isEmptySymbol(size_t idx) const {
+        if (LLVM_LIKELY(empty_nucls_ == nullptr)) {
+            return false;
+        }
+        return empty_nucls_->test(idx);
+    }
+
+    char getNuclFromBuffer(size_t idx) const {
+        const ST *bytes = data_->data();
+        return static_cast<char>((bytes[idx >> STNBits] >> ((idx & (STN - size_t{1})) << size_t{1})) & size_t{3});
+    }
+
+    bool emptyNuclsEqual(const Sequence &that) const {
+        return (empty_nucls_ == that.empty_nucls_ || (
+                    empty_nucls_ != nullptr
+                    && that.empty_nucls_ != nullptr
+                    && *empty_nucls_ == *that.empty_nucls_));
+    }
+
     explicit Sequence(size_t size)
             : size_(size), from_(0), rtl_(false), data_(ManagedNuclBuffer::create(size_)) {}
 
     //Low level constructor. Handle with care.
-    Sequence(const Sequence &seq, size_t from, size_t size, bool rtl)
-            : size_(size), from_(from), rtl_(rtl), data_(seq.data_) {}
+    Sequence(const Sequence &seq, size_t from, size_t size, bool rtl, std::shared_ptr<llvm::SparseBitVector<>> empty_nucls)
+            : size_(size), from_(from), rtl_(rtl), data_(seq.data_), empty_nucls_(std::move(empty_nucls)) {}
 
 public:
     /**
@@ -153,12 +195,12 @@ public:
     }
 
     Sequence()
-            : Sequence(size_t(0)) {
+            : Sequence(size_t{0}) {
         memset(data_->data(), 0, DataSize(size_));
     }
 
     Sequence(const Sequence &s)
-            : Sequence(s, s.from_, s.size_, s.rtl_) {}
+            : Sequence(s, s.from_, s.size_, s.rtl_, nullptr) {}
 
     Sequence(Sequence &&) = default;
 
@@ -170,6 +212,7 @@ public:
         size_ = rhs.size_;
         rtl_ = rhs.rtl_;
         data_ = rhs.data_;
+        empty_nucls_ = rhs.empty_nucls_;
 
         return *this;
     }
@@ -178,13 +221,18 @@ public:
 
     char operator[](const size_t index) const {
         VERIFY_DEV(index < size_);
-        const ST *bytes = data_->data();
         if (rtl_) {
             size_t i = from_ + size_ - 1 - index;
-            return complement((bytes[i >> STNBits] >> ((i & (STN - 1)) << 1)) & 3);
+            if (LLVM_UNLIKELY(isEmptySymbol(i))) {
+                return 'N';
+            }
+            return complement(getNuclFromBuffer(i));
         } else {
             size_t i = from_ + index;
-            return (bytes[i >> STNBits] >> ((i & (STN - 1)) << 1)) & 3;
+            if (LLVM_UNLIKELY(isEmptySymbol(i))) {
+                return 'N';
+            }
+            return getNuclFromBuffer(i);
         }
     }
 
@@ -192,7 +240,7 @@ public:
         if (size_ != that.size_)
             return false;
 
-        if (data_ == that.data_ && from_ == that.from_ && rtl_ == that.rtl_)
+        if (data_ == that.data_ && from_ == that.from_ && rtl_ == that.rtl_ && emptyNuclsEqual(that))
             return true;
 
         for (size_t i = 0; i < size_; ++i) {
@@ -221,7 +269,7 @@ public:
     }
 
     Sequence GetReverseComplement() const {
-        return Sequence(*this, from_, size_, !rtl_);
+        return {*this, from_, size_, !rtl_, empty_nucls_};
     }
 
     inline Sequence operator<<(char c) const;
@@ -296,9 +344,9 @@ Sequence Sequence::Subseq(size_t from, size_t to) const {
     VERIFY(to <= size_);
     //VERIFY(to - from <= size_);
     if (rtl_) {
-        return Sequence(*this, from_ + size_ - to, to - from, true);
+        return {*this, from_ + size_ - to, to - from, true, empty_nucls_};
     } else {
-        return Sequence(*this, from_ + from, to - from, false);
+        return {*this, from_ + from, to - from, false, empty_nucls_};
     }
 }
 
@@ -357,7 +405,8 @@ std::string Sequence::err() const {
     oss << "{ *data=" << data_->data() <<
             ", from_=" << from_ <<
             ", size_=" << size_ <<
-            ", rtl_=" << int(rtl_) << " }";
+            ", rtl_=" << int(rtl_) <<
+            ", empty_nucls_=" << empty_nucls_.get() << " }";
     return oss.str();
 }
 

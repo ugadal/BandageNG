@@ -61,6 +61,16 @@ inline bool is_nucl(char c) {
     }
 }
 
+inline bool is_N(char c) {
+    switch (c) {
+        case 'N':
+        case 'n':
+            return true;
+        default:
+            return false;
+    }
+}
+
 /**
  * ACGT -> TGCA
  * @param char c is 'A/a/0', 'C/c/1', 'G/g/2', 'T/t/3' or 'N'
