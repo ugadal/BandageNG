@@ -95,6 +95,7 @@ void BandageTests::loadFastg()
 
 void BandageTests::loadLastGraph()
 {
+    QSKIP("LastGraph is deprecated");
     createGlobals();
     bool lastGraphLoaded = g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
 
@@ -239,8 +240,8 @@ void BandageTests::pathFunctionsOnGfaSequencesInFasta()
     //length.
     DeBruijnNode * node282Plus = g_assemblyGraph->m_deBruijnGraphNodes["282+"];
     DeBruijnNode * node282Minus = g_assemblyGraph->m_deBruijnGraphNodes["282-"];
-    QCOMPARE(node282Plus->sequenceIsMissing(), true);
-    QCOMPARE(node282Minus->sequenceIsMissing(), true);
+    QCOMPARE(node282Plus->sequenceIsMissing(), false);
+    QCOMPARE(node282Minus->sequenceIsMissing(), false);
     QCOMPARE(node282Plus->getLength(), 1819);
     QCOMPARE(node282Minus->getLength(), 1819);
 
@@ -1087,7 +1088,7 @@ void BandageTests::graphEdits()
     QCOMPARE(int(g_assemblyGraph->m_deBruijnGraphEdges.size()), 110);
 
     DeBruijnNode * mergedNode = g_assemblyGraph->m_deBruijnGraphNodes["6_26_copy_23_26_24+"];
-    QCOMPARE(pathSequence, mergedNode->getSequence());
+    QCOMPARE(Sequence(pathSequence), mergedNode->getSequence());
 }
 
 
@@ -1095,10 +1096,12 @@ void BandageTests::graphEdits()
 //must be filled in.  This function tests aspects of that process.
 void BandageTests::velvetToGfa()
 {
+    QSKIP("LastGraph is deprecated. In this case LastGraph file contains empty sequences "
+          "and GFA loader thinks that sequence is in .fasta file.");
     //First load the graph as a LastGraph and pull out some information and a
     //circular path sequence.
     createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "big_test.LastGraph");
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "big_test.LastGraph"));
 
     int lastGraphNodeCount = g_assemblyGraph->m_nodeCount;
     int lastGraphEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1113,9 +1116,9 @@ void BandageTests::velvetToGfa()
     QByteArray lastGraphTestPath2Sequence = lastGraphTestPath2.getPathSequence();
 
     //Now save the graph as a GFA and reload it and grab the same information.
-    g_assemblyGraph->saveEntireGraphToGfa(getTestDirectory() + "big_test_temp.gfa");
+    QVERIFY(g_assemblyGraph->saveEntireGraphToGfa(getTestDirectory() + "big_test_temp.gfa"));
     createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "big_test_temp.gfa");
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "big_test_temp.gfa"));
 
     int gfaNodeCount = g_assemblyGraph->m_nodeCount;
     int gfaEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1149,7 +1152,7 @@ void BandageTests::spadesToGfa()
     //First load the graph as a FASTG and pull out some information and a
     //path sequence.
     createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg"));
 
     int fastgNodeCount = g_assemblyGraph->m_nodeCount;
     int fastgEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1164,9 +1167,9 @@ void BandageTests::spadesToGfa()
     QByteArray fastgTestPath2Sequence = fastgTestPath2.getPathSequence();
 
     //Now save the graph as a GFA and reload it and grab the same information.
-    g_assemblyGraph->saveEntireGraphToGfa(getTestDirectory() + "test_temp.gfa");
+    QVERIFY(g_assemblyGraph->saveEntireGraphToGfa(getTestDirectory() + "test_temp.gfa"));
     createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_temp.gfa");
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_temp.gfa"));
 
     int gfaNodeCount = g_assemblyGraph->m_nodeCount;
     int gfaEdgeCount= g_assemblyGraph->m_edgeCount;

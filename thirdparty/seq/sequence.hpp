@@ -191,7 +191,9 @@ public:
     template<typename S, typename = std::enable_if_t<has_size_method<S>::value>>
     explicit Sequence(const S &s, bool rc = false)
             : Sequence(s.size()) {
-        InitFromNucls(s, rc);
+        if (s.size() > 0) {
+            InitFromNucls(s, rc);
+        }
     }
 
     Sequence()
@@ -226,13 +228,13 @@ public:
             if (LLVM_UNLIKELY(isEmptySymbol(i))) {
                 return 'N';
             }
-            return complement(getNuclFromBuffer(i));
+            return nucl(complement(getNuclFromBuffer(i)));
         } else {
             size_t i = from_ + index;
             if (LLVM_UNLIKELY(isEmptySymbol(i))) {
                 return 'N';
             }
-            return getNuclFromBuffer(i);
+            return nucl(getNuclFromBuffer(i));
         }
     }
 

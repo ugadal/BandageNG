@@ -104,7 +104,7 @@ public:
     //MODIFERS
     void setDepthRelativeToMeanDrawnDepth(double newVal) {m_depthRelativeToMeanDrawnDepth = newVal;}
     void setSequence(QByteArray newSeq) {m_sequence = Sequence(newSeq); m_length = m_sequence.size();}
-    void appendToSequence(QByteArray additionalSeq) { abort();/* m_sequence.append(additionalSeq); m_length = m_sequence.length();*/}
+    void setSequence(const Sequence &newSeq) {m_sequence = newSeq; m_length = m_sequence.size();}
     void upgradeContiguityStatus(ContiguityStatus newStatus);
     void resetContiguityStatus() {m_contiguityStatus = NOT_CONTIGUOUS;}
     void setReverseComplement(DeBruijnNode * rc) {m_reverseComplement = rc;}

@@ -29,6 +29,7 @@
 #include "program/globals.h"
 #include "ui/mygraphicsscene.h"
 #include "path.h"
+#include "sequence.hpp"
 #include <QPair>
 
 class DeBruijnNode;

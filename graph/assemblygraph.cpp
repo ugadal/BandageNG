@@ -703,7 +703,8 @@ void AssemblyGraph::buildDeBruijnGraphFromFastg(QString fullFileName)
     {
         std::vector<QString> edgeStartingNodeNames;
         std::vector<QString> edgeEndingNodeNames;
-        DeBruijnNode * node = 0;
+        DeBruijnNode * node = nullptr;
+        QByteArray sequenceBytes;
 
         QTextStream in(&inputFile);
         while (!in.atEnd())
@@ -718,6 +719,10 @@ void AssemblyGraph::buildDeBruijnGraphFromFastg(QString fullFileName)
             //If the line starts with a '>', then we are beginning a new node.
             if (line.startsWith(">"))
             {
+                if (node != nullptr) {
+                    node->setSequence(sequenceBytes);
+                    sequenceBytes.clear();
+                }
                 line.remove(0, 1); //Remove '>' from start
                 line.chop(1); //Remove ';' from end
                 QStringList nodeDetails = line.split(":");
@@ -790,10 +795,12 @@ void AssemblyGraph::buildDeBruijnGraphFromFastg(QString fullFileName)
             //sequence for the last node.
             else
             {
-                QByteArray sequenceLine = line.simplified().toLocal8Bit();
-                if (node != 0)
-                    node->appendToSequence(sequenceLine);
+                sequenceBytes.push_back(line.simplified().toLocal8Bit());
             }
+        }
+        if (node != nullptr) {
+            node->setSequence(sequenceBytes);
+            sequenceBytes.clear();
         }
 
         inputFile.close();
@@ -962,7 +969,7 @@ void AssemblyGraph::buildDeBruijnGraphFromTrinityFasta(QString fullFileName)
                 int nodeRangeEnd = nodeRangeParts.at(1).toInt();
                 int nodeLength = nodeRangeEnd - nodeRangeStart + 1;
 
-                Sequence nodeSequence = sequence.Subseq(nodeRangeStart, nodeRangeEnd);
+                Sequence nodeSequence = sequence.Subseq(nodeRangeStart, nodeRangeEnd + 1);
                 auto node = new DeBruijnNode(nodeName, 1.0, nodeSequence);
                 m_deBruijnGraphNodes.insert(nodeName, node);
             }
@@ -3575,10 +3582,11 @@ bool AssemblyGraph::attemptToLoadSequencesFromFasta()
             DeBruijnNode * posNode = m_deBruijnGraphNodes[name + "+"];
             if (posNode->sequenceIsMissing())
             {
+                Sequence sequence{sequences[i]};
                 atLeastOneNodeSequenceLoaded = true;
-                posNode->setSequence(sequences[i]);
+                posNode->setSequence(sequence);
                 DeBruijnNode * negNode = m_deBruijnGraphNodes[name + "-"];
-                negNode->setSequence(getReverseComplement(sequences[i]));
+                negNode->setSequence(sequence.GetReverseComplement());
             }
         }
     }

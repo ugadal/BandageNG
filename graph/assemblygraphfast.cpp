@@ -56,6 +56,8 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
     *customLabels = false;
     *customColours = false;
 
+    bool sequencesAreMissing = false;
+
     /* ------------------------ NODES ------------------------ */
     std::vector<DeBruijnNode *> nodePtrs;
     nodePtrs.resize(gfaWrapper.verticesCount());
@@ -89,6 +91,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
             }
             length = lnTag.value();
             sequence_bytes = "";
+            sequencesAreMissing = true;
         } else
             length = int(sequence_bytes.size());
 
@@ -251,4 +254,8 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
     tryUpdateNodeDepthsForCanuGraphs();
 
     m_sequencesLoadedFromFasta = NOT_TRIED;
+
+    if (sequencesAreMissing && !g_assemblyGraph->attemptToLoadSequencesFromFasta()) {
+        throw AssemblyGraphError("Cannot load fasta file with sequences.");
+    }
 }
