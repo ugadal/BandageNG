@@ -129,46 +129,6 @@ public:
     void setDepth(double newDepth) {m_depth = newDepth;}
     void setName(QString newName) {m_name = newName;}
 
-    struct SizeInfo {
-        int64_t name_symbols = 0;
-        int64_t name_memory = 0;
-        int64_t sequence = 0;
-        int64_t sequence_memory = 0;
-        int64_t type = 0;
-        int64_t edges = 0;
-        int64_t edges_capacity = 0;
-        int64_t other_containers = 0;
-
-        SizeInfo &operator+=(const SizeInfo &other) {
-            name_symbols += other.name_symbols;
-            sequence += other.sequence;
-            name_memory += other.name_memory;
-            sequence_memory += other.sequence_memory;
-            type += other.type;
-            edges += other.edges;
-            edges_capacity += other.edges_capacity;
-            other_containers += other.other_containers;
-            return *this;
-        }
-
-        int64_t sum() const {
-            return name_memory + sequence_memory + type + edges_capacity + other_containers;
-        }
-    };
-
-    SizeInfo nodeSize() const {
-        return {
-            .name_symbols = static_cast<int64_t>(m_name.size()),
-            .name_memory = static_cast<int64_t>(sizeof(m_name[0]) * m_name.capacity()),
-            .sequence = static_cast<int64_t>(m_sequence.size()),
-            .sequence_memory = static_cast<int64_t>(m_sequence.capacity()),
-            .type = sizeof(*this),
-            .edges = static_cast<int64_t>(m_edges.size() * 8),
-            .edges_capacity = static_cast<int64_t>(m_edges.capacity() * 8),
-            .other_containers = static_cast<int64_t>(m_csvData.capacity() + m_blastHits.capacity()) * 8,
-        };
-    }
-
 private:
     QString m_name;
     double m_depth;

@@ -139,6 +139,7 @@ void BandageTests::loadTrinity()
 //where the connections are simple.
 void BandageTests::pathFunctionsOnLastGraph()
 {
+    QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
     createGlobals();
     g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
 
@@ -297,6 +298,7 @@ void BandageTests::graphLocationFunctions()
     QCOMPARE(location2.isNull(), false);
     QCOMPARE(location3.isNull(), true);
 
+    QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
     //Now look at a LastGraph file which is more complex.  Because of the
     //offset, reverse complement positions can be in different nodes and may
     //not even exist.
@@ -1096,7 +1098,7 @@ void BandageTests::graphEdits()
 //must be filled in.  This function tests aspects of that process.
 void BandageTests::velvetToGfa()
 {
-    QSKIP("LastGraph is deprecated. In this case LastGraph file contains empty sequences "
+    QSKIP("LastGraph is deprecated. In this case 'big_test.LastGraph' file contains empty sequences "
           "and GFA loader thinks that sequence is in .fasta file.");
     //First load the graph as a LastGraph and pull out some information and a
     //circular path sequence.
@@ -1451,21 +1453,6 @@ void BandageTests::bandageInfo()
     int componentCount = 0;
     int largestComponentLength = 0;
 
-
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
-    g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
-    g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
-    QCOMPARE(17, g_assemblyGraph->m_nodeCount);
-    QCOMPARE(16, g_assemblyGraph->m_edgeCount);
-    QCOMPARE(29939, g_assemblyGraph->m_totalLength);
-    QCOMPARE(10, g_assemblyGraph->getDeadEndCount());
-    QCOMPARE(2000, n50);
-    QCOMPARE(59, shortestNode);
-    QCOMPARE(2000, longestNode);
-    QCOMPARE(1, componentCount);
-    QCOMPARE(29939, largestComponentLength);
-
     createGlobals();
     g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
     g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
@@ -1487,6 +1474,21 @@ void BandageTests::bandageInfo()
     QCOMPARE(149, g_assemblyGraph->getDeadEndCount());
     QCOMPARE(66, componentCount);
     QCOMPARE(9398, largestComponentLength);
+
+    QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
+    createGlobals();
+    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
+    g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
+    g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
+    QCOMPARE(17, g_assemblyGraph->m_nodeCount);
+    QCOMPARE(16, g_assemblyGraph->m_edgeCount);
+    QCOMPARE(29939, g_assemblyGraph->m_totalLength);
+    QCOMPARE(10, g_assemblyGraph->getDeadEndCount());
+    QCOMPARE(2000, n50);
+    QCOMPARE(59, shortestNode);
+    QCOMPARE(2000, longestNode);
+    QCOMPARE(1, componentCount);
+    QCOMPARE(29939, largestComponentLength);
 }
 
 

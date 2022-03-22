@@ -82,37 +82,6 @@ public:
                                            int nodeSearchDepth,
                                            int minDistance, int maxDistance);
 
-    struct SizeInfo {
-        int64_t type = 0;
-        int64_t edges = 0;
-        int64_t edges_capacity = 0;
-        int64_t nodes = 0;
-        int64_t nodes_capacity = 0;
-
-        SizeInfo &operator+=(const SizeInfo &other) {
-            type += other.type;
-            edges += other.edges;
-            nodes += other.nodes;
-            edges_capacity += other.edges_capacity;
-            nodes_capacity += other.nodes_capacity;
-            return *this;
-        }
-
-        int64_t sum() const {
-            return nodes + type + edges;
-        }
-    };
-
-    SizeInfo nodeSize() const {
-        return {
-            .type = sizeof(*this),
-            .edges = static_cast<int64_t>(m_edges.size() * 8),
-            .edges_capacity = static_cast<int64_t>(m_edges.capacity() * 8),
-            .nodes = static_cast<int64_t>(m_nodes.size() * 8),
-            .nodes_capacity = static_cast<int64_t>(m_nodes.capacity() * 8),
-        };
-    }
-
 private:
     GraphLocation m_startLocation;
     GraphLocation m_endLocation;

@@ -68,25 +68,6 @@ public:
     void autoDetermineExactOverlap();
     void addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::EdgeArray<double> * edgeArray) const;
 
-    struct SizeInfo {
-        int64_t type = 0;
-
-        SizeInfo &operator+=(const SizeInfo &other) {
-            type += other.type;
-            return *this;
-        }
-
-        int64_t sum() const {
-            return type;
-        }
-    };
-
-    SizeInfo nodeSize() const {
-        return {
-            .type = sizeof(*this),
-        };
-    }
-
 private:
     DeBruijnNode * m_startingNode;
     DeBruijnNode * m_endingNode;
