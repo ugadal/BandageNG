@@ -10,7 +10,7 @@
 
 inline QByteArray sequenceToQByteArray(const Sequence &sequence) {
     auto sequence_str = sequence.str();
-    return {sequence_str.c_str(), std::ssize(sequence_str)};
+    return {sequence_str.c_str(), static_cast<qsizetype >(sequence_str.size())};
 }
 
 #endif //BANDAGE_GRAPH_SEQUENCEUTILS_HPP_
