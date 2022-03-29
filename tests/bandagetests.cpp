@@ -58,6 +58,11 @@ private slots:
     void changeNodeDepths();
     void blastQueryPaths();
     void bandageInfo();
+    void sequenceInit();
+    void sequenceInitN();
+    void sequenceAccess();
+    void sequenceSubstring();
+    void sequenceDoubleReverseComplement();
 
 
 private:
@@ -1594,7 +1599,80 @@ bool BandageTests::doCircularSequencesMatch(QByteArray s1, QByteArray s2)
     return false;
 }
 
+void BandageTests::sequenceInit() {
+    Sequence sequenceFromString{"ATGC"};
+    Sequence sequenceFromQByteArray{QByteArray{"ATGC"}};
+    Sequence sequenceRevComp{"GCAT", true};
+    Sequence sequenceFromStringLower{"atgc"};
 
+    QCOMPARE(sequenceFromQByteArray, sequenceFromString);
+    QCOMPARE(sequenceFromString, sequenceRevComp);
+    QCOMPARE(sequenceRevComp, sequenceFromStringLower);
+    QCOMPARE(sequenceFromStringLower, sequenceFromQByteArray);
+}
+
+void BandageTests::sequenceInitN() {
+    Sequence sequenceFromString{"ATGCN"};
+    Sequence sequenceFromQByteArray{QByteArray{"ATGCN"}};
+    Sequence sequenceRevComp{"NGCAT", true};
+    Sequence sequenceFromStringLower{"atgcn"};
+
+    QCOMPARE(sequenceFromQByteArray, sequenceFromString);
+    QCOMPARE(sequenceFromString, sequenceRevComp);
+    QCOMPARE(sequenceRevComp, sequenceFromStringLower);
+    QCOMPARE(sequenceFromStringLower, sequenceFromQByteArray);
+}
+
+void BandageTests::sequenceAccess() {
+    Sequence sequence{"ATGCN"};
+
+    QCOMPARE(sequence[0], 'A');
+    QCOMPARE(sequence[1], 'T');
+    QCOMPARE(sequence[2], 'G');
+    QCOMPARE(sequence[3], 'C');
+    QCOMPARE(sequence[4], 'N');
+
+    Sequence sequenceRC{"ATGCN", true};
+
+    QCOMPARE(sequenceRC[0], 'N');
+    QCOMPARE(sequenceRC[1], 'G');
+    QCOMPARE(sequenceRC[2], 'C');
+    QCOMPARE(sequenceRC[3], 'A');
+    QCOMPARE(sequenceRC[4], 'T');
+}
+
+void BandageTests::sequenceSubstring() {
+    Sequence sequence{"ATGCNATGCN"};
+    Sequence substr = sequence.Subseq(2, 7); // GCNAT
+
+    QCOMPARE(substr[0], 'G');
+    QCOMPARE(substr[1], 'C');
+    QCOMPARE(substr[2], 'N');
+    QCOMPARE(substr[3], 'A');
+    QCOMPARE(substr[4], 'T');
+
+    Sequence substrRC = sequence.Subseq(2, 7).GetReverseComplement(); // GCNAT -> ATNGC
+
+    QCOMPARE(substrRC[0], 'A');
+    QCOMPARE(substrRC[1], 'T');
+    QCOMPARE(substrRC[2], 'N');
+    QCOMPARE(substrRC[3], 'G');
+    QCOMPARE(substrRC[4], 'C');
+
+    Sequence rcSubstr = sequence.GetReverseComplement().Subseq(2, 8); // ATGCNATGCN -> NGCATNGCAT -> CATNG
+
+    QCOMPARE(rcSubstr[0], 'C');
+    QCOMPARE(rcSubstr[1], 'A');
+    QCOMPARE(rcSubstr[2], 'T');
+    QCOMPARE(rcSubstr[3], 'N');
+    QCOMPARE(rcSubstr[4], 'G');
+}
+
+void BandageTests::sequenceDoubleReverseComplement() {
+    Sequence sequence{"ATGCNATGCN"};
+
+    QCOMPARE(sequence, sequence.GetReverseComplement().GetReverseComplement());
+}
 
 QTEST_MAIN(BandageTests)
 #include "bandagetests.moc"
