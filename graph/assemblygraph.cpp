@@ -847,8 +847,8 @@ void AssemblyGraph::makeReverseComplementNodeIfNecessary(DeBruijnNode * node)
         if (!node->sequenceIsMissing())
             nodeSequence = node->getSequence();
         auto newNode = new DeBruijnNode(reverseComplementName, node->getDepth(),
-                                                  nodeSequence.GetReverseComplement(),
-                                                  node->getLength());
+                                        nodeSequence.GetReverseComplement(),
+                                        node->getLength());
         m_deBruijnGraphNodes.insert(reverseComplementName, newNode);
     }
 }

@@ -60,13 +60,14 @@ class Sequence {
 
         const ST *data() const { return getTrailingObjects<ST>(); }
         ST *data() { return getTrailingObjects<ST>(); }
+
+        std::unique_ptr<llvm::SparseBitVector<>> empty_nucls_ = nullptr;
     };
 
     size_t size_ : 32;
     size_t from_ : 31;
     bool   rtl_  : 1;  // Right to left + complimentary (?)
     llvm::IntrusiveRefCntPtr<ManagedNuclBuffer> data_;
-    std::shared_ptr<llvm::SparseBitVector<>> empty_nucls_ = nullptr;
 
     static size_t DataSize(size_t size) {
         return (size + STN - 1) >> STNBits;
@@ -82,10 +83,10 @@ class Sequence {
 
         for (int i = start; i != end; i += step) {
             if (is_N(s[i])) {
-                if (LLVM_UNLIKELY(empty_nucls_ == nullptr)) {
-                    empty_nucls_ = std::make_shared<llvm::SparseBitVector<>>();
+                if (LLVM_UNLIKELY(data_->empty_nucls_ == nullptr)) {
+                    data_->empty_nucls_ = std::make_unique<llvm::SparseBitVector<>>();
                 }
-                empty_nucls_->set(cur_index);
+                data_->empty_nucls_->set(cur_index);
             }
             cur_index++;
         }
@@ -147,10 +148,10 @@ class Sequence {
     }
 
     bool isEmptySymbol(size_t idx) const {
-        if (LLVM_LIKELY(empty_nucls_ == nullptr)) {
+        if (LLVM_LIKELY(data_->empty_nucls_ == nullptr)) {
             return false;
         }
-        return empty_nucls_->test(idx);
+        return data_->empty_nucls_->test(idx);
     }
 
     char getNuclFromBuffer(size_t idx) const {
@@ -159,18 +160,18 @@ class Sequence {
     }
 
     bool emptyNuclsEqual(const Sequence &that) const {
-        return (empty_nucls_ == that.empty_nucls_ || (
-                    empty_nucls_ != nullptr
-                    && that.empty_nucls_ != nullptr
-                    && *empty_nucls_ == *that.empty_nucls_));
+        return data_->empty_nucls_ == that.data_->empty_nucls_
+            || (data_->empty_nucls_ != nullptr
+                && that.data_->empty_nucls_ != nullptr
+                && *data_->empty_nucls_ == *that.data_->empty_nucls_);
     }
 
     explicit Sequence(size_t size)
             : size_(size), from_(0), rtl_(false), data_(ManagedNuclBuffer::create(size_)) {}
 
     //Low level constructor. Handle with care.
-    Sequence(const Sequence &seq, size_t from, size_t size, bool rtl, std::shared_ptr<llvm::SparseBitVector<>> empty_nucls)
-            : size_(size), from_(from), rtl_(rtl), data_(seq.data_), empty_nucls_(std::move(empty_nucls)) {}
+    Sequence(const Sequence &seq, size_t from, size_t size, bool rtl)
+            : size_(size), from_(from), rtl_(rtl), data_(seq.data_) {}
 
 public:
     /**
@@ -202,7 +203,7 @@ public:
     }
 
     Sequence(const Sequence &s)
-            : Sequence(s, s.from_, s.size_, s.rtl_, nullptr) {}
+            : Sequence(s, s.from_, s.size_, s.rtl_) {}
 
     Sequence(Sequence &&) = default;
 
@@ -214,7 +215,6 @@ public:
         size_ = rhs.size_;
         rtl_ = rhs.rtl_;
         data_ = rhs.data_;
-        empty_nucls_ = rhs.empty_nucls_;
 
         return *this;
     }
@@ -271,7 +271,7 @@ public:
     }
 
     Sequence GetReverseComplement() const {
-        return {*this, from_, size_, !rtl_, empty_nucls_};
+        return {*this, from_, size_, !rtl_};
     }
 
     inline Sequence operator<<(char c) const;
@@ -346,9 +346,9 @@ Sequence Sequence::Subseq(size_t from, size_t to) const {
     VERIFY(to <= size_);
     //VERIFY(to - from <= size_);
     if (rtl_) {
-        return {*this, from_ + size_ - to, to - from, true, empty_nucls_};
+        return {*this, from_ + size_ - to, to - from, true};
     } else {
-        return {*this, from_ + from, to - from, false, empty_nucls_};
+        return {*this, from_ + from, to - from, false};
     }
 }
 
@@ -408,7 +408,7 @@ std::string Sequence::err() const {
             ", from_=" << from_ <<
             ", size_=" << size_ <<
             ", rtl_=" << int(rtl_) <<
-            ", empty_nucls_=" << empty_nucls_.get() << " }";
+            ", empty_nucls_=" << data_->empty_nucls_.get() << " }";
     return oss.str();
 }
 
