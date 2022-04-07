@@ -29,6 +29,7 @@
 #include "program/globals.h"
 #include "ui/mygraphicsscene.h"
 #include "path.h"
+#include "sequence.hpp"
 #include <QPair>
 
 class DeBruijnNode;
@@ -100,7 +101,7 @@ public:
     void buildDeBruijnGraphFromFastg(QString fullFileName);
     void buildDeBruijnGraphFromTrinityFasta(QString fullFileName);
     int buildDeBruijnGraphFromAsqg(QString fullFileName);
-    void buildDeBruijnGraphFromPlainFasta(QString fullFileName);
+    void buildDeBruijnGraphFromPlainFasta(const QString& fullFileName);
     void recalculateAllDepthsRelativeToDrawnMean();
     void recalculateAllNodeWidths();
 

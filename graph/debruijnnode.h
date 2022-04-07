@@ -27,6 +27,7 @@
 #include <QColor>
 #include "blast/blasthitpart.h"
 #include "program/settings.h"
+#include "seq/sequence.hpp"
 
 class OgdfNode;
 class DeBruijnEdge;
@@ -37,7 +38,7 @@ class DeBruijnNode
 {
 public:
     //CREATORS
-    DeBruijnNode(QString name, double depth, QByteArray sequence, int length = 0);
+    DeBruijnNode(QString name, double depth, const Sequence &sequence, int length = 0);
     ~DeBruijnNode();
 
     //ACCESSORS
@@ -46,14 +47,15 @@ public:
     QString getSign() const {if (m_name.length() > 0) return m_name.right(1); else return "+";}
     double getDepth() const {return m_depth;}
     double getDepthRelativeToMeanDrawnDepth() const {return m_depthRelativeToMeanDrawnDepth;}
-    QByteArray getSequence() const;
+    const Sequence &getSequence() const;
+    Sequence &getSequence();
     int getLength() const {return m_length;}
     QByteArray getSequenceForGfa() const;
     int getFullLength() const;
     int getLengthWithoutTrailingOverlap() const;
     QByteArray getFasta(bool sign, bool newLines = true, bool evenIfEmpty = true) const;
     QByteArray getGfaSegmentLine(QString depthTag) const;
-    char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.length()) return m_sequence.at(i); else return '\0';}
+    char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
     ContiguityStatus getContiguityStatus() const {return m_contiguityStatus;}
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
     OgdfNode * getOgdfNode() const {return m_ogdfNode;}
@@ -101,8 +103,8 @@ public:
 
     //MODIFERS
     void setDepthRelativeToMeanDrawnDepth(double newVal) {m_depthRelativeToMeanDrawnDepth = newVal;}
-    void setSequence(QByteArray newSeq) {m_sequence = newSeq; m_length = m_sequence.length();}
-    void appendToSequence(QByteArray additionalSeq) {m_sequence.append(additionalSeq); m_length = m_sequence.length();}
+    void setSequence(QByteArray newSeq) {m_sequence = Sequence(newSeq); m_length = m_sequence.size();}
+    void setSequence(const Sequence &newSeq) {m_sequence = newSeq; m_length = m_sequence.size();}
     void upgradeContiguityStatus(ContiguityStatus newStatus);
     void resetContiguityStatus() {m_contiguityStatus = NOT_CONTIGUOUS;}
     void setReverseComplement(DeBruijnNode * rc) {m_reverseComplement = rc;}
@@ -131,7 +133,7 @@ private:
     QString m_name;
     double m_depth;
     double m_depthRelativeToMeanDrawnDepth;
-    QByteArray m_sequence;
+    Sequence m_sequence;
     int m_length;
     ContiguityStatus m_contiguityStatus;
     DeBruijnNode * m_reverseComplement;

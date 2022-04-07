@@ -521,11 +521,15 @@ void AssemblyGraph::buildDeBruijnGraphFromLastGraph(QString fullFileName)
                 else
                     nodeDepth = double(nodeDetails.at(3).toInt());
 
-                QByteArray sequence = in.readLine().toLocal8Bit();
-                QByteArray revCompSequence = in.readLine().toLocal8Bit();
+                Sequence sequence{in.readLine().toLocal8Bit()};
+                Sequence revCompSequence{in.readLine().toLocal8Bit()};
 
-                DeBruijnNode * node = new DeBruijnNode(posNodeName, nodeDepth, sequence);
-                DeBruijnNode * reverseComplementNode = new DeBruijnNode(negNodeName, nodeDepth, revCompSequence);
+                if (sequence.GetReverseComplement() != revCompSequence) {
+                    throw AssemblyGraphError{"Invalid reverse-complement sequence in file."};
+                }
+
+                auto node = new DeBruijnNode(posNodeName, nodeDepth, sequence);
+                auto reverseComplementNode = new DeBruijnNode(negNodeName, nodeDepth, revCompSequence);
                 node->setReverseComplement(reverseComplementNode);
                 reverseComplementNode->setReverseComplement(node);
                 m_deBruijnGraphNodes.insert(posNodeName, node);
@@ -699,7 +703,8 @@ void AssemblyGraph::buildDeBruijnGraphFromFastg(QString fullFileName)
     {
         std::vector<QString> edgeStartingNodeNames;
         std::vector<QString> edgeEndingNodeNames;
-        DeBruijnNode * node = 0;
+        DeBruijnNode * node = nullptr;
+        QByteArray sequenceBytes;
 
         QTextStream in(&inputFile);
         while (!in.atEnd())
@@ -714,6 +719,10 @@ void AssemblyGraph::buildDeBruijnGraphFromFastg(QString fullFileName)
             //If the line starts with a '>', then we are beginning a new node.
             if (line.startsWith(">"))
             {
+                if (node != nullptr) {
+                    node->setSequence(sequenceBytes);
+                    sequenceBytes.clear();
+                }
                 line.remove(0, 1); //Remove '>' from start
                 line.chop(1); //Remove ';' from end
                 QStringList nodeDetails = line.split(":");
@@ -746,7 +755,7 @@ void AssemblyGraph::buildDeBruijnGraphFromFastg(QString fullFileName)
                 nodeDepth = nodeDepthString.toDouble();
 
                 //Make the node
-                node = new DeBruijnNode(nodeName, nodeDepth, ""); //Sequence string is currently empty - will be added to on subsequent lines of the fastg file
+                node = new DeBruijnNode(nodeName, nodeDepth, {}); //Sequence string is currently empty - will be added to on subsequent lines of the fastg file
                 m_deBruijnGraphNodes.insert(nodeName, node);
 
                 //The second part of nodeDetails is a comma-delimited list of edge nodes.
@@ -786,10 +795,12 @@ void AssemblyGraph::buildDeBruijnGraphFromFastg(QString fullFileName)
             //sequence for the last node.
             else
             {
-                QByteArray sequenceLine = line.simplified().toLocal8Bit();
-                if (node != 0)
-                    node->appendToSequence(sequenceLine);
+                sequenceBytes.push_back(line.simplified().toLocal8Bit());
             }
+        }
+        if (node != nullptr) {
+            node->setSequence(sequenceBytes);
+            sequenceBytes.clear();
         }
 
         inputFile.close();
@@ -832,14 +843,12 @@ void AssemblyGraph::makeReverseComplementNodeIfNecessary(DeBruijnNode * node)
     DeBruijnNode * reverseComplementNode = m_deBruijnGraphNodes[reverseComplementName];
     if (reverseComplementNode == 0)
     {
-        QByteArray nodeSequence;
-        if (node->sequenceIsMissing())
-            nodeSequence = "*";
-        else
+        Sequence nodeSequence{};
+        if (!node->sequenceIsMissing())
             nodeSequence = node->getSequence();
-        DeBruijnNode * newNode = new DeBruijnNode(reverseComplementName, node->getDepth(),
-                                                  getReverseComplement(nodeSequence),
-                                                  node->getLength());
+        auto newNode = new DeBruijnNode(reverseComplementName, node->getDepth(),
+                                        nodeSequence.GetReverseComplement(),
+                                        node->getLength());
         m_deBruijnGraphNodes.insert(reverseComplementName, newNode);
     }
 }
@@ -886,7 +895,7 @@ void AssemblyGraph::buildDeBruijnGraphFromTrinityFasta(QString fullFileName)
         QApplication::processEvents();
 
         QString name = names[i];
-        QByteArray sequence = sequences[i];
+        Sequence sequence{sequences[i]};
 
         //The header can come in a few different formats:
         // TR1|c0_g1_i1 len=280 path=[274:0-228 275:229-279] [-1, 274, 275, -2]
@@ -960,8 +969,8 @@ void AssemblyGraph::buildDeBruijnGraphFromTrinityFasta(QString fullFileName)
                 int nodeRangeEnd = nodeRangeParts.at(1).toInt();
                 int nodeLength = nodeRangeEnd - nodeRangeStart + 1;
 
-                QByteArray nodeSequence = sequence.mid(nodeRangeStart, nodeLength);
-                DeBruijnNode * node = new DeBruijnNode(nodeName, 1.0, nodeSequence);
+                Sequence nodeSequence = sequence.Subseq(nodeRangeStart, nodeRangeEnd + 1);
+                auto node = new DeBruijnNode(nodeName, 1.0, nodeSequence);
                 m_deBruijnGraphNodes.insert(nodeName, node);
             }
 
@@ -1046,13 +1055,13 @@ int AssemblyGraph::buildDeBruijnGraphFromAsqg(QString fullFileName)
                     nodeName = "node";
                 nodeName += "+";
 
-                QByteArray sequence = lineParts.at(2).toLocal8Bit();
-                int length = sequence.length();
+                Sequence sequence{lineParts.at(2).toLocal8Bit()};
+                int length = static_cast<int>(sequence.size());
 
                 //ASQG files don't seem to include depth, so just set this to one for every node.
                 double nodeDepth = 1.0;
 
-                DeBruijnNode * node = new DeBruijnNode(nodeName, nodeDepth, sequence, length);
+                auto node = new DeBruijnNode(nodeName, nodeDepth, sequence, length);
                 m_deBruijnGraphNodes.insert(nodeName, node);
             }
 
@@ -1148,7 +1157,7 @@ int AssemblyGraph::buildDeBruijnGraphFromAsqg(QString fullFileName)
 }
 
 
-void AssemblyGraph::buildDeBruijnGraphFromPlainFasta(QString fullFileName)
+void AssemblyGraph::buildDeBruijnGraphFromPlainFasta(const QString& fullFileName)
 {
     m_graphFileType = PLAIN_FASTA;
     m_filename = fullFileName;
@@ -1166,7 +1175,7 @@ void AssemblyGraph::buildDeBruijnGraphFromPlainFasta(QString fullFileName)
         QString name = names[i];
         QString lowerName = name.toLower();
         double depth = 1.0;
-        QByteArray sequence = sequences[i];
+        Sequence sequence{sequences[i]};
 
         // Check to see if the node name matches the Velvet/SPAdes contig format.  If so, we can get the depth and node
         // number.
@@ -1190,7 +1199,7 @@ void AssemblyGraph::buildDeBruijnGraphFromPlainFasta(QString fullFileName)
         // If it doesn't match, then we will use the sequence name up to the first space.
         else {
             QStringList nameParts = name.split(" ");
-            if (nameParts.size() > 0)
+            if (!nameParts.empty())
                 name = nameParts[0];
         }
 
@@ -1219,14 +1228,14 @@ void AssemblyGraph::buildDeBruijnGraphFromPlainFasta(QString fullFileName)
         if (name.length() < 1)
             throw "load error";
 
-        DeBruijnNode * node = new DeBruijnNode(name, depth, sequence);
+        auto node = new DeBruijnNode(name, depth, sequence);
         m_deBruijnGraphNodes.insert(name, node);
         makeReverseComplementNodeIfNecessary(node);
     }
     pointEachNodeToItsReverseComplement();
 
     // For any circular nodes, make an edge connecting them to themselves.
-    for (auto circularNodeName : circularNodeNames) {
+    for (const auto& circularNodeName : circularNodeNames) {
         createDeBruijnEdge(circularNodeName, circularNodeName, 0, EXACT_OVERLAP);
     }
 }
@@ -2611,27 +2620,27 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
             }
         }
 
-        if (nodes.size() == 0)
+        if (nodes.empty())
             break;
 
     } while (addedNode);
 
     //If there are still nodes left in the first list, then they don't form a
     //nice simple path and the merge won't work.
-    if (nodes.size() > 0)
+    if (!nodes.empty())
         return false;
 
     double mergedNodeDepth = getMeanDepth(orderedList);
 
     Path posPath = Path::makeFromOrderedNodes(orderedList, false);
-    QByteArray mergedNodePosSequence = posPath.getPathSequence();
+    Sequence mergedNodePosSequence{posPath.getPathSequence()};
 
     QList<DeBruijnNode *> revCompOrderedList;
-    for (int i = 0; i < orderedList.size(); ++i)
-        revCompOrderedList.push_front(orderedList[i]->getReverseComplement());
+    for (auto &node : orderedList)
+        revCompOrderedList.push_front(node->getReverseComplement());
 
     Path negPath = Path::makeFromOrderedNodes(revCompOrderedList, false);
-    QByteArray mergedNodeNegSequence = negPath.getPathSequence();
+    Sequence mergedNodeNegSequence{negPath.getPathSequence()};
 
     QString newNodeBaseName;
     for (int i = 0; i < orderedList.size(); ++i)
@@ -2644,8 +2653,8 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
     QString newPosNodeName = newNodeBaseName + "+";
     QString newNegNodeName = newNodeBaseName + "-";
 
-    DeBruijnNode * newPosNode = new DeBruijnNode(newPosNodeName, mergedNodeDepth, mergedNodePosSequence);
-    DeBruijnNode * newNegNode = new DeBruijnNode(newNegNodeName, mergedNodeDepth, mergedNodeNegSequence);
+    auto newPosNode = new DeBruijnNode(newPosNodeName, mergedNodeDepth, mergedNodePosSequence);
+    auto newNegNode = new DeBruijnNode(newNegNodeName, mergedNodeDepth, mergedNodeNegSequence);
 
     newPosNode->setReverseComplement(newNegNode);
     newNegNode->setReverseComplement(newPosNode);
@@ -2654,17 +2663,15 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
     m_deBruijnGraphNodes.insert(newNegNodeName, newNegNode);
 
     std::vector<DeBruijnEdge *> leavingEdges = orderedList.back()->getLeavingEdges();
-    for (size_t i = 0; i < leavingEdges.size(); ++i)
+    for (auto leavingEdge : leavingEdges)
     {
-        DeBruijnEdge * leavingEdge = leavingEdges[i];
         createDeBruijnEdge(newPosNodeName, leavingEdge->getEndingNode()->getName(), leavingEdge->getOverlap(),
                            leavingEdge->getOverlapType());
     }
 
     std::vector<DeBruijnEdge *> enteringEdges = orderedList.front()->getEnteringEdges();
-    for (size_t i = 0; i < enteringEdges.size(); ++i)
+    for (auto enteringEdge : enteringEdges)
     {
-        DeBruijnEdge * enteringEdge = enteringEdges[i];
         createDeBruijnEdge(enteringEdge->getStartingNode()->getName(), newPosNodeName, enteringEdge->getOverlap(),
                            enteringEdge->getOverlapType());
     }
@@ -2690,8 +2697,8 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
     mergeGraphicsNodes(&orderedList, &revCompOrderedList, newPosNode, scene);
 
     std::vector<DeBruijnNode *> nodesToDelete;
-    for (int i = 0; i < orderedList.size(); ++i)
-        nodesToDelete.push_back(orderedList[i]);
+    for (auto node : orderedList)
+        nodesToDelete.push_back(node);
     deleteNodes(&nodesToDelete);
 
     return true;
@@ -3575,10 +3582,11 @@ bool AssemblyGraph::attemptToLoadSequencesFromFasta()
             DeBruijnNode * posNode = m_deBruijnGraphNodes[name + "+"];
             if (posNode->sequenceIsMissing())
             {
+                Sequence sequence{sequences[i]};
                 atLeastOneNodeSequenceLoaded = true;
-                posNode->setSequence(sequences[i]);
+                posNode->setSequence(sequence);
                 DeBruijnNode * negNode = m_deBruijnGraphNodes[name + "-"];
-                negNode->setSequence(getReverseComplement(sequences[i]));
+                negNode->setSequence(sequence.GetReverseComplement());
             }
         }
     }

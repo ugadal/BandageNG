@@ -63,8 +63,8 @@
 #include "program/memory.h"
 #include "changenodenamedialog.h"
 #include "changenodedepthdialog.h"
-#include <limits>
 #include "graphinfodialog.h"
+#include "graph/sequenceutils.hpp"
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(0),
@@ -998,7 +998,7 @@ void MainWindow::copySelectedSequencesToClipboard()
 
     for (size_t i = 0; i < selectedNodes.size(); ++i)
     {
-        clipboardText += selectedNodes[i]->getSequence();
+        clipboardText += sequenceToQByteArray(selectedNodes[i]->getSequence());
         if (i != selectedNodes.size() - 1)
             clipboardText += "\n";
     }

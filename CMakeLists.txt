@@ -123,6 +123,7 @@ include_directories(ui)
 
 add_subdirectory(thirdparty)
 include_directories(thirdparty)
+include_directories(thirdparty/seq)
 
 add_executable(Bandage program/main.cpp ${LIB_SOURCES} ${FORMS} ${RESOURCES})
 target_link_libraries(Bandage PRIVATE Qt6::Widgets Qt6::Svg gfa1)

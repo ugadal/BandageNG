@@ -27,6 +27,7 @@
 #include "graph/gfawrapper.hpp"
 #include "graph/graphicsitemedge.h"
 #include "graph/graphicsitemnode.h"
+#include "graph/sequenceutils.hpp"
 #include "ogdf/energybased/FMMMLayout.h"
 #include "program/globals.h"
 #include "ui/myprogressdialog.h"
@@ -55,6 +56,8 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
     *customLabels = false;
     *customColours = false;
 
+    bool sequencesAreMissing = false;
+
     /* ------------------------ NODES ------------------------ */
     std::vector<DeBruijnNode *> nodePtrs;
     nodePtrs.resize(gfaWrapper.verticesCount());
@@ -64,7 +67,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
         const auto &tagWrapper = segment.getTagsWrapper();
 
         QString nodeName = segment.getName();
-        QByteArray sequence = segment.getSequence();
+        QByteArray sequence_bytes = segment.getSequence();
 
         //We check to see if the node ended in a "+" or "-".
         //If so, we assume that is giving the orientation and leave it.
@@ -81,15 +84,16 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
         //that's not available, use a length of 0.
         //If there is a sequence, then the LN tag will be ignored.
         int length;
-        if (sequence == "*" || sequence == "") {
+        if (sequence_bytes == "*" || sequence_bytes == "") {
             auto lnTag = tagWrapper.getNumberTag<int>("LN");
             if (!lnTag) {
-                throw AssemblyGraphError("expected LN tag because sequence is " + sequence);
+                throw AssemblyGraphError("expected LN tag because sequence is " + sequence_bytes);
             }
             length = lnTag.value();
-            sequence = "*";
+            sequence_bytes = "";
+            sequencesAreMissing = true;
         } else
-            length = int(sequence.size());
+            length = int(sequence_bytes.size());
 
         auto dp = tagWrapper.getNumberTag<float>("DP");
         auto kc = tagWrapper.getNumberTag<float>("KC");
@@ -113,12 +117,12 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
 
         auto oppositeNodeName = getOppositeNodeName(nodeName);
 
-        auto reverseComplementSequence = getReverseComplement(sequence);
+        Sequence sequence{sequence_bytes};
 
         auto nodePtr = new DeBruijnNode(nodeName, nodeDepth, sequence, length);
         auto oppositeNodePtr = new DeBruijnNode(oppositeNodeName,
                                                 nodeDepth,
-                                                reverseComplementSequence,
+                                                sequence.GetReverseComplement(),
                                                 length);
 
         auto lb = tagWrapper.getTagString("LB");
@@ -191,4 +195,8 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
     tryUpdateNodeDepthsForCanuGraphs();
 
     m_sequencesLoadedFromFasta = NOT_TRIED;
+
+    if (sequencesAreMissing && !g_assemblyGraph->attemptToLoadSequencesFromFasta()) {
+        throw AssemblyGraphError("Cannot load fasta file with sequences.");
+    }
 }

@@ -3936,4 +3936,3 @@ bool OgmlParser::read(
 
 
 }//namespace ogdf
-

@@ -24,6 +24,7 @@
 #include "blast/blasthit.h"
 #include "blast/blastquery.h"
 #include "assemblygraph.h"
+#include "sequenceutils.hpp"
 #include <set>
 #include <QApplication>
 #include <QSet>
@@ -31,12 +32,12 @@
 
 //The length parameter is optional.  If it is set, then the node will use that
 //for its length.  If not set, it will just use the sequence length.
-DeBruijnNode::DeBruijnNode(QString name, double depth, QByteArray sequence, int length) :
-    m_name(name),
+DeBruijnNode::DeBruijnNode(QString name, double depth, const Sequence& sequence, int length) :
+    m_name(std::move(name)),
     m_depth(depth),
     m_depthRelativeToMeanDrawnDepth(1.0),
     m_sequence(sequence),
-    m_length(sequence.length()),
+    m_length(sequence.size()),
     m_contiguityStatus(NOT_CONTIGUOUS),
     m_reverseComplement(0),
     m_ogdfNode(0),
@@ -342,7 +343,7 @@ bool DeBruijnNode::isNotOnlyPathInItsDirection(DeBruijnNode * connectedNode,
 
 QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) const
 {
-    QByteArray sequence = getSequence();
+    QByteArray sequence = sequenceToQByteArray(getSequence());
     if (sequence.isEmpty() && !evenIfEmpty)
         return QByteArray();
 
@@ -404,8 +405,10 @@ QByteArray DeBruijnNode::getSequenceForGfa() const
     if (sequenceIsMissing())
         return QByteArray("*");
 
+    QByteArray sequence = sequenceToQByteArray(getSequence());
+
     if (g_assemblyGraph->m_graphFileType != LAST_GRAPH)
-        return getSequence();
+        return sequence;
 
     //If the code got here, then we are getting a full sequence from a Velvet
     //LastGraph graph, so we need to extend the beginning of the sequence.
@@ -415,10 +418,10 @@ QByteArray DeBruijnNode::getSequenceForGfa() const
     //deduced from the reverse complement node.
     if (getLength() >= extensionLength)
     {
-        QByteArray revCompSeq = getReverseComplement()->getSequence();
+        QByteArray revCompSeq = sequenceToQByteArray(getReverseComplement()->getSequence());
         QByteArray endOfRevCompSeq = revCompSeq.right(extensionLength);
         QByteArray extension = AssemblyGraph::getReverseComplement(endOfRevCompSeq);
-        return extension + getSequence();
+        return extension + sequence;
     }
 
     //If the node is not long enough, then we must look in upstream nodes for
@@ -433,7 +436,7 @@ QByteArray DeBruijnNode::getSequenceForGfa() const
             n.fill('N', additionalBases);
             extension = n + extension;
         }
-        return extension + getSequence();
+        return extension + sequence;
     }
 }
 
@@ -447,7 +450,7 @@ QByteArray DeBruijnNode::getUpstreamSequence(int upstreamSequenceLength) const
     for (size_t i = 0; i < upstreamNodes.size(); ++i)
     {
         DeBruijnNode * upstreamNode = upstreamNodes[i];
-        QByteArray upstreamNodeFullSequence = upstreamNode->getSequence();
+        QByteArray upstreamNodeFullSequence = sequenceToQByteArray(upstreamNode->getSequence());
         QByteArray upstreamNodeSequence;
 
         //If the upstream node has enough sequence, great!
@@ -728,24 +731,19 @@ bool DeBruijnNode::isInDepthRange(double min, double max) const
 
 bool DeBruijnNode::sequenceIsMissing() const
 {
-    return m_sequence == "*" || (m_sequence == "" && m_length > 0);
+    return m_sequence.size() == 0;
 }
 
 
-QByteArray DeBruijnNode::getSequence() const
+const Sequence &DeBruijnNode::getSequence() const
 {
-    if (sequenceIsMissing() && g_assemblyGraph->m_sequencesLoadedFromFasta == NOT_TRIED)
-        g_assemblyGraph->attemptToLoadSequencesFromFasta();
-
-    //If the sequence is still missing, return a string of Ns equal to the
-    //sequence length.
-    if (sequenceIsMissing())
-        return QByteArray(m_length, 'N');
-    else
-        return m_sequence;  
+    return m_sequence;
 }
 
-
+Sequence &DeBruijnNode::getSequence()
+{
+    return m_sequence;
+}
 
 //If the node has an edge which leads to itself (creating a loop), this function
 //will return it.  Otherwise, it returns 0.

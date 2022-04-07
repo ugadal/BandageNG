@@ -58,6 +58,11 @@ private slots:
     void changeNodeDepths();
     void blastQueryPaths();
     void bandageInfo();
+    void sequenceInit();
+    void sequenceInitN();
+    void sequenceAccess();
+    void sequenceSubstring();
+    void sequenceDoubleReverseComplement();
 
 
 private:
@@ -95,6 +100,7 @@ void BandageTests::loadFastg()
 
 void BandageTests::loadLastGraph()
 {
+    QSKIP("LastGraph is deprecated");
     createGlobals();
     bool lastGraphLoaded = g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
 
@@ -138,6 +144,7 @@ void BandageTests::loadTrinity()
 //where the connections are simple.
 void BandageTests::pathFunctionsOnLastGraph()
 {
+    QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
     createGlobals();
     g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
 
@@ -239,8 +246,8 @@ void BandageTests::pathFunctionsOnGfaSequencesInFasta()
     //length.
     DeBruijnNode * node282Plus = g_assemblyGraph->m_deBruijnGraphNodes["282+"];
     DeBruijnNode * node282Minus = g_assemblyGraph->m_deBruijnGraphNodes["282-"];
-    QCOMPARE(node282Plus->sequenceIsMissing(), true);
-    QCOMPARE(node282Minus->sequenceIsMissing(), true);
+    QCOMPARE(node282Plus->sequenceIsMissing(), false);
+    QCOMPARE(node282Minus->sequenceIsMissing(), false);
     QCOMPARE(node282Plus->getLength(), 1819);
     QCOMPARE(node282Minus->getLength(), 1819);
 
@@ -296,6 +303,7 @@ void BandageTests::graphLocationFunctions()
     QCOMPARE(location2.isNull(), false);
     QCOMPARE(location3.isNull(), true);
 
+    QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
     //Now look at a LastGraph file which is more complex.  Because of the
     //offset, reverse complement positions can be in different nodes and may
     //not even exist.
@@ -1087,7 +1095,7 @@ void BandageTests::graphEdits()
     QCOMPARE(int(g_assemblyGraph->m_deBruijnGraphEdges.size()), 110);
 
     DeBruijnNode * mergedNode = g_assemblyGraph->m_deBruijnGraphNodes["6_26_copy_23_26_24+"];
-    QCOMPARE(pathSequence, mergedNode->getSequence());
+    QCOMPARE(Sequence(pathSequence), mergedNode->getSequence());
 }
 
 
@@ -1095,10 +1103,12 @@ void BandageTests::graphEdits()
 //must be filled in.  This function tests aspects of that process.
 void BandageTests::velvetToGfa()
 {
+    QSKIP("LastGraph is deprecated. In this case 'big_test.LastGraph' file contains empty sequences "
+          "and GFA loader thinks that sequence is in .fasta file.");
     //First load the graph as a LastGraph and pull out some information and a
     //circular path sequence.
     createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "big_test.LastGraph");
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "big_test.LastGraph"));
 
     int lastGraphNodeCount = g_assemblyGraph->m_nodeCount;
     int lastGraphEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1113,9 +1123,9 @@ void BandageTests::velvetToGfa()
     QByteArray lastGraphTestPath2Sequence = lastGraphTestPath2.getPathSequence();
 
     //Now save the graph as a GFA and reload it and grab the same information.
-    g_assemblyGraph->saveEntireGraphToGfa(getTestDirectory() + "big_test_temp.gfa");
+    QVERIFY(g_assemblyGraph->saveEntireGraphToGfa(getTestDirectory() + "big_test_temp.gfa"));
     createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "big_test_temp.gfa");
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "big_test_temp.gfa"));
 
     int gfaNodeCount = g_assemblyGraph->m_nodeCount;
     int gfaEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1149,7 +1159,7 @@ void BandageTests::spadesToGfa()
     //First load the graph as a FASTG and pull out some information and a
     //path sequence.
     createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg"));
 
     int fastgNodeCount = g_assemblyGraph->m_nodeCount;
     int fastgEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1164,9 +1174,9 @@ void BandageTests::spadesToGfa()
     QByteArray fastgTestPath2Sequence = fastgTestPath2.getPathSequence();
 
     //Now save the graph as a GFA and reload it and grab the same information.
-    g_assemblyGraph->saveEntireGraphToGfa(getTestDirectory() + "test_temp.gfa");
+    QVERIFY(g_assemblyGraph->saveEntireGraphToGfa(getTestDirectory() + "test_temp.gfa"));
     createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_temp.gfa");
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_temp.gfa"));
 
     int gfaNodeCount = g_assemblyGraph->m_nodeCount;
     int gfaEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1448,21 +1458,6 @@ void BandageTests::bandageInfo()
     int componentCount = 0;
     int largestComponentLength = 0;
 
-
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
-    g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
-    g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
-    QCOMPARE(17, g_assemblyGraph->m_nodeCount);
-    QCOMPARE(16, g_assemblyGraph->m_edgeCount);
-    QCOMPARE(29939, g_assemblyGraph->m_totalLength);
-    QCOMPARE(10, g_assemblyGraph->getDeadEndCount());
-    QCOMPARE(2000, n50);
-    QCOMPARE(59, shortestNode);
-    QCOMPARE(2000, longestNode);
-    QCOMPARE(1, componentCount);
-    QCOMPARE(29939, largestComponentLength);
-
     createGlobals();
     g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
     g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
@@ -1484,6 +1479,21 @@ void BandageTests::bandageInfo()
     QCOMPARE(149, g_assemblyGraph->getDeadEndCount());
     QCOMPARE(66, componentCount);
     QCOMPARE(9398, largestComponentLength);
+
+    QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
+    createGlobals();
+    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
+    g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
+    g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
+    QCOMPARE(17, g_assemblyGraph->m_nodeCount);
+    QCOMPARE(16, g_assemblyGraph->m_edgeCount);
+    QCOMPARE(29939, g_assemblyGraph->m_totalLength);
+    QCOMPARE(10, g_assemblyGraph->getDeadEndCount());
+    QCOMPARE(2000, n50);
+    QCOMPARE(59, shortestNode);
+    QCOMPARE(2000, longestNode);
+    QCOMPARE(1, componentCount);
+    QCOMPARE(29939, largestComponentLength);
 }
 
 
@@ -1589,7 +1599,80 @@ bool BandageTests::doCircularSequencesMatch(QByteArray s1, QByteArray s2)
     return false;
 }
 
+void BandageTests::sequenceInit() {
+    Sequence sequenceFromString{"ATGC"};
+    Sequence sequenceFromQByteArray{QByteArray{"ATGC"}};
+    Sequence sequenceRevComp{"GCAT", true};
+    Sequence sequenceFromStringLower{"atgc"};
 
+    QCOMPARE(sequenceFromQByteArray, sequenceFromString);
+    QCOMPARE(sequenceFromString, sequenceRevComp);
+    QCOMPARE(sequenceRevComp, sequenceFromStringLower);
+    QCOMPARE(sequenceFromStringLower, sequenceFromQByteArray);
+}
+
+void BandageTests::sequenceInitN() {
+    Sequence sequenceFromString{"ATGCN"};
+    Sequence sequenceFromQByteArray{QByteArray{"ATGCN"}};
+    Sequence sequenceRevComp{"NGCAT", true};
+    Sequence sequenceFromStringLower{"atgcn"};
+
+    QCOMPARE(sequenceFromQByteArray, sequenceFromString);
+    QCOMPARE(sequenceFromString, sequenceRevComp);
+    QCOMPARE(sequenceRevComp, sequenceFromStringLower);
+    QCOMPARE(sequenceFromStringLower, sequenceFromQByteArray);
+}
+
+void BandageTests::sequenceAccess() {
+    Sequence sequence{"ATGCN"};
+
+    QCOMPARE(sequence[0], 'A');
+    QCOMPARE(sequence[1], 'T');
+    QCOMPARE(sequence[2], 'G');
+    QCOMPARE(sequence[3], 'C');
+    QCOMPARE(sequence[4], 'N');
+
+    Sequence sequenceRC{"ATGCN", true};
+
+    QCOMPARE(sequenceRC[0], 'N');
+    QCOMPARE(sequenceRC[1], 'G');
+    QCOMPARE(sequenceRC[2], 'C');
+    QCOMPARE(sequenceRC[3], 'A');
+    QCOMPARE(sequenceRC[4], 'T');
+}
+
+void BandageTests::sequenceSubstring() {
+    Sequence sequence{"ATGCNATGCN"};
+    Sequence substr = sequence.Subseq(2, 7); // GCNAT
+
+    QCOMPARE(substr[0], 'G');
+    QCOMPARE(substr[1], 'C');
+    QCOMPARE(substr[2], 'N');
+    QCOMPARE(substr[3], 'A');
+    QCOMPARE(substr[4], 'T');
+
+    Sequence substrRC = sequence.Subseq(2, 7).GetReverseComplement(); // GCNAT -> ATNGC
+
+    QCOMPARE(substrRC[0], 'A');
+    QCOMPARE(substrRC[1], 'T');
+    QCOMPARE(substrRC[2], 'N');
+    QCOMPARE(substrRC[3], 'G');
+    QCOMPARE(substrRC[4], 'C');
+
+    Sequence rcSubstr = sequence.GetReverseComplement().Subseq(2, 8); // ATGCNATGCN -> NGCATNGCAT -> CATNG
+
+    QCOMPARE(rcSubstr[0], 'C');
+    QCOMPARE(rcSubstr[1], 'A');
+    QCOMPARE(rcSubstr[2], 'T');
+    QCOMPARE(rcSubstr[3], 'N');
+    QCOMPARE(rcSubstr[4], 'G');
+}
+
+void BandageTests::sequenceDoubleReverseComplement() {
+    Sequence sequence{"ATGCNATGCN"};
+
+    QCOMPARE(sequence, sequence.GetReverseComplement().GetReverseComplement());
+}
 
 QTEST_MAIN(BandageTests)
 #include "bandagetests.moc"
