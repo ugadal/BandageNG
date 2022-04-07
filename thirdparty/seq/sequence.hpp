@@ -82,7 +82,7 @@ class Sequence {
         int cur_index = 0;
 
         for (int i = start; i != end; i += step) {
-            if (is_N(s[i])) {
+            if (LLVM_UNLIKELY(is_N(s[i]))) {
                 if (LLVM_UNLIKELY(data_->empty_nucls_ == nullptr)) {
                     data_->empty_nucls_ = std::make_unique<llvm::SparseBitVector<>>();
                 }

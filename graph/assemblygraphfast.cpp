@@ -87,7 +87,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
         if (sequence_bytes == "*" || sequence_bytes == "") {
             auto lnTag = tagWrapper.getNumberTag<int>("LN");
             if (!lnTag) {
-                throw AssemblyGraphError("expected LN tag because sequence_bytes is " + sequence_bytes);
+                throw AssemblyGraphError("expected LN tag because sequence is " + sequence_bytes);
             }
             length = lnTag.value();
             sequence_bytes = "";
