@@ -85,11 +85,12 @@ void BlastSearch::buildHitsFromBlastOutput()
             continue;
 
         QString nodeName = getNodeNameFromString(nodeLabel);
-        DeBruijnNode * node;
-        if (g_assemblyGraph->m_deBruijnGraphNodes.contains(nodeName))
-            node = g_assemblyGraph->m_deBruijnGraphNodes[nodeName];
-        else
+        DeBruijnNode *node = nullptr;
+        auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
+        if (it == g_assemblyGraph->m_deBruijnGraphNodes.end())
             continue;
+        
+        node = it.value();
 
         BlastQuery * query = g_blastSearch->m_blastQueries.getQueryFromName(queryName);
         if (query == nullptr)

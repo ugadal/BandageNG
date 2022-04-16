@@ -764,8 +764,12 @@ void MainWindow::setupPathSelectionComboBox() {
     ui->pathSelectionComboBox2->clear();
 
     QStringList comboBoxItems;
-    for (auto &entry : g_assemblyGraph->m_deBruijnGraphPaths)
-        comboBoxItems.push_back(entry.first);
+    std::string key_buffer;
+    for (auto it = g_assemblyGraph->m_deBruijnGraphPaths.begin();
+         it != g_assemblyGraph->m_deBruijnGraphPaths.end(); ++it) {
+        it.key(key_buffer);
+        comboBoxItems.push_back(key_buffer.c_str());
+    }
     comboBoxItems.sort();
 
     if (comboBoxItems.size() > 0)
@@ -1613,7 +1617,7 @@ void MainWindow::selectPathNodes()
     std::vector<QString> nodesNotInGraph;
     std::vector<DeBruijnNode *> nodesToSelect;
 
-    QList<DeBruijnNode *> nodes = g_assemblyGraph->m_deBruijnGraphPaths[ui->pathSelectionComboBox2->currentText()]->getNodes();
+    QList<DeBruijnNode *> nodes = g_assemblyGraph->m_deBruijnGraphPaths[ui->pathSelectionComboBox2->currentText().toStdString()]->getNodes();
     for (QList<DeBruijnNode *>::iterator i = nodes.begin(); i != nodes.end(); ++i)
         nodesToSelect.push_back(*i);
 
@@ -1946,7 +1950,7 @@ void MainWindow::selectNodesWithBlastHits()
     bool atLeastOneNodeSelected = false;
 
     for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry.second;
+        DeBruijnNode * node = entry;
 
         bool nodeHasBlastHits;
 
@@ -2001,7 +2005,7 @@ void MainWindow::selectNodesWithDeadEnds()
     bool atLeastOneNodeSelected = false;
 
     for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry.second;
+        DeBruijnNode * node = entry;
 
         bool nodeHasDeadEnd = node->getDeadEndCount() > 0;
         if (nodeHasDeadEnd)
@@ -2136,7 +2140,7 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
     m_scene->clearSelection();
 
     for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry.second;
+        DeBruijnNode * node = entry;
         GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
 
         if (graphicsItemNode == 0)

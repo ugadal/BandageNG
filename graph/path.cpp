@@ -156,8 +156,8 @@ Path Path::makeFromString(QString pathString, bool circular,
     for (int i = 0; i < nodeNameList.size(); ++i)
     {
         QString nodeName = nodeNameList[i].simplified();
-        if (g_assemblyGraph->m_deBruijnGraphNodes.contains(nodeName))
-            nodesInGraph.push_back(g_assemblyGraph->m_deBruijnGraphNodes[nodeName]);
+        if (g_assemblyGraph->m_deBruijnGraphNodes.count(nodeName.toStdString()))
+            nodesInGraph.push_back(g_assemblyGraph->m_deBruijnGraphNodes[nodeName.toStdString()]);
         else
             nodesNotInGraph.push_back(nodeName);
     }

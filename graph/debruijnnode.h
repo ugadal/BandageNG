@@ -46,10 +46,13 @@ public:
     QString getName() const {return m_name;}
     QString getNameWithoutSign() const {return m_name.left(m_name.length() - 1);}
     QString getSign() const {if (m_name.length() > 0) return m_name.right(1); else return "+";}
+
     double getDepth() const {return m_depth;}
     double getDepthRelativeToMeanDrawnDepth() const {return m_depthRelativeToMeanDrawnDepth;}
+
     const Sequence &getSequence() const;
     Sequence &getSequence();
+
     int getLength() const {return m_length;}
     QByteArray getSequenceForGfa() const;
     int getFullLength() const;
@@ -130,18 +133,22 @@ private:
     double m_depth;
     double m_depthRelativeToMeanDrawnDepth;
     Sequence m_sequence;
-    int m_length;
-    ContiguityStatus m_contiguityStatus;
     DeBruijnNode * m_reverseComplement;
+    std::vector<DeBruijnEdge *> m_edges;
+
     OgdfNode * m_ogdfNode;
     GraphicsItemNode * m_graphicsItemNode;
-    std::vector<DeBruijnEdge *> m_edges;
-    bool m_specialNode;
-    bool m_drawn;
-    int m_highestDistanceInNeighbourSearch;
+
+    int m_length;
+    int m_highestDistanceInNeighbourSearch : 27;
+    ContiguityStatus m_contiguityStatus : 3;
+    bool m_specialNode : 1;
+    bool m_drawn : 1;
+
     QColor m_customColour;
     QString m_customLabel;
     QStringList m_csvData;
+
     QString getNodeNameForFasta(bool sign) const;
     QByteArray getUpstreamSequence(int upstreamSequenceLength) const;
 
