@@ -19,16 +19,20 @@
 #ifndef DEBRUIJNNODE_H
 #define DEBRUIJNNODE_H
 
-#include <QByteArray>
-#include <utility>
-#include <vector>
+#include "program/globals.h"
+#include "program/settings.h"
+#include "blast/blasthitpart.h"
+
 #include "ogdf/basic/Graph.h"
 #include "ogdf/basic/GraphAttributes.h"
-#include "program/globals.h"
-#include <QColor>
-#include "blast/blasthitpart.h"
-#include "program/settings.h"
+
+#include "llvm/ADT/iterator_range.h"
 #include "seq/sequence.hpp"
+#include "small_vector/small_pod_vector.hpp"
+
+#include <QColor>
+#include <QByteArray>
+#include <vector>
 
 class OgdfNode;
 class DeBruijnEdge;
@@ -66,7 +70,14 @@ public:
     GraphicsItemNode * getGraphicsItemNode() const {return m_graphicsItemNode;}
     bool thisOrReverseComplementHasGraphicsItemNode() const {return (m_graphicsItemNode != 0 || getReverseComplement()->m_graphicsItemNode != 0);}
     bool hasGraphicsItem() const {return m_graphicsItemNode != 0;}
-    const std::vector<DeBruijnEdge *> * getEdgesPointer() const {return &m_edges;}
+
+    auto edgeBegin() { return m_edges.begin(); }
+    const auto edgeBegin() const { return m_edges.begin(); }
+    auto edgeEnd() { return m_edges.end(); }
+    const auto edgeEnd() const { return m_edges.end(); }
+    auto edges() { return llvm::make_range(edgeBegin(), edgeEnd()); }
+    const auto edges() const { return llvm::make_range(edgeBegin(), edgeEnd()); }
+    
     std::vector<DeBruijnEdge *> getEnteringEdges() const;
     std::vector<DeBruijnEdge *> getLeavingEdges() const;
     std::vector<DeBruijnNode *> getDownstreamNodes() const;
@@ -134,7 +145,7 @@ private:
     double m_depthRelativeToMeanDrawnDepth;
     Sequence m_sequence;
     DeBruijnNode * m_reverseComplement;
-    std::vector<DeBruijnEdge *> m_edges;
+    adt::SmallPODVector<DeBruijnEdge *> m_edges;
 
     OgdfNode * m_ogdfNode;
     GraphicsItemNode * m_graphicsItemNode;

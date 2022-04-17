@@ -17,6 +17,7 @@
 
 
 #include "assemblygraph.h"
+#include "debruijnedge.h"
 #include "graphlocation.h"
 #include "ogdfnode.h"
 #include "path.h"
@@ -48,6 +49,7 @@
 #include <algorithm>
 #include <limits>
 #include <cmath>
+#include <utility>
 
 AssemblyGraph::AssemblyGraph() :
     m_kmer(0), m_contiguitySearchDone(false),
@@ -120,11 +122,9 @@ void AssemblyGraph::createDeBruijnEdge(QString node1Name, QString node2Name,
         return;
 
     //Quit if the edge already exists
-    const std::vector<DeBruijnEdge *> * edges = (*node1)->getEdgesPointer();
-    for (size_t i = 0; i < edges->size(); ++i)
-    {
-        if ((*edges)[i]->getStartingNode() == *node1 &&
-            (*edges)[i]->getEndingNode() == *node2)
+    for (const auto *edge : (*node1)->edges()) {
+        if (edge->getStartingNode() == *node1 &&
+            edge->getEndingNode() == *node2)
             return;
     }
 
@@ -148,9 +148,9 @@ void AssemblyGraph::createDeBruijnEdge(QString node1Name, QString node2Name,
     forwardEdge->setOverlapType(overlapType);
     backwardEdge->setOverlapType(overlapType);
 
-    m_deBruijnGraphEdges.emplace(QPair<DeBruijnNode*, DeBruijnNode*>(forwardEdge->getStartingNode(), forwardEdge->getEndingNode()), forwardEdge);
+    m_deBruijnGraphEdges.emplace(std::make_pair(forwardEdge->getStartingNode(), forwardEdge->getEndingNode()), forwardEdge);
     if (!isOwnPair)
-        m_deBruijnGraphEdges.emplace(QPair<DeBruijnNode*, DeBruijnNode*>(backwardEdge->getStartingNode(), backwardEdge->getEndingNode()), backwardEdge);
+        m_deBruijnGraphEdges.emplace(std::make_pair(backwardEdge->getStartingNode(), backwardEdge->getEndingNode()), backwardEdge);
 
     (*node1)->addEdge(forwardEdge);
     (*node2)->addEdge(forwardEdge);
@@ -2283,10 +2283,7 @@ void AssemblyGraph::deleteNodes(std::vector<DeBruijnNode *> * nodes)
     for (int i = 0; i < nodesToDelete.size(); ++i)
     {
         DeBruijnNode * node = nodesToDelete[i];
-        const std::vector<DeBruijnEdge *> * nodeEdges = node->getEdgesPointer();
-        for (size_t j = 0; j < nodeEdges->size(); ++j)
-        {
-            DeBruijnEdge * edge = (*nodeEdges)[j];
+        for (auto *edge : node->edges()) {
             bool alreadyAdded = std::find(edgesToDelete.begin(), edgesToDelete.end(), edge) != edgesToDelete.end();
             if (!alreadyAdded)
                 edgesToDelete.push_back(edge);
@@ -2458,10 +2455,7 @@ void AssemblyGraph::duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnN
 
     scene->addItem(newGraphicsItemNode);
 
-    const std::vector<DeBruijnEdge *> * newEdges = newNode->getEdgesPointer();
-    for (size_t i = 0; i < newEdges->size(); ++i)
-    {
-        DeBruijnEdge * newEdge = (*newEdges)[i];
+    for (auto *newEdge : newNode->edges()) {
         GraphicsItemEdge * graphicsItemEdge = new GraphicsItemEdge(newEdge);
         graphicsItemEdge->setZValue(-1.0);
         newEdge->setGraphicsItemEdge(graphicsItemEdge);
@@ -2680,7 +2674,7 @@ void AssemblyGraph::mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
     std::vector<DeBruijnNode *> nodesToRemove;
     for (int i = 0; i < originalNodes->size(); ++i)
         nodesToRemove.push_back((*originalNodes)[i]);
-    removeGraphicsItemNodes(&nodesToRemove, true, scene);
+    removeGraphicsItemNodes(nodesToRemove, true, scene);
 }
 
 
@@ -2739,10 +2733,7 @@ bool AssemblyGraph::mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
 
         scene->addItem(newGraphicsItemNode);
 
-        const std::vector<DeBruijnEdge *> * newEdges = newNode->getEdgesPointer();
-        for (size_t i = 0; i < newEdges->size(); ++i)
-        {
-            DeBruijnEdge * newEdge = (*newEdges)[i];
+        for (auto *newEdge : newNode->edges()) {
             GraphicsItemEdge * graphicsItemEdge = new GraphicsItemEdge(newEdge);
             graphicsItemEdge->setZValue(-1.0);
             newEdge->setGraphicsItemEdge(graphicsItemEdge);
@@ -2756,14 +2747,14 @@ bool AssemblyGraph::mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
 
 
 //If reverseComplement is true, this function will also remove the graphics items for reverse complements of the nodes.
-void AssemblyGraph::removeGraphicsItemNodes(const std::vector<DeBruijnNode *> * nodes,
+void AssemblyGraph::removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
                                             bool reverseComplement,
                                             MyGraphicsScene * scene)
 {
     QSet<GraphicsItemNode *> graphicsItemNodesToDelete;
-    for (size_t i = 0; i < nodes->size(); ++i)
+    for (size_t i = 0; i < nodes.size(); ++i)
     {
-        DeBruijnNode * node = (*nodes)[i];
+        DeBruijnNode * node = nodes[i];
         removeAllGraphicsEdgesFromNode(node, reverseComplement, scene);
 
         GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
@@ -2802,18 +2793,18 @@ void AssemblyGraph::removeGraphicsItemNodes(const std::vector<DeBruijnNode *> * 
 void AssemblyGraph::removeAllGraphicsEdgesFromNode(DeBruijnNode * node, bool reverseComplement,
                                                    MyGraphicsScene * scene)
 {
-    const std::vector<DeBruijnEdge *> * edges = node->getEdgesPointer();
+    std::vector<DeBruijnEdge*> edges(node->edgeBegin(), node->edgeEnd());
     removeGraphicsItemEdges(edges, reverseComplement, scene);
 }
 
-void AssemblyGraph::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> * edges,
+void AssemblyGraph::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
                                             bool reverseComplement,
                                             MyGraphicsScene * scene)
 {
     QSet<GraphicsItemEdge *> graphicsItemEdgesToDelete;
-    for (size_t i = 0; i < edges->size(); ++i)
+    for (size_t i = 0; i < edges.size(); ++i)
     {
-        DeBruijnEdge * edge = (*edges)[i];
+        DeBruijnEdge * edge = edges[i];
 
         GraphicsItemEdge * graphicsItemEdge = edge->getGraphicsItemEdge();
         if (graphicsItemEdge != 0 && !graphicsItemEdgesToDelete.contains(graphicsItemEdge))
@@ -3369,11 +3360,9 @@ long long AssemblyGraph::getTotalLengthMinusEdgeOverlaps() const
         if (node->isPositiveNode())
         {
             totalLength += node->getLength();
-            const std::vector<DeBruijnEdge *> * edges = node->getEdgesPointer();
             int maxOverlap = 0;
-            for (size_t j = 0; j < edges->size(); ++j)
-            {
-                int edgeOverlap = (*edges)[j]->getOverlap();
+            for (const auto* edge : node->edges()) {
+                int edgeOverlap = edge->getOverlap();
                 maxOverlap = std::max(maxOverlap, edgeOverlap);
             }
             totalLength -= maxOverlap;

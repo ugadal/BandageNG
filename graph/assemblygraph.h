@@ -161,10 +161,10 @@ public:
     void duplicateNodePair(DeBruijnNode * node, MyGraphicsScene * scene);
     bool mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * scene,
                     bool recalulateDepth);
-    void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> * edges,
+    void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
                                  bool reverseComplement,
                                  MyGraphicsScene * scene);
-    void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> * nodes,
+    void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
                                  bool reverseComplement,
                                  MyGraphicsScene * scene);
     int mergeAllPossible(MyGraphicsScene * scene = 0,

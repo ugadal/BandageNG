@@ -308,16 +308,12 @@ std::vector<DeBruijnEdge *> DeBruijnEdge::findNextEdgesInPath(DeBruijnNode * nex
                                                               bool forward) const
 {
     std::vector<DeBruijnEdge *> nextEdges;
-    const std::vector<DeBruijnEdge *> * nextNodeEdges = nextNode->getEdgesPointer();
-    for (size_t i = 0; i < nextNodeEdges->size(); ++i)
-    {
-        DeBruijnEdge * edge = (*nextNodeEdges)[i];
-
+    for (DeBruijnEdge * edge : nextNode->edges()) {
         //If forward, we're looking for edges that lead away from
         //nextNode.  If backward, we're looking for edges that lead
         //into nextNode.
         if ((forward && edge->m_startingNode == nextNode) ||
-                (!forward && edge->m_endingNode == nextNode))
+            (!forward && edge->m_endingNode == nextNode))
             nextEdges.push_back(edge);
     }
 

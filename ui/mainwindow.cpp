@@ -2435,7 +2435,7 @@ QByteArray MainWindow::makeStringUrlSafe(QByteArray s)
 void MainWindow::hideNodes()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    g_assemblyGraph->removeGraphicsItemNodes(&selectedNodes, !g_settings->doubleMode, m_scene);
+    g_assemblyGraph->removeGraphicsItemNodes(selectedNodes, !g_settings->doubleMode, m_scene);
 }
 
 
@@ -2445,8 +2445,8 @@ void MainWindow::removeSelection()
     std::vector<DeBruijnEdge *> selectedEdges = m_scene->getSelectedEdges();
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
 
-    g_assemblyGraph->removeGraphicsItemEdges(&selectedEdges, true, m_scene);
-    g_assemblyGraph->removeGraphicsItemNodes(&selectedNodes, true, m_scene);
+    g_assemblyGraph->removeGraphicsItemEdges(selectedEdges, true, m_scene);
+    g_assemblyGraph->removeGraphicsItemNodes(selectedNodes, true, m_scene);
 
     g_assemblyGraph->deleteEdges(&selectedEdges);
     g_assemblyGraph->deleteNodes(&selectedNodes);
