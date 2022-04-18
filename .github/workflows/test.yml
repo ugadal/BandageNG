@@ -46,5 +46,6 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: Bandage
-          path: ${{github.workspace}}/build/Bandage |
-            ${{github.workspace}}/build/BandageTests
+          path: |
+             ${{github.workspace}}/build/Bandage
+             ${{github.workspace}}/build/BandageTests
