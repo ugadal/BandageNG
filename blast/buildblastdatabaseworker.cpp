@@ -47,7 +47,7 @@ void BuildBlastDatabaseWorker::buildBlastDatabase()
             return;
         }
 
-        DeBruijnNode * node = entry.second;
+        DeBruijnNode *node = entry;
         out << node->getFasta(true, false, false);
     }
     file.close();
@@ -55,7 +55,7 @@ void BuildBlastDatabaseWorker::buildBlastDatabase()
     // Make sure the graph has sequences to BLAST.
     bool atLeastOneSequence = false;
     for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry.second;
+        DeBruijnNode * node = entry;
         if (!node->sequenceIsMissing())
         {
             atLeastOneSequence = true;

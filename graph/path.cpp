@@ -82,10 +82,7 @@ Path Path::makeFromOrderedNodes(QList<DeBruijnNode *> nodes, bool circular)
         DeBruijnNode * node2 = path.m_nodes[secondNodeIndex];
 
         bool foundEdge = false;
-        const std::vector<DeBruijnEdge *> * edges = node1->getEdgesPointer();
-        for (size_t j = 0; j < edges->size(); ++j)
-        {
-            DeBruijnEdge * edge = (*edges)[j];
+        for (auto * edge : node1->edges()) {
             if (edge->getStartingNode() == node1 && edge->getEndingNode() == node2)
             {
                 path.m_edges.push_back(edge);
@@ -156,8 +153,8 @@ Path Path::makeFromString(QString pathString, bool circular,
     for (int i = 0; i < nodeNameList.size(); ++i)
     {
         QString nodeName = nodeNameList[i].simplified();
-        if (g_assemblyGraph->m_deBruijnGraphNodes.contains(nodeName))
-            nodesInGraph.push_back(g_assemblyGraph->m_deBruijnGraphNodes[nodeName]);
+        if (g_assemblyGraph->m_deBruijnGraphNodes.count(nodeName.toStdString()))
+            nodesInGraph.push_back(g_assemblyGraph->m_deBruijnGraphNodes[nodeName.toStdString()]);
         else
             nodesNotInGraph.push_back(nodeName);
     }
@@ -416,15 +413,12 @@ bool Path::checkForOtherEdges()
     for (int i = 0; i < m_nodes.size(); ++i)
     {
         DeBruijnNode * startingNode = m_nodes[i];
-        const std::vector<DeBruijnEdge *> * startingNodeEdges = startingNode->getEdgesPointer();
         for (int j = 0; j < m_nodes.size(); ++j)
         {
             DeBruijnNode * endingNode = m_nodes[j];
-            for (size_t k = 0; k < startingNodeEdges->size(); ++k)
-            {
-                DeBruijnEdge * edge = (*startingNodeEdges)[k];
+            for (auto *edge : startingNode->edges()) {
                 if (edge->getStartingNode() == startingNode &&
-                        edge->getEndingNode() == endingNode)
+                    edge->getEndingNode() == endingNode)
                     allConnectingEdges.push_back(edge);
             }
         }
@@ -618,10 +612,7 @@ bool Path::canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const
         return false;
 
     DeBruijnNode * lastNode = m_nodes.back();
-    const std::vector<DeBruijnEdge *> * lastNodeEdges = lastNode->getEdgesPointer();
-    for (size_t i = 0; i < lastNodeEdges->size(); ++i)
-    {
-        DeBruijnEdge * edge = (*lastNodeEdges)[i];
+    for (auto *edge : lastNode->edges()) {
         if (edge->getStartingNode() == lastNode && edge->getEndingNode() == node)
         {
             *extendedPath = *this;
@@ -648,10 +639,7 @@ bool Path::canNodeFitAtStart(DeBruijnNode * node, Path * extendedPath) const
         return false;
 
     DeBruijnNode * firstNode = m_nodes.front();
-    const std::vector<DeBruijnEdge *> * firstNodeEdges = firstNode->getEdgesPointer();
-    for (size_t i = 0; i < firstNodeEdges->size(); ++i)
-    {
-        DeBruijnEdge * edge = (*firstNodeEdges)[i];
+    for (auto *edge : firstNode->edges()) {
         if (edge->getStartingNode() == node && edge->getEndingNode() == firstNode)
         {
             *extendedPath = *this;

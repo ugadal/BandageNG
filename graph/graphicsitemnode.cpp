@@ -511,8 +511,7 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) con
 
     if (nodes == nullptr)
     {
-        const std::vector<DeBruijnEdge *> * edges = m_deBruijnNode->getEdgesPointer();
-        for (auto edge : *edges)
+        for (auto *edge : m_deBruijnNode->edges())
             edgesToFix.insert(edge);
     }
     else
@@ -520,8 +519,7 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) con
         for (auto &graphicNode : *nodes)
         {
             DeBruijnNode * node = graphicNode->m_deBruijnNode;
-            const std::vector<DeBruijnEdge *> * edges = node->getEdgesPointer();
-            for (auto edge : *edges)
+            for (auto *edge : node->edges())
                 edgesToFix.insert(edge);
         }
     }

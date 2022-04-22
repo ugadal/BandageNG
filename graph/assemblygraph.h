@@ -26,6 +26,7 @@
 
 #include "seq/sequence.hpp"
 #include "parallel_hashmap/phmap.h"
+#include "tsl/htrie_map.h"
 
 #include "ogdf/basic/Graph.h"
 #include "ogdf/basic/GraphAttributes.h"
@@ -35,6 +36,7 @@
 #include <QMap>
 #include <QPair>
 #include <QObject>
+#include <unordered_map>
 #include <vector>
 
 class DeBruijnNode;
@@ -55,13 +57,13 @@ public:
     ~AssemblyGraph() override;
 
     //Nodes are stored in a map with a key of the node's name.
-    phmap::parallel_flat_hash_map<QString, DeBruijnNode*> m_deBruijnGraphNodes;
+    tsl::htrie_map<char, DeBruijnNode*> m_deBruijnGraphNodes;
 
     //Edges are stored in a map with a key of the starting and ending node
     //pointers.
     phmap::parallel_flat_hash_map<QPair<DeBruijnNode*, DeBruijnNode*>, DeBruijnEdge*> m_deBruijnGraphEdges;
 
-    phmap::parallel_flat_hash_map<QString, Path*> m_deBruijnGraphPaths;
+    tsl::htrie_map<char, Path*> m_deBruijnGraphPaths;
     
     ogdf::Graph * m_ogdfGraph;
     ogdf::EdgeArray<double> * m_edgeArray;
@@ -159,10 +161,10 @@ public:
     void duplicateNodePair(DeBruijnNode * node, MyGraphicsScene * scene);
     bool mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * scene,
                     bool recalulateDepth);
-    void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> * edges,
+    void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
                                  bool reverseComplement,
                                  MyGraphicsScene * scene);
-    void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> * nodes,
+    void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
                                  bool reverseComplement,
                                  MyGraphicsScene * scene);
     int mergeAllPossible(MyGraphicsScene * scene = 0,

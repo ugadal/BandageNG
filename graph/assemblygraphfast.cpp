@@ -140,8 +140,8 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
         nodePtr->setReverseComplement(oppositeNodePtr);
         oppositeNodePtr->setReverseComplement(nodePtr);
 
-        m_deBruijnGraphNodes[nodeName] = nodePtr;
-        m_deBruijnGraphNodes[oppositeNodeName] = oppositeNodePtr;
+        m_deBruijnGraphNodes[nodeName.toStdString()] = nodePtr;
+        m_deBruijnGraphNodes[oppositeNodeName.toStdString()] = oppositeNodePtr;
         nodePtrs[gfa::Wrapper::getVertexId(i)] = nodePtr;
         nodePtrs[gfa::Wrapper::getComplementVertexId(gfa::Wrapper::getVertexId(i))] = oppositeNodePtr;
     }

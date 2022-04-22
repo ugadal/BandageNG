@@ -1066,7 +1066,7 @@ void BandageTests::graphEdits()
     g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 88);
-    QCOMPARE(int(g_assemblyGraph->m_deBruijnGraphEdges.size()), 118);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 118);
 
     //Get the path sequence now to compare to the merged node sequence at the
     //end.
@@ -1077,7 +1077,7 @@ void BandageTests::graphEdits()
     g_assemblyGraph->duplicateNodePair(g_assemblyGraph->m_deBruijnGraphNodes["26+"], 0);
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 90);
-    QCOMPARE(int(g_assemblyGraph->m_deBruijnGraphEdges.size()), 126);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 126);
 
     std::vector<DeBruijnEdge *> edgesToRemove;
     edgesToRemove.push_back(getEdgeFromNodeNames("26_copy+", "24+"));
@@ -1087,14 +1087,18 @@ void BandageTests::graphEdits()
     g_assemblyGraph->deleteEdges(&edgesToRemove);
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 90);
-    QCOMPARE(int(g_assemblyGraph->m_deBruijnGraphEdges.size()), 118);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 118);
 
     g_assemblyGraph->mergeAllPossible();
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 82);
-    QCOMPARE(int(g_assemblyGraph->m_deBruijnGraphEdges.size()), 110);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 110);
 
     DeBruijnNode * mergedNode = g_assemblyGraph->m_deBruijnGraphNodes["6_26_copy_23_26_24+"];
+    if (mergedNode == nullptr)
+        mergedNode = g_assemblyGraph->m_deBruijnGraphNodes["24_26_23_26_copy_6-"];
+
+    QVERIFY(mergedNode != nullptr);
     QCOMPARE(Sequence(pathSequence), mergedNode->getSequence());
 }
 
@@ -1248,7 +1252,7 @@ void BandageTests::mergeNodesOnGfa()
 
     //That last node should have a length of its six constituent nodes, minus
     //the overlaps.
-    DeBruijnNode * lastNode = g_assemblyGraph->m_deBruijnGraphNodes.begin()->second;
+    DeBruijnNode * lastNode = *g_assemblyGraph->m_deBruijnGraphNodes.begin();
     QCOMPARE(lastNode->getLength(), nodeTotalLength - 5 * 81);
 
     //If we make a circular path with this node, its length should be equal to
@@ -1563,8 +1567,8 @@ QString BandageTests::getTestDirectory()
 DeBruijnEdge * BandageTests::getEdgeFromNodeNames(QString startingNodeName,
                                                   QString endingNodeName)
 {
-    DeBruijnNode * startingNode = g_assemblyGraph->m_deBruijnGraphNodes[startingNodeName];
-    DeBruijnNode * endingNode = g_assemblyGraph->m_deBruijnGraphNodes[endingNodeName];
+    DeBruijnNode * startingNode = g_assemblyGraph->m_deBruijnGraphNodes[startingNodeName.toStdString()];
+    DeBruijnNode * endingNode = g_assemblyGraph->m_deBruijnGraphNodes[endingNodeName.toStdString()];
 
     QPair<DeBruijnNode*, DeBruijnNode*> nodePair(startingNode, endingNode);
 
