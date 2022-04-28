@@ -107,6 +107,8 @@ public:
     QString blastQueryFilename;
     QString csvFilename;
     QString unnamedQueryDefaultName;
+    std::string blastSolidAnnotationGroupName;
+    std::string blastRainbowAnnotationGroupName;
 
     double minZoom;
     double minZoomOnGraphDraw;
