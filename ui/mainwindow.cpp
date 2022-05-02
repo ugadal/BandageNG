@@ -152,7 +152,6 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->nodeDepthCheckBox, SIGNAL(toggled(bool)), this, SLOT(setTextDisplaySettings()));
     connect(ui->csvCheckBox, SIGNAL(toggled(bool)), this, SLOT(setTextDisplaySettings()));
     connect(ui->csvComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setTextDisplaySettings()));
-    connect(ui->blastHitsCheckBox, SIGNAL(toggled(bool)), this, SLOT(setTextDisplaySettings()));
     connect(ui->textOutlineCheckBox, SIGNAL(toggled(bool)), this, SLOT(setTextDisplaySettings()));
     connect(ui->fontButton, SIGNAL(clicked()), this, SLOT(fontButtonPressed()));
     connect(ui->setNodeCustomColourButton, SIGNAL(clicked()), this, SLOT(setNodeCustomColour()));
@@ -1413,7 +1412,6 @@ void MainWindow::setTextDisplaySettings()
     g_settings->displayNodeNames = ui->nodeNamesCheckBox->isChecked();
     g_settings->displayNodeLengths = ui->nodeLengthsCheckBox->isChecked();
     g_settings->displayNodeDepth = ui->nodeDepthCheckBox->isChecked();
-    g_settings->displayBlastHits = ui->blastHitsCheckBox->isChecked();
     g_settings->displayNodeCsvData = ui->csvCheckBox->isChecked();
     g_settings->displayNodeCsvDataCol = ui->csvComboBox->currentIndex();
     g_settings->textOutline = ui->textOutlineCheckBox->isChecked();
@@ -2236,7 +2234,6 @@ void MainWindow::setWidgetsFromSettings()
     ui->nodeNamesCheckBox->setChecked(g_settings->displayNodeNames);
     ui->nodeLengthsCheckBox->setChecked(g_settings->displayNodeLengths);
     ui->nodeDepthCheckBox->setChecked(g_settings->displayNodeDepth);
-    ui->blastHitsCheckBox->setChecked(g_settings->displayBlastHits);
     ui->textOutlineCheckBox->setChecked(g_settings->textOutline);
 
     ui->startingNodesExactMatchRadioButton->setChecked(g_settings->startingNodesExactMatch);
@@ -2619,13 +2616,14 @@ void MainWindow::mergeAllPossible()
 void MainWindow::cleanUpAllBlast()
 {
     g_blastSearch->cleanUp();
-    g_assemblyGraph->clearAllBlastHitPointers();
+    g_annotationsManager->removeGroupByName(g_settings->blastSolidAnnotationGroupName);
+    g_annotationsManager->removeGroupByName(g_settings->blastRainbowAnnotationGroupName);
     ui->blastQueryComboBox->clear();
 
-    if (m_blastSearchDialog != 0)
+    if (m_blastSearchDialog != nullptr)
     {
         delete m_blastSearchDialog;
-        m_blastSearchDialog = 0;
+        m_blastSearchDialog = nullptr;
     }
 }
 
@@ -2674,7 +2672,6 @@ void MainWindow::changeNodeDepth()
         g_graphicsView->viewport()->update();
     }
 }
-
 
 
 void MainWindow::openGraphInfoDialog()
