@@ -130,7 +130,7 @@ target_link_libraries(Bandage PRIVATE Qt6::Widgets Qt6::Svg gfa1)
 if (APPLE)
   set_target_properties(Bandage PROPERTIES
         MACOSX_BUNDLE ON
-        MACOSX_BUNDLE_BUNDLE_NAME "Bandge"
+        MACOSX_BUNDLE_BUNDLE_NAME "Bandage"
         MACOSX_BUNDLE_BUNDLE_IDENTIFIER "org.bandage.app")
 endif()
 
