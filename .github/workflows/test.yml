@@ -68,7 +68,8 @@ jobs:
         shell: bash
       - uses: actions/upload-artifact@v3
         with:
-          name: Bandage
+          name: Bandage-${{ runner.os }}
           path: |
              ${{github.workspace}}/build/BandageNG
+             ${{github.workspace}}/build/BandageNG.app
              ${{github.workspace}}/build/BandageTests
