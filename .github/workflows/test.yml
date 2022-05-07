@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest]
         experimental: [false]
 
     steps:
@@ -37,7 +37,12 @@ jobs:
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
           version: '6.2.3'
 
-      - name: Install Blast
+      - if: contains(matrix.os, 'macos')
+        name: Install Blast under macOS
+        run: brew install blast
+
+      - if: contains(matrix.os, 'ubuntu')
+        name: Install Blast under Linux
         run: sudo apt-get install -y ncbi-blast+
 
       - name: Configure CMake
