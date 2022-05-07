@@ -128,7 +128,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     //If this is a Mac, change the 'Delete' shortcuts to 'Backspace' instead.
 #ifdef Q_OS_MAC
     ui->actionHide_selected_nodes->setShortcut(Qt::Key_Backspace);
-    ui->actionRemove_selection_from_graph->setShortcut(Qt::SHIFT + Qt::Key_Backspace);
+    ui->actionRemove_selection_from_graph->setShortcut(Qt::SHIFT | Qt::Key_Backspace);
 #endif
 
     connect(ui->drawGraphButton, SIGNAL(clicked()), this, SLOT(drawGraph()));

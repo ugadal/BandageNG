@@ -3,6 +3,7 @@ project(Bandage VERSION 0.9.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -115,24 +116,30 @@ set(FORMS
         ui/querypathsdialog.ui
         ui/settingsdialog.ui)
 
-set(RESOURCES images/images.qrc)
+set(RESOURCES images/images.qrc images/application.icns)
 
-add_compile_definitions(QT_DISABLE_DEPRECATED_BEFORE=0x050F00)
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}-dev")
 include_directories(ui)
 
 add_subdirectory(thirdparty)
 include_directories(thirdparty)
 
-add_executable(Bandage program/main.cpp ${LIB_SOURCES} ${FORMS} ${RESOURCES})
-target_link_libraries(Bandage PRIVATE Qt6::Widgets Qt6::Svg gfa1)
+# FIXME: Untagle this
+add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS} ${RESOURCES})
+target_link_libraries(BandageLib PRIVATE Qt6::Widgets Qt6::Svg gfa1)
+
+add_executable(Bandage program/main.cpp)
+target_link_libraries(Bandage BandageLib Qt6::Core Qt6::Widgets)
 
 if (APPLE)
   set_target_properties(Bandage PROPERTIES
         MACOSX_BUNDLE ON
         MACOSX_BUNDLE_BUNDLE_NAME "Bandage"
-        MACOSX_BUNDLE_BUNDLE_IDENTIFIER "org.bandage.app")
+        MACOSX_BUNDLE_BUNDLE_IDENTIFIER "org.bandage.app"
+        MACOSX_BUNDLE_ICON_FILE "application.icns")
+  set_source_files_properties(images/application.icns PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources")
 endif()
 
-add_executable(BandageTests tests/bandagetests.cpp ${LIB_SOURCES} ${FORMS} ${RESOURCES})
-target_link_libraries(BandageTests PRIVATE Qt6::Widgets Qt6::Svg Qt6::Test gfa1)
+add_executable(BandageTests tests/bandagetests.cpp)
+target_link_libraries(BandageTests PRIVATE BandageLib Qt6::Widgets Qt6::Test)
