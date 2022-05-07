@@ -62,6 +62,7 @@ jobs:
              if [ "$RUNNER_OS" == "Linux" ]; then
                ./bandage_command_line_tests.sh ${{github.workspace}}/build/BandageNG
              elif [ "$RUNNER_OS" == "macOS" ]; then
+               brew install imagemagick
                ./bandage_command_line_tests.sh ${{github.workspace}}/build/BandageNG.app/Contents/MacOS/BandageNG
              fi
         shell: bash
