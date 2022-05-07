@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     if (g_memory->terminalWidth > 300) g_memory->terminalWidth = 300;
     #endif //Q_OS_WIN32
 
-    QApplication::setApplicationName("Bandage");
+    QApplication::setApplicationName("BandageNG");
     QApplication::setApplicationVersion(APP_VERSION);
 
     QTextStream out(stdout);

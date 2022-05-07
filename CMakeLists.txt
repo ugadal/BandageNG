@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(Bandage VERSION 0.9.0 LANGUAGES CXX)
+project(BandageNG VERSION 0.9.5 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -125,17 +125,17 @@ add_subdirectory(thirdparty)
 include_directories(thirdparty)
 
 # FIXME: Untagle this
-add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS} ${RESOURCES})
+add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})
 target_link_libraries(BandageLib PRIVATE Qt6::Widgets Qt6::Svg gfa1)
 
-add_executable(Bandage program/main.cpp)
-target_link_libraries(Bandage BandageLib Qt6::Core Qt6::Widgets)
+add_executable(BandageNG program/main.cpp ${RESOURCES})
+target_link_libraries(BandageNG BandageLib Qt6::Core Qt6::Widgets)
 
 if (APPLE)
-  set_target_properties(Bandage PROPERTIES
+  set_target_properties(BandageNG PROPERTIES
         MACOSX_BUNDLE ON
-        MACOSX_BUNDLE_BUNDLE_NAME "Bandage"
-        MACOSX_BUNDLE_BUNDLE_IDENTIFIER "org.bandage.app"
+        MACOSX_BUNDLE_BUNDLE_NAME "BandageNG"
+        MACOSX_BUNDLE_BUNDLE_IDENTIFIER "org.bandage-ng.app"
         MACOSX_BUNDLE_ICON_FILE "application.icns")
   set_source_files_properties(images/application.icns PROPERTIES
         MACOSX_PACKAGE_LOCATION "Resources")

@@ -41,11 +41,11 @@ jobs:
 
       - name: CLI Tests
         working-directory: ${{github.workspace}}/tests
-        run: ./bandage_command_line_tests.sh ${{github.workspace}}/build/Bandage
+        run: ./bandage_command_line_tests.sh ${{github.workspace}}/build/BandageNG
         
       - uses: actions/upload-artifact@v3
         with:
           name: Bandage
           path: |
-             ${{github.workspace}}/build/Bandage
+             ${{github.workspace}}/build/BandageNG
              ${{github.workspace}}/build/BandageTests
