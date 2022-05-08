@@ -141,5 +141,10 @@ if (APPLE)
         MACOSX_PACKAGE_LOCATION "Resources")
 endif()
 
+add_subdirectory(resources)
+install(TARGETS BandageNG
+        DESTINATION bin
+        COMPONENT main)
+
 add_executable(BandageTests tests/bandagetests.cpp)
 target_link_libraries(BandageTests PRIVATE BandageLib Qt6::Widgets Qt6::Test)

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Categories=Utility;Biology;
+Icon=icon480
+Name=BandageNG
+Type=Application
+Exec=BandageNG
+Comment=Assembly graph viewer
