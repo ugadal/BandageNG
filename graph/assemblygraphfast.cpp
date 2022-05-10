@@ -153,6 +153,10 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
         auto gfaEdge = gfaWrapper.getEdgeById(i);
         auto fromNodePtr = nodePtrs[gfaEdge.getStartVertexId()];
         auto toNodePtr = nodePtrs[gfaEdge.getEndVertexId()];
+        // Ignore dups, hifiasm seems to create them
+        if (m_deBruijnGraphEdges.count({fromNodePtr, toNodePtr}))
+            continue;
+
         auto edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
 
         if (gfaEdge.fromOverlapLength() != gfaEdge.toOverlapLength()) {
@@ -173,11 +177,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
         }
         linkIdToEdgePtr[gfaEdge.getLinkId()] = edgePtr;
 
-        auto &oldEdgePtr = m_deBruijnGraphEdges[{fromNodePtr, toNodePtr}];
-        if (oldEdgePtr != nullptr) {
-            throw AssemblyGraphError("Multiple edges are not supported.");
-        }
-        oldEdgePtr = edgePtr;
+        m_deBruijnGraphEdges[{fromNodePtr, toNodePtr}] = edgePtr;
 
         fromNodePtr->addEdge(edgePtr);
         toNodePtr->addEdge(edgePtr);
