@@ -1262,7 +1262,13 @@ bool AssemblyGraph::checkFileIsFasta(QString fullFileName)
 //Cursory look to see if file appears to be a GFA file.
 bool AssemblyGraph::checkFileIsGfa(QString fullFileName)
 {
-    return checkFirstLineOfFile(fullFileName, "^[SLH]\t");
+    QFileInfo gfaFileInfo(fullFileName);
+    if (gfaFileInfo.isFile()) {
+        return fullFileName.endsWith(".gfa") ||
+               fullFileName.endsWith(".gfa.gz");
+    }
+
+    return false;
 }
 
 //Cursory look to see if file appears to be a Trinity.fasta file.
