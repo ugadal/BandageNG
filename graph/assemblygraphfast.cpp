@@ -156,7 +156,9 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
         auto edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
 
         if (gfaEdge.fromOverlapLength() != gfaEdge.toOverlapLength()) {
-            throw AssemblyGraphError("Non-exact overlaps in gfa are not supported.");
+            throw AssemblyGraphError("Non-exact overlaps in gfa are not supported, edge: " +
+                                     fromNodePtr->getName().toStdString() + " -- " +
+                                     toNodePtr->getName().toStdString());
         }
         edgePtr->setOverlap(static_cast<int>(gfaEdge.fromOverlapLength()));
         edgePtr->setOverlapType(EXACT_OVERLAP);

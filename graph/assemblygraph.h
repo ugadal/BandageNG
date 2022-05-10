@@ -43,7 +43,7 @@ class DeBruijnNode;
 class DeBruijnEdge;
 class MyProgressDialog;
 
-class AssemblyGraphError : std::runtime_error {
+class AssemblyGraphError : public std::runtime_error {
   public:
     using std::runtime_error::runtime_error;
 };

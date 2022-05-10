@@ -36,6 +36,7 @@
 #include <QTextStream>
 #include <QScrollBar>
 #include "settingsdialog.h"
+#include <stdexcept>
 #include <stdlib.h>
 #include <time.h>
 #include <QProgressDialog>
@@ -457,6 +458,19 @@ void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
         setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
     }
 
+    catch (const AssemblyGraphError &err) {
+        QString errorTitle = "Error loading " + convertGraphFileTypeToString(graphFileType);
+        QString errorMessage = "There was an error when attempting to load\n"
+                               + fullFileName + ":\n"
+                               + err.what() + "\n\n"
+                               "Please verify that this file has the correct format.";
+        QMessageBox::warning(this, errorTitle, errorMessage);
+        resetScene();
+        cleanUp();
+        clearGraphDetails();
+        setUiState(NO_GRAPH_LOADED);
+    }
+    
     catch (...)
     {
         QString errorTitle = "Error loading " + convertGraphFileTypeToString(graphFileType);
