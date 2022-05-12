@@ -1,0 +1,63 @@
+name: build-snapshots
+
+on:
+  workflow_dispatch:
+    branches: [ dev ]
+
+env:
+  BUILD_TYPE: Release
+  QT_QPA_PLATFORM: offscreen
+  XDG_RUNTIME_DIR: '/tmp/runtime-runner'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04]
+        experimental: [false]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v1
+        with:
+          path: ../Qt
+          key: ${{ runner.os }}-QtCache
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          version: '6.2.3'
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
+
+      - name: Make AppDir
+        working-directory: ${{github.workspace}}/build
+        run: make install DESTDIR=AppDir
+
+      - name: Make AppImage
+        working-directory: ${{github.workspace}}/build
+        run: |
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+
+          chmod +x linuxdeploy*.AppImage
+
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
+        shell: bash
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Bandage-${{ runner.os }}
+          path: |
+             ${{github.workspace}}/build/BandageNG*.AppImage
