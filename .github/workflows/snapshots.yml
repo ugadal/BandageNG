@@ -1,9 +1,9 @@
 name: build-snapshots
 
 on:
-  workflow_dispatch:
-    branches: [ dev ]
-
+  push:
+    tags:
+      - "v*.*.*"
 env:
   BUILD_TYPE: Release
   QT_QPA_PLATFORM: offscreen
@@ -75,5 +75,14 @@ jobs:
         with:
           name: Bandage-${{ runner.os }}
           path: |
+             ${{github.workspace}}/build/BandageNG*.AppImage
+             ${{github.workspace}}/build/BandageNG*.dmg
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft : true
+          fail_on_unmatched_files : false
+          files: |
              ${{github.workspace}}/build/BandageNG*.AppImage
              ${{github.workspace}}/build/BandageNG*.dmg
