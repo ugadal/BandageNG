@@ -6,6 +6,7 @@
 
 #include "graph/debruijnedge.h"
 #include "graph/debruijnnode.h"
+#include "seq/sequence.hpp"
 
 #include <QApplication>
 #include <QFileInfo>
@@ -154,8 +155,7 @@ static bool attemptToLoadSequencesFromFasta(AssemblyGraph &graph) {
     // FIXME: this does not belong here
     graph.readFastaFile(fastaName, &names, &sequences);
 
-    for (size_t i = 0; i < names.size(); ++i)
-    {
+    for (size_t i = 0; i < names.size(); ++i) {
         QString name = names[i];
         name = name.split(QRegularExpression("\\s+"))[0];
         if (graph.m_deBruijnGraphNodes.count((name + "+").toStdString())) {
@@ -190,18 +190,21 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
             nodeName.push_back('+');
 
         // GFA can use * to indicate that the sequence is not in the
-        // file.  In this case, try to use the LN tag for length.  If
-        // that's not available, use a length of 0.
+        // file.  In this case, try to use the LN tag for length.
         // If there is a sequence, then the LN tag will be ignored.
         size_t length = seq.size();
-        if (!length) {
+        Sequence sequence;
+        if (!length ||
+            length == 1 && seq.starts_with('*')) {
             auto lnTag = getTag<int64_t>("LN", record.tags);
             if (!lnTag)
                 throw AssemblyGraphError("expected LN tag because sequence is missing");
 
             length = size_t(*lnTag);
             sequencesAreMissing = true;
-        }
+            sequence = Sequence(length, /* allNs */ true);
+        } else
+            sequence = Sequence{seq};
 
         double nodeDepth = 0;
         if (auto dpTag = getTag<float>("DP", record.tags)) {
@@ -219,7 +222,6 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         }
                         
         std::string oppositeNodeName = getOppositeNodeName(nodeName);
-        Sequence sequence{seq};
 
         // FIXME: get rid of copies and QString's
         auto nodePtr = new DeBruijnNode(nodeName.c_str(), nodeDepth, sequence, length);
@@ -366,10 +368,8 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         }
 
         graph.m_sequencesLoadedFromFasta = NOT_TRIED;
-
-        if (sequencesAreMissing && !attemptToLoadSequencesFromFasta(graph)) {
-            throw AssemblyGraphError("Cannot load fasta file with sequences.");
-        }
+        if (sequencesAreMissing)
+            attemptToLoadSequencesFromFasta(graph);
     }
 };
 

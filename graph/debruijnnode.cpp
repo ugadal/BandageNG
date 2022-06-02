@@ -641,7 +641,7 @@ bool DeBruijnNode::isInDepthRange(double min, double max) const
 
 bool DeBruijnNode::sequenceIsMissing() const
 {
-    return m_sequence.empty();
+    return m_sequence.empty() || m_sequence.missing();
 }
 
 

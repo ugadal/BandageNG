@@ -166,14 +166,20 @@ class Sequence {
                 && *data_->empty_nucls_ == *that.data_->empty_nucls_);
     }
 
-    explicit Sequence(size_t size)
-            : size_(size), from_(0), rtl_(false), data_(ManagedNuclBuffer::create(size_)) {}
-
     //Low level constructor. Handle with care.
     Sequence(const Sequence &seq, size_t from, size_t size, bool rtl)
             : size_(size), from_(from), rtl_(rtl), data_(seq.data_) {}
 
 public:
+    explicit Sequence(size_t size, bool allNs = false)
+            : size_(size), from_(0), rtl_(false), data_(ManagedNuclBuffer::create(size_)) {
+        if (allNs) {
+            data_->empty_nucls_ = std::make_unique<llvm::SparseBitVector<>>();
+            for (size_t i = from_; i < size_; ++i)
+                data_->empty_nucls_->set(i);
+        }
+    }
+
     /**
      * Sequence initialization (arbitrary size string)
      *
@@ -312,6 +318,15 @@ public:
 
     bool empty() const {
         return size() == 0;
+    }
+
+    bool missing() const {
+        // No N's - nothing is missed
+        if (!data_->empty_nucls_)
+            return false;
+
+        // All N's are set
+        return size_ == data_->empty_nucls_->count();
     }
 
     template<class Seq>
