@@ -314,9 +314,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         size_t overlapLength = 0;
         if (overlap.size() > 1 ||
             (overlap.size() == 1 && overlap.front().op != 'M')) {
-            throw AssemblyGraphError("Non-exact overlaps in gfa are not supported, edge: " +
-                                     fromNodePtr->getName().toStdString() + " -- " +
-                                     toNodePtr->getName().toStdString());
+            hasComplexOverlaps_ = true;
         } else if (overlap.size() == 1) {
             overlapLength = overlap.front().count;
         }
