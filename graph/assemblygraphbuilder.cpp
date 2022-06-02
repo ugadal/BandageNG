@@ -238,10 +238,9 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         if (!length ||
             length == 1 && seq.starts_with('*')) {
             auto lnTag = getTag<int64_t>("LN", record.tags);
-            if (!lnTag)
-                throw AssemblyGraphError("expected LN tag because sequence is missing");
+            if (lnTag)
+                length = size_t(*lnTag);
 
-            length = size_t(*lnTag);
             sequencesAreMissing = true;
             sequence = Sequence(length, /* allNs */ true);
         } else
