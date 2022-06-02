@@ -100,8 +100,8 @@ auto tab = dsl::lit_c<'\t'>;
 struct segment_name {
     static constexpr auto name = "segment name";
     static constexpr auto rule =
-            dsl::identifier(dsl::ascii::graph - LEXY_LIT("=") - LEXY_LIT("*") - LEXY_LIT(","),
-                            dsl::ascii::graph - LEXY_LIT(",") - LEXY_LIT("+") - LEXY_LIT("-"));
+            dsl::identifier(dsl::ascii::graph - LEXY_LIT("=") - LEXY_LIT("*") - LEXY_LIT(",") - LEXY_LIT(";"),
+                            dsl::ascii::graph - LEXY_LIT(",") - LEXY_LIT(";"));
     static constexpr auto value = lexy::as_string<std::string_view>;
 };
 
