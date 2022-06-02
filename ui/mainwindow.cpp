@@ -380,7 +380,7 @@ void MainWindow::loadGraph(QString fullFileName)
                                  "is undefined.");
         
         setUiState(GRAPH_LOADED);
-        setWindowTitle("Bandage - " + fullFileName);
+        setWindowTitle("BandageNG - " + fullFileName);
 
         g_assemblyGraph->determineGraphInfo();
         displayGraphDetails();
