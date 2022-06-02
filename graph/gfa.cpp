@@ -112,7 +112,12 @@ struct segment_orientation {
 };
 
 struct oriented_segment {
-    static constexpr auto rule = dsl::capture(dsl::token(dsl::p<segment_name> + dsl::p<segment_orientation>));
+    // Apparently we cannot use segment_name + segment_orientation as GFA grammar is context-dependent
+    // Parse as full segment name and deal with possible invalid input later
+    // static constexpr auto rule = dsl::capture(dsl::token(dsl::p<segment_name> + dsl::p<segment_orientation>));
+    static constexpr auto rule =
+            dsl::identifier(dsl::ascii::graph - LEXY_LIT("=") - LEXY_LIT("*") - LEXY_LIT(",") - LEXY_LIT(";"),
+                            dsl::ascii::graph - LEXY_LIT(",") - LEXY_LIT(";"));
     static constexpr auto value = lexy::as_string<std::string_view>;
 };
 
