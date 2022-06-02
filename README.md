@@ -32,7 +32,7 @@ Bandage help tips are also built into the program. Throughout the UI, you will f
 
 ## Pre-built binaries
 
-No pre-built binaries are available at the moment (but planned!)
+Pre-built Linux and Mac binaries are available from [Releases](https://github.com/asl/Bandage/releases) page.
 
 ## Building from source
 
