@@ -1,3 +1,8 @@
+[![License](https://img.shields.io/badge/licence-GPLv3-blue)](https://www.gnu.org/licenses/gpl-3.0)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/asl/Bandage?include_prereleases)
+[![GitHub Downloads](https://img.shields.io/github/downloads/asl/Bandage/total.svg?style=social&logo=github&label=Download)](https://github.com/asl/Bandage/releases)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/asl/Bandage/build-test?label=checks)
+
 # <img src="http://rrwick.github.io/Bandage/images/logo.png" alt="Bandage" width="115" height="115" align="middle">Bandage-NG
 
 ## IMPORTANT: This is a fork of original Bandage repo. It may contain new features, new bugs and otherwise be not compatible with the Bandage by Ryan Wick. The documentation, instructions, etc. might be incomplete, missed and inaccurate as well
