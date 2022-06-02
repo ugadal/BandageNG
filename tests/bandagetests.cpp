@@ -40,10 +40,11 @@ public:
 
         std::cout << "sizeof(DeBruijnNode)=" << sizeof(DeBruijnNode)
                   << ", sizeof(DeBruijnEdge)=" << sizeof(DeBruijnEdge) << std::endl;
-    }    
-    
+    }
+
 private slots:
     void loadFastg();
+    void loadGFAWithPlaceholders();
     void loadLastGraph();
     void loadTrinity();
     void pathFunctionsOnLastGraph();
@@ -103,6 +104,27 @@ void BandageTests::loadFastg()
     DeBruijnNode * node28 = g_assemblyGraph->m_deBruijnGraphNodes["28-"];
     QCOMPARE(node1->getLength(), 6070);
     QCOMPARE(node28->getLength(), 79);
+}
+
+void BandageTests::loadGFAWithPlaceholders()
+{
+    createGlobals();
+    bool gfaGraphLoaded = g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_not_defined.gfa");
+
+    //Check that the graph loaded properly.
+    QCOMPARE(gfaGraphLoaded, true);
+
+    //Check that the appropriate number of nodes/edges are present.
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 8);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 8);
+
+    //Check the length of a couple nodes.
+    DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
+    DeBruijnNode * node2 = g_assemblyGraph->m_deBruijnGraphNodes["2+"];
+    DeBruijnNode * node4 = g_assemblyGraph->m_deBruijnGraphNodes["4-"];
+    QCOMPARE(node1->getLength(), 19);
+    QCOMPARE(node2->getLength(), 1);
+    QCOMPARE(node4->getLength(), 0);
 }
 
 

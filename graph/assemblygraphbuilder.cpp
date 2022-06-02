@@ -24,7 +24,7 @@ static bool checkFirstLineOfFile(QString fullFileName, QString regExp) {
         QTextStream in(&inputFile);
         if (in.atEnd())
             return false;
-        
+
         QRegularExpression rx(regExp);
         QString line = in.readLine();
         if (rx.match(line).hasMatch())
@@ -39,7 +39,7 @@ static bool checkFileIsLastGraph(QString fullFileName) {
 }
 
 //Cursory look to see if file appears to be a FASTG file.
-static bool checkFileIsFastG(QString fullFileName) {    
+static bool checkFileIsFastG(QString fullFileName) {
     return checkFirstLineOfFile(fullFileName, "^>(NODE|EDGE).*;");
 }
 
@@ -101,7 +101,7 @@ static ssize_t gzgetdelim(char **buf, size_t *bufsiz, int delimiter, gzFile fp) 
             ssize_t d = ptr - *buf;
             if ((nbuf = (char*)realloc(*buf, nbufsiz)) == NULL)
                 return -1;
-                
+
             *buf = nbuf;
             *bufsiz = nbufsiz;
             eptr = nbuf + nbufsiz;
@@ -175,6 +175,47 @@ static bool attemptToLoadSequencesFromFasta(AssemblyGraph &graph) {
 
 class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
   private:
+    DeBruijnNode *maybeAddSegment(const std::string &nodeName,
+                                  double nodeDepth, Sequence sequence,
+                                  AssemblyGraph &graph) {
+        auto nodeStorage = graph.m_deBruijnGraphNodes.find(nodeName);
+        // If node already exists it should be a placeholder of zero length
+        if (nodeStorage != graph.m_deBruijnGraphNodes.end()) {
+            DeBruijnNode *placeholder = nodeStorage.value();
+            if (!placeholder->getSequence().empty())
+                return nullptr;
+
+            // Takeover the placeholder
+            placeholder->setDepth(nodeDepth);
+            placeholder->setSequence(sequence);
+
+            return placeholder;
+        }
+
+        return (graph.m_deBruijnGraphNodes[nodeName] = new DeBruijnNode(nodeName.c_str(), nodeDepth, sequence));
+    }
+
+    auto
+    addSegmentPair(const std::string &nodeName,
+                   double nodeDepth, Sequence sequence,
+                   AssemblyGraph &graph) {
+        std::string oppositeNodeName = getOppositeNodeName(nodeName);
+
+        auto *nodePtr = maybeAddSegment(nodeName, nodeDepth, sequence, graph);
+        if (!nodePtr)
+            throw AssemblyGraphError("Duplicate segment named: " + nodeName);
+
+        auto oppositeNodePtr =
+                maybeAddSegment(getOppositeNodeName(nodeName), nodeDepth, sequence.GetReverseComplement(), graph);
+        if (!oppositeNodePtr)
+            throw AssemblyGraphError("Duplicate segment named: " + oppositeNodeName);
+
+        nodePtr->setReverseComplement(oppositeNodePtr);
+        oppositeNodePtr->setReverseComplement(nodePtr);
+
+        return std::make_pair(nodePtr, oppositeNodePtr);
+    }
+
     bool handleSegment(const gfa::segment &record,
                        AssemblyGraph &graph) {
         bool sequencesAreMissing = false;
@@ -220,18 +261,9 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
             graph.m_depthTag = "FC";
             nodeDepth = double(*fcTag) / double(length);
         }
-                        
-        std::string oppositeNodeName = getOppositeNodeName(nodeName);
 
         // FIXME: get rid of copies and QString's
-        auto nodePtr = new DeBruijnNode(nodeName.c_str(), nodeDepth, sequence, length);
-        auto oppositeNodePtr = new DeBruijnNode(oppositeNodeName.c_str(),
-                                                nodeDepth,
-                                                sequence.GetReverseComplement(),
-                                                length);
-
-        nodePtr->setReverseComplement(oppositeNodePtr);
-        oppositeNodePtr->setReverseComplement(nodePtr);
+        auto [nodePtr, oppositeNodePtr] = addSegmentPair(nodeName, nodeDepth, sequence, graph);
 
         auto lb = getTag<std::string>("LB", record.tags);
         auto l2 = getTag<std::string>("L2", record.tags);
@@ -244,9 +276,6 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         hasCustomColours_ = hasCustomColours_ || cb || c2;
         if (cb) graph.setCustomColour(nodePtr, cb->c_str());
         if (c2) graph.setCustomColour(oppositeNodePtr, c2->c_str());
-
-        graph.m_deBruijnGraphNodes[nodeName] = nodePtr;
-        graph.m_deBruijnGraphNodes[oppositeNodeName] = oppositeNodePtr;
 
         return sequencesAreMissing;
     }
@@ -262,17 +291,19 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         DeBruijnNode *toNodePtr = nullptr;
 
         auto fromNodeIt = graph.m_deBruijnGraphNodes.find(fromNode);
-        if (fromNodeIt== graph.m_deBruijnGraphNodes.end())
-            throw AssemblyGraphError("Unknown segment name " + fromNode + " at link: " +
-                                     fromNode + " -- " + toNode);
-        else
+        if (fromNodeIt== graph.m_deBruijnGraphNodes.end()) {
+            // Add placeholder
+            DeBruijnNode *oppositeNodePtr;
+            std::tie(fromNodePtr, oppositeNodePtr) = addSegmentPair(fromNode, 0, Sequence(), graph);
+        } else
             fromNodePtr = *fromNodeIt;
 
         auto toNodeIt = graph.m_deBruijnGraphNodes.find(toNode);
-        if (toNodeIt== graph.m_deBruijnGraphNodes.end())
-            throw AssemblyGraphError("Unknown segment name " + toNode + " at link: " +
-                                     fromNode + " -- " + toNode);
-        else
+        if (toNodeIt== graph.m_deBruijnGraphNodes.end()) {
+            // Add placeholder
+            DeBruijnNode *oppositeNodePtr;
+            std::tie(toNodePtr, oppositeNodePtr) = addSegmentPair(toNode, 0, Sequence(), graph);
+        } else
             toNodePtr = *toNodeIt;
 
         // Ignore dups, hifiasm seems to create them
@@ -319,13 +350,13 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
                     AssemblyGraph &graph) {
         QList<DeBruijnNode *> pathNodes;
         pathNodes.reserve(record.segments.size());
-        
+
         for (const auto &node : record.segments)
             pathNodes.push_back(graph.m_deBruijnGraphNodes.at(node));
         graph.m_deBruijnGraphPaths[record.name] = new Path(Path::makeFromOrderedNodes(pathNodes, false));
     }
-    
-    
+
+
   public:
     using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
@@ -378,7 +409,7 @@ static void pointEachNodeToItsReverseComplement(AssemblyGraph &graph) {
         DeBruijnNode * positiveNode = entry;
         if (!positiveNode->isPositiveNode())
             continue;
-        
+
         if (DeBruijnNode * negativeNode =
             graph.m_deBruijnGraphNodes[getOppositeNodeName(positiveNode->getName().toStdString())]) {
             positiveNode->setReverseComplement(negativeNode);
@@ -483,7 +514,7 @@ class FastaAssemblyGraphBuilder : public AssemblyGraphBuilder {
             // SKESA circularity
             if (thisNodeDetails.size() == 4 and thisNodeDetails[3] == "Circ")
                 circularNodeNames.push_back(name);
-            
+
             if (name.length() < 1)
                 throw "load error";
 
@@ -840,7 +871,7 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
                 throw "load error";
 
             QStringList pathParts = path.split(" ");
-            
+
             //Each path part is a node
             QString previousNodeName;
             for (int i = 0; i < pathParts.length(); ++i) {
@@ -857,12 +888,12 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
                     nodeNumberString = nodeNumberString.mid(1, nodeNumberString.length() - 3);
 
                 QString nodeName = component + "_" + nodeNumberString + "+";
-                
+
                 //If the node doesn't yet exist, make it now.
                 if (!graph.m_deBruijnGraphNodes.count(nodeName.toStdString())) {
                     QString nodeRange = nodeParts.at(1);
                     QStringList nodeRangeParts = nodeRange.split("-");
-                    
+
                     if (nodeRangeParts.size() < 2)
                         throw "load error";
 
@@ -1025,7 +1056,6 @@ AssemblyGraphBuilder::get(const QString &fullFileName) {
         res.reset(new AsqgAssemblyGraphBuilder(fullFileName));
     else if (checkFileIsFasta(fullFileName))
         res.reset(new FastaAssemblyGraphBuilder(fullFileName));
-    
+
     return res;
 }
-
