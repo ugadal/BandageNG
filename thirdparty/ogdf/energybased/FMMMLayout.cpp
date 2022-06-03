@@ -54,9 +54,6 @@
 #include "Rectangle.h"
 #include <time.h>
 
-#include <QPointF>
-#include <QLineF>
-
 namespace ogdf {
 
 
@@ -249,7 +246,7 @@ void FMMMLayout::call_FORCE_CALCULATION_step(
 		}//while
 
         if(act_level == 0) {
-            fixTwistedSplits(G, A);
+            // fixTwistedSplits(G, A);
 			call_POSTPROCESSING_step(G,A,E,F,F_attr,F_rep,last_node_movement);
         }
 
@@ -1634,7 +1631,7 @@ void FMMMLayout::adapt_drawing_to_ideal_average_edgelength(
 }
 
 
-
+#if 0
 void FMMMLayout::fixTwistedSplits(Graph &G, NodeArray<NodeAttributes>& A) {
     node v;
     forall_nodes(v, G) {
@@ -1701,7 +1698,7 @@ void FMMMLayout::fixTwistedSplits(Graph &G, NodeArray<NodeAttributes>& A) {
         }
     }
 }
-
+#endif
 
 std::vector<node> FMMMLayout::getAdjacentNodes(node v) {
     std::vector<node> adjacentNodes;

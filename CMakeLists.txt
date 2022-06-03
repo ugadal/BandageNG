@@ -38,41 +38,6 @@ set(LIB_SOURCES
         graph/graphicsitemnode.cpp
         graph/graphlocation.cpp
         graph/path.cpp
-        ogdf/basic/CombinatorialEmbedding.cpp
-        ogdf/basic/Constraint.cpp
-        ogdf/basic/Graph.cpp
-        ogdf/basic/GraphAttributes.cpp
-        ogdf/basic/GraphCopy.cpp
-        ogdf/basic/Hashing.cpp
-        ogdf/basic/Math.cpp
-        ogdf/basic/String.cpp
-        ogdf/basic/System.cpp
-        ogdf/basic/basic.cpp
-        ogdf/basic/geometry.cpp
-        ogdf/basic/simple_graph_alg.cpp
-        ogdf/cluster/ClusterGraph.cpp
-        ogdf/cluster/ClusterGraphAttributes.cpp
-        ogdf/energybased/FMMMLayout.cpp
-        ogdf/energybased/MAARPacking.cpp
-        ogdf/energybased/Multilevel.cpp
-        ogdf/energybased/Set.cpp
-        ogdf/energybased/numexcept.cpp
-        ogdf/fileformats/DinoLineBuffer.cpp
-        ogdf/fileformats/DinoTools.cpp
-        ogdf/fileformats/DinoXmlParser.cpp
-        ogdf/fileformats/DinoXmlScanner.cpp
-        ogdf/fileformats/GmlParser.cpp
-        ogdf/fileformats/Ogml.cpp
-        ogdf/fileformats/OgmlParser.cpp
-        ogdf/fileformats/XmlParser.cpp
-        ogdf/internal/basic/PoolMemoryAllocator.cpp
-        ogdf/internal/energybased/EdgeAttributes.cpp
-        ogdf/internal/energybased/FruchtermanReingold.cpp
-        ogdf/internal/energybased/MultilevelGraph.cpp
-        ogdf/internal/energybased/NMM.cpp
-        ogdf/internal/energybased/NodeAttributes.cpp
-        ogdf/internal/energybased/QuadTreeNM.cpp
-        ogdf/internal/energybased/QuadTreeNodeNM.cpp
         program/globals.cpp
         program/graphlayoutworker.cpp
         program/memory.cpp
@@ -136,7 +101,7 @@ FetchContent_MakeAvailable(lexy)
 
 # FIXME: Untagle this
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})
-target_link_libraries(BandageLib PRIVATE Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
+target_link_libraries(BandageLib PRIVATE ogdf Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
 
 add_executable(BandageNG program/main.cpp ${RESOURCES})
 target_link_libraries(BandageNG BandageLib Qt6::Core Qt6::Widgets ZLIB::ZLIB)
