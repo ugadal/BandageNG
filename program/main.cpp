@@ -56,11 +56,12 @@ void printUsage(QTextStream * out, bool all)
 {
     QStringList text;
 
+    // FIXME: Put argv[0] here
     text << "";
-    text << "Usage:    Bandage <command> [options]";
+    text << "Usage:    BandageNG <command> [options]";
     text << "";
-    text << "Commands: <blank>      Launch the Bandage GUI";
-    text << "load         Launch the Bandage GUI and load a graph file";
+    text << "Commands: <blank>      Launch the Bandage-NG GUI";
+    text << "load         Launch the Bandage-NG GUI and load a graph file";
     text << "info         Display information about a graph";
     text << "image        Generate an image file of a graph";
     text << "querypaths   Output graph paths for BLAST queries";
@@ -126,7 +127,7 @@ int main(int argc, char *argv[])
     if (g_memory->terminalWidth > 300) g_memory->terminalWidth = 300;
     #endif //Q_OS_WIN32
 
-    QApplication::setApplicationName("BandageNG");
+    QApplication::setApplicationName("Bandage-NG");
     QApplication::setApplicationVersion(APP_VERSION);
 
     QTextStream out(stdout);
@@ -198,7 +199,7 @@ int main(int argc, char *argv[])
     QString error = checkForInvalidOrExcessSettings(&argumentsCopy);
     if (error.length() > 0)
     {
-        outputText("Bandage error: " + error, &err);
+        outputText("Bandage-NG error: " + error, &err);
         return 1;
     }
 

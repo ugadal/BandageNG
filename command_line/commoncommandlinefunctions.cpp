@@ -48,7 +48,7 @@ void getSettingsUsage(QStringList * text)
     for (int i = 0; i < g_memory->terminalWidth - 10; ++i)
         dashes += '-';
 
-    *text << "Settings: The following options configure the Bandage settings that are available in the Bandage GUI.";
+    *text << "Settings: The following options configure the Bandage-NG settings that are available in the Bandage-NG GUI.";
     *text << "";
     *text << "Colours can be specified using hex values, with or without an alpha channel, (e.g. #FFB6C1 or #7FD2B48C) or using standard colour names (e.g. red, yellowgreen or skyblue).  Note that hex colours will either need to be enclosed in quotes (e.g. \"#FFB6C1\") or have the hash symbol escaped (e.g. \\#FFB6C1).";
     *text << "";
@@ -142,7 +142,7 @@ void getSettingsUsage(QStringList * text)
     *text << "BLAST search";
     *text << dashes;
     *text << "--query <fastafile> A FASTA file of either nucleotide or protein sequences to be used as BLAST queries (default: none)";
-    *text << "--blastp <param>    Parameters to be used by blastn and tblastn when conducting a BLAST search in Bandage (default: none). Format BLAST parameters exactly as they would be used for blastn/tblastn on the command line, and enclose them in quotes.";
+    *text << "--blastp <param>    Parameters to be used by blastn and tblastn when conducting a BLAST search in Bandage-NG (default: none). Format BLAST parameters exactly as they would be used for blastn/tblastn on the command line, and enclose them in quotes.";
     *text << "--alfilter <int>    Alignment length filter for BLAST hits. Hits with shorter alignments will be excluded " + getRangeAndDefault(g_settings->blastAlignmentLengthFilter);
     *text << "--qcfilter <float>  Query coverage filter for BLAST hits. Hits with less coverage will be excluded " + getRangeAndDefault(g_settings->blastQueryCoverageFilter);
     *text << "--ifilter <float>   Identity filter for BLAST hits. Hits with less identity will be excluded " + getRangeAndDefault(g_settings->blastIdentityFilter);
@@ -151,7 +151,7 @@ void getSettingsUsage(QStringList * text)
     *text << "";
     *text << "BLAST query paths";
     *text << dashes;
-    *text << "These settings control how Bandage searches for query paths after conducting a BLAST search.";
+    *text << "These settings control how Bandage-NG searches for query paths after conducting a BLAST search.";
     *text << "--pathnodes <int>   The number of allowed nodes in a BLAST query path " + getRangeAndDefault(g_settings->maxQueryPathNodes);
     *text << "--minpatcov <float> Minimum fraction of a BLAST query which must be covered by a query path " + getRangeAndDefault(g_settings->minQueryCoveredByPath);
     *text << "--minhitcov <float> Minimum fraction of a BLAST query which must be covered by BLAST hits in a query path " + getRangeAndDefault(g_settings->minQueryCoveredByHits);
@@ -242,9 +242,9 @@ QString checkForInvalidOrExcessSettings(QStringList * arguments)
     error = checkOptionForInt("--distance", arguments, g_settings->nodeDistance, false); if (error.length() > 0) return error;
     error = checkOptionForFloat("--mindepth", arguments, g_settings->minDepthRange, false); if (error.length() > 0) return error;
     error = checkOptionForFloat("--maxdepth", arguments, g_settings->maxDepthRange, false); if (error.length() > 0) return error;
-    if (isOptionPresent("--query", arguments) && g_memory->commandLineCommand == NO_COMMAND) return "A graph must be given (e.g. via Bandage load) to use the --query option";
+    if (isOptionPresent("--query", arguments) && g_memory->commandLineCommand == NO_COMMAND) return "A graph must be given (e.g. via BandageNG load) to use the --query option";
     error = checkOptionForFile("--query", arguments); if (error.length() > 0) return error;
-    if (isOptionPresent("--csv", arguments) && g_memory->commandLineCommand == NO_COMMAND) return "A graph must be given (e.g. via Bandage load) to use the --csv option";
+    if (isOptionPresent("--csv", arguments) && g_memory->commandLineCommand == NO_COMMAND) return "A graph must be given (e.g. via BandageNG load) to use the --csv option";
     error = checkOptionForFile("--csv", arguments); if (error.length() > 0) return error;
     error = checkOptionForString("--blastp", arguments, QStringList(), "blastn/tblastn parameters"); if (error.length() > 0) return error;
     checkOptionWithoutValue("--double", arguments);
@@ -1171,7 +1171,7 @@ void getCommonHelp(QStringList * text)
 {
     *text << "--help              View this help message";
     *text << "--helpall           View all command line settings";
-    *text << "--version           View Bandage version number";
+    *text << "--version           View Bandage-NG version number";
     *text << "";
 }
 
@@ -1334,6 +1334,6 @@ bool isError(QString text)
 
 void getOnlineHelpMessage(QStringList * text)
 {
-    *text << "Online Bandage help: https://github.com/rrwick/Bandage/wiki";
+    *text << "Online Bandage help: https://github.com/asl/Bandage/wiki";
     *text << "";
 }
