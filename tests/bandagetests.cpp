@@ -1563,8 +1563,8 @@ bool BandageTests::createBlastTempDirectory()
 void BandageTests::deleteBlastTempDirectory()
 {
     if (g_blastSearch->m_tempDirectory != "" &&
-            QDir(g_blastSearch->m_tempDirectory).exists() &&
-            QDir(g_blastSearch->m_tempDirectory).dirName().contains("bandage_temp"))
+        QDir(g_blastSearch->m_tempDirectory).exists() &&
+        QDir(g_blastSearch->m_tempDirectory).dirName().contains("bandage_temp"))
         QDir(g_blastSearch->m_tempDirectory).removeRecursively();
 }
 
@@ -1577,7 +1577,7 @@ QString BandageTests::getTestDirectory()
     QString path;
     while (true)
     {
-        path = directory.path() + "/Bandage/tests/";
+        path = directory.path() + "/BandageNG/tests/";
         if (QDir(path).exists())
             return path;
         if (!directory.cdUp())
