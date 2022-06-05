@@ -50,7 +50,7 @@ int bandageQueryPaths(QStringList arguments)
     arguments.pop_front();
     if (!checkIfFileExists(graphFilename))
     {
-        outputText("Bandage error: " + graphFilename, &err);
+        outputText("Bandage-NG error: " + graphFilename, &err);
         return 1;
     }
 
@@ -58,7 +58,7 @@ int bandageQueryPaths(QStringList arguments)
     arguments.pop_front();
     if (!checkIfFileExists(queriesFilename))
     {
-        outputText("Bandage error: " + queriesFilename, &err);
+        outputText("Bandage-NG error: " + queriesFilename, &err);
         return 1;
     }
     g_settings->blastQueryFilename = queriesFilename;
@@ -67,7 +67,7 @@ int bandageQueryPaths(QStringList arguments)
     //queries file that is a positional argument.
     if (isOptionPresent("--query", &arguments))
     {
-        err << "Bandage error: the --query option cannot be used with Bandage querypaths." << Qt::endl;
+        err << "Bandage-NG error: the --query option cannot be used with Bandage querypaths." << Qt::endl;
         return 1;
     }
 
@@ -80,7 +80,7 @@ int bandageQueryPaths(QStringList arguments)
     QString error = checkForInvalidQueryPathsOptions(arguments);
     if (error.length() > 0)
     {
-        outputText("Bandage error: " + error, &err);
+        outputText("Bandage-NG error: " + error, &err);
         return 1;
     }
 
@@ -94,17 +94,17 @@ int bandageQueryPaths(QStringList arguments)
     QFile hitsFile(hitsFastaFilename);
     if (tableFile.exists())
     {
-        outputText("Bandage error: " + tableFilename + " already exists.", &err);
+        outputText("Bandage-NG error: " + tableFilename + " already exists.", &err);
         return 1;
     }
     if (pathFasta && pathsFile.exists())
     {
-        outputText("Bandage error: " + pathFastaFilename + " already exists.", &err);
+        outputText("Bandage-NG error: " + pathFastaFilename + " already exists.", &err);
         return 1;
     }
     if (hitsFasta && hitsFile.exists())
     {
-        outputText("Bandage error: " + hitsFastaFilename + " already exists.", &err);
+        outputText("Bandage-NG error: " + hitsFastaFilename + " already exists.", &err);
         return 1;
     }
 

@@ -48,14 +48,14 @@ int bandageLoad(QStringList arguments)
 
     if (!checkIfFileExists(filename))
     {
-        outputText("Bandage error: " + filename + " does not exist", &err);
+        outputText("Bandage-NG error: " + filename + " does not exist", &err);
         return 1;
     }
 
     QString error = checkForInvalidLoadOptions(arguments);
     if (error.length() > 0)
     {
-        outputText("Bandage error: " + error, &err);
+        outputText("Bandage-NG error: " + error, &err);
         return 1;
     }
 

@@ -57,7 +57,7 @@ int bandageReduce(QStringList arguments)
 
     if (!checkIfFileExists(inputFilename))
     {
-        outputText("Bandage error: " + inputFilename + " does not exist", &err);
+        outputText("Bandage-NG error: " + inputFilename + " does not exist", &err);
         return 1;
     }
 
@@ -69,14 +69,14 @@ int bandageReduce(QStringList arguments)
     QString error = checkForInvalidReduceOptions(arguments);
     if (error.length() > 0)
     {
-        outputText("Bandage error: " + error, &err);
+        outputText("Bandage-NG error: " + error, &err);
         return 1;
     }
 
     bool loadSuccess = g_assemblyGraph->loadGraphFromFile(inputFilename);
     if (!loadSuccess)
     {
-        outputText("Bandage error: could not load " + inputFilename, &err);
+        outputText("Bandage-NG error: could not load " + inputFilename, &err);
         return 1;
     }
 

@@ -57,7 +57,7 @@ int bandageImage(QStringList arguments)
 
     if (!checkIfFileExists(graphFilename))
     {
-        outputText("Bandage error: " + graphFilename + " does not exist", &err);
+        outputText("Bandage-NG error: " + graphFilename + " does not exist", &err);
         return 1;
     }
 
@@ -72,21 +72,21 @@ int bandageImage(QStringList arguments)
         pixelImage = false;
     else
     {
-        outputText("Bandage error: the output filename must end in .png, .jpg or .svg", &err);
+        outputText("Bandage-NG error: the output filename must end in .png, .jpg or .svg", &err);
         return 1;
     }
 
     QString error = checkForInvalidImageOptions(arguments);
     if (error.length() > 0)
     {
-        outputText("Bandage error: " + error, &err);
+        outputText("Bandage-NG error: " + error, &err);
         return 1;
     }
 
     bool loadSuccess = g_assemblyGraph->loadGraphFromFile(graphFilename);
     if (!loadSuccess)
     {
-        outputText("Bandage error: could not load " + graphFilename, &err);
+        outputText("Bandage-NG error: could not load " + graphFilename, &err);
         return 1;
     }
 

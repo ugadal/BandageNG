@@ -51,14 +51,14 @@ int bandageInfo(QStringList arguments)
 
     if (!checkIfFileExists(graphFilename))
     {
-        outputText("Bandage error: " + graphFilename + " does not exist.", &err);
+        outputText("Bandage-NG error: " + graphFilename + " does not exist.", &err);
         return 1;
     }
 
     QString error = checkForInvalidInfoOptions(arguments);
     if (error.length() > 0)
     {
-        outputText("Bandage error: " + error, &err);
+        outputText("Bandage-NG error: " + error, &err);
         return 1;
     }
 
@@ -68,7 +68,7 @@ int bandageInfo(QStringList arguments)
     bool loadSuccess = g_assemblyGraph->loadGraphFromFile(graphFilename);
     if (!loadSuccess)
     {
-        err << "Bandage error: could not load " << graphFilename << Qt::endl;
+        err << "Bandage-NG error: could not load " << graphFilename << Qt::endl;
         return 1;
     }
 
