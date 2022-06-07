@@ -102,6 +102,7 @@ FetchContent_MakeAvailable(lexy)
 # FIXME: Untagle this
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})
 target_link_libraries(BandageLib PRIVATE ogdf Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
+target_include_directories(BandageLib INTERFACE ".")
 
 add_executable(BandageNG program/main.cpp ${RESOURCES})
 target_link_libraries(BandageNG BandageLib Qt6::Core Qt6::Widgets ZLIB::ZLIB)
@@ -122,7 +123,4 @@ install(TARGETS BandageNG
         COMPONENT main)
 
 enable_testing(true)
-add_executable(BandageTests tests/bandagetests.cpp)
-add_test(NAME BandageTests COMMAND BandageTests)
-
-target_link_libraries(BandageTests PRIVATE BandageLib Qt6::Widgets Qt6::Test)
+add_subdirectory(tests)

@@ -130,31 +130,31 @@ function test_image_width_and_height {
 mkdir tmp
 
 # Bandage image tests
-test_all "$bandagepath image test.fastg tmp/test.png" 0 "" ""
+test_all "$bandagepath image inputs/test.fastg tmp/test.png" 0 "" ""
 test_image_height tmp/test.png 1000; rm tmp/test.png
-test_all "$bandagepath image test.fastg tmp/test.jpg" 0 "" "";
+test_all "$bandagepath image inputs/test.fastg tmp/test.jpg" 0 "" "";
 test_image_height tmp/test.jpg 1000; rm tmp/test.jpg
-test_all "$bandagepath image test.fastg tmp/test.svg" 0 "" ""; rm tmp/test.svg
-test_all "$bandagepath image test.fastg tmp/test.png --height 500" 0 "" ""
+test_all "$bandagepath image inputs/test.fastg tmp/test.svg" 0 "" ""; rm tmp/test.svg
+test_all "$bandagepath image inputs/test.fastg tmp/test.png --height 500" 0 "" ""
 test_image_height tmp/test.png 500; rm tmp/test.png
-test_all "$bandagepath image test.fastg tmp/test.png --height 50" 0 "" ""
+test_all "$bandagepath image inputs/test.fastg tmp/test.png --height 50" 0 "" ""
 test_image_height tmp/test.png 50; rm tmp/test.png
-test_all "$bandagepath image test.fastg tmp/test.png --width 500" 0 "" ""
+test_all "$bandagepath image inputs/test.fastg tmp/test.png --width 500" 0 "" ""
 test_image_width tmp/test.png 500; rm tmp/test.png
-test_all "$bandagepath image test.fastg tmp/test.png --width 50" 0 "" ""
+test_all "$bandagepath image inputs/test.fastg tmp/test.png --width 50" 0 "" ""
 test_image_width tmp/test.png 50; rm tmp/test.png
-test_all "$bandagepath image test.fastg tmp/test.png  --width 400 --height 500" 0 "" ""
+test_all "$bandagepath image inputs/test.fastg tmp/test.png  --width 400 --height 500" 0 "" ""
 test_image_width_and_height tmp/test.png 400 500; rm tmp/test.png
-test_all "$bandagepath image test.fastg tmp/test.png  --width 500 --height 400" 0 "" ""
+test_all "$bandagepath image inputs/test.fastg tmp/test.png  --width 500 --height 400" 0 "" ""
 test_image_width_and_height tmp/test.png 500 400; rm tmp/test.png
 test_all "$bandagepath image abc.fastg test.png" 1 "" "Bandage-NG error: abc.fastg does not exist"
-test_all "$bandagepath image test.fastg test.abc" 1 "" "Bandage-NG error: the output filename must end in .png, .jpg or .svg"
-test_all "$bandagepath image test.csv tmp/test.png" 1 "" "Bandage-NG error: could not load test.csv"
-test_all "$bandagepath image test.fastg test.png --query abc.fasta" 1 "" "Bandage-NG error: --query must be followed by a valid filename"
+test_all "$bandagepath image inputs/test.fastg test.abc" 1 "" "Bandage-NG error: the output filename must end in .png, .jpg or .svg"
+test_all "$bandagepath image inputs/test.csv tmp/test.png" 1 "" "Bandage-NG error: could not load inputs/test.csv"
+test_all "$bandagepath image inputs/test.fastg test.png --query abc.fasta" 1 "" "Bandage-NG error: --query must be followed by a valid filename"
 
 # BandageNG load  tests
 test_all "$bandagepath load abc.fastg" 1 "" "Bandage-NG error: abc.fastg does not exist"
-test_all "$bandagepath load test.fastg --query abc.fasta" 1 "" "Bandage-NG error: --query must be followed by a valid filename"
+test_all "$bandagepath load inputs/test.fastg --query abc.fasta" 1 "" "Bandage-NG error: --query must be followed by a valid filename"
 
 # Bandage help tests
 test_exit_code "$bandagepath --help" 0

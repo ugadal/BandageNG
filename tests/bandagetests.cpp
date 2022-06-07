@@ -47,6 +47,25 @@ class BandageTests : public QObject
         return testDir.filePath(fileName);
     }
 
+    QString getTestDirectory() const {
+        QDir directory = QDir::current();
+
+        // We want to find a directory "Bandage/tests/inputs".  Keep backing up in the
+        // directory structure until we find it.
+        QString path;
+        while (true)
+        {
+            path = directory.path() + "/tests/inputs/";
+
+            if (QDir(path).exists())
+                return path;
+            if (!directory.cdUp())
+                return "";
+        }
+
+        return "";
+    }
+
 public:
     BandageTests()
             : m_tmpDir("bandage-tests") {
@@ -106,7 +125,6 @@ private slots:
 
 private:
     bool createBlastTempDirectory();
-    QString getTestDirectory() const;
     DeBruijnEdge * getEdgeFromNodeNames(QString startingNodeName,
                                         QString endingNodeName) const;
     bool doCircularSequencesMatch(QByteArray s1, QByteArray s2) const;
@@ -1611,25 +1629,6 @@ bool BandageTests::createBlastTempDirectory()
 
     g_blastSearch->m_blastQueries.createTempQueryFiles();
     return true;
-}
-
-QString BandageTests::getTestDirectory() const
-{
-    QDir directory = QDir::current();
-
-    //We want to find a directory "Bandage/tests/".  Keep backing up in the
-    //directory structure until we find it.
-    QString path;
-    while (true)
-    {
-        path = directory.path() + "/BandageNG/tests/";
-        if (QDir(path).exists())
-            return path;
-        if (!directory.cdUp())
-            return "";
-    }
-
-    return "";
 }
 
 DeBruijnEdge * BandageTests::getEdgeFromNodeNames(QString startingNodeName,
