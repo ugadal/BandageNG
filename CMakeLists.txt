@@ -121,5 +121,8 @@ install(TARGETS BandageNG
         DESTINATION bin
         COMPONENT main)
 
+enable_testing(true)
 add_executable(BandageTests tests/bandagetests.cpp)
+add_test(NAME BandageTests COMMAND BandageTests)
+
 target_link_libraries(BandageTests PRIVATE BandageLib Qt6::Widgets Qt6::Test)
