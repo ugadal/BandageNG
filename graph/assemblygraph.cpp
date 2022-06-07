@@ -24,9 +24,6 @@
 #include "assemblygraphbuilder.h"
 
 #include "blast/blastsearch.h"
-#include "command_line/commoncommandlinefunctions.h"
-#include "graph/debruijnedge.h"
-#include "graph/debruijnnode.h"
 #include "graph/graphicsitemedge.h"
 #include "graph/graphicsitemnode.h"
 #include "ogdf/energybased/FMMMLayout.h"
@@ -37,15 +34,11 @@
 #include "ui/myprogressdialog.h"
 
 #include <QApplication>
-#include <QDir>
 #include <QFile>
-#include <QFileInfo>
 #include <QList>
-#include <QMapIterator>
 #include <QQueue>
 #include <QRegularExpression>
 #include <QSet>
-#include <QTextStream>
 
 #include <algorithm>
 #include <limits>

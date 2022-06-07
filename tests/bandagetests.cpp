@@ -18,8 +18,6 @@
 
 #include <QtTest/QtTest>
 #include <QDebug>
-#include "ogdf/basic/Graph.h"
-#include "ogdf/basic/GraphAttributes.h"
 #include "graph/assemblygraph.h"
 #include "program/settings.h"
 #include "blast/blastsearch.h"
