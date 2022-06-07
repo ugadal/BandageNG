@@ -16,8 +16,6 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include <QtTest/QtTest>
-#include <QDebug>
 #include "graph/assemblygraph.h"
 #include "program/settings.h"
 #include "blast/blastsearch.h"
@@ -29,18 +27,52 @@
 #include "program/globals.h"
 #include "command_line/commoncommandlinefunctions.h"
 
+#include <QtTest/QtTest>
+#include <QDebug>
+#include <QTemporaryDir>
+
 class BandageTests : public QObject
 {
     Q_OBJECT
 
-public:
-    BandageTests() {
+    QTemporaryDir m_tmpDir;
 
+    QString tempFile(const QString &fileName) const {
+        return m_tmpDir.filePath(fileName);
+    }
+
+    QString testFile(const QString &fileName) const {
+        QDir testDir(getTestDirectory());
+
+        return testDir.filePath(fileName);
+    }
+
+public:
+    BandageTests()
+            : m_tmpDir("bandage-tests") {
         std::cout << "sizeof(DeBruijnNode)=" << sizeof(DeBruijnNode)
                   << ", sizeof(DeBruijnEdge)=" << sizeof(DeBruijnEdge) << std::endl;
     }
 
 private slots:
+    void init() {
+        g_settings.reset(new Settings());
+        g_memory.reset(new Memory());
+        g_blastSearch.reset(new BlastSearch());
+        g_assemblyGraph.reset(new AssemblyGraph());
+        g_graphicsView = new MyGraphicsView();
+        g_annotationsManager = std::make_shared<AnnotationsManager>();
+    }
+
+    void cleanup() {
+        if (g_blastSearch->m_tempDirectory == "")
+            return;
+
+        QDir tmpdir(g_blastSearch->m_tempDirectory);
+        if (tmpdir.exists() && tmpdir.dirName().contains("bandage_temp"))
+            tmpdir.removeRecursively();
+    }
+
     void loadFastg();
     void loadGFAWithPlaceholders();
     void loadLastGraph();
@@ -73,13 +105,11 @@ private slots:
 
 
 private:
-    void createGlobals();
     bool createBlastTempDirectory();
-    void deleteBlastTempDirectory();
-    QString getTestDirectory();
+    QString getTestDirectory() const;
     DeBruijnEdge * getEdgeFromNodeNames(QString startingNodeName,
-                                        QString endingNodeName);
-    bool doCircularSequencesMatch(QByteArray s1, QByteArray s2);
+                                        QString endingNodeName) const;
+    bool doCircularSequencesMatch(QByteArray s1, QByteArray s2) const;
 };
 
 
@@ -87,8 +117,7 @@ private:
 
 void BandageTests::loadFastg()
 {
-    createGlobals();
-    bool fastgGraphLoaded = g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    bool fastgGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
 
     //Check that the graph loaded properly.
     QCOMPARE(fastgGraphLoaded, true);
@@ -106,8 +135,7 @@ void BandageTests::loadFastg()
 
 void BandageTests::loadGFAWithPlaceholders()
 {
-    createGlobals();
-    bool gfaGraphLoaded = g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_not_defined.gfa");
+    bool gfaGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_not_defined.gfa"));
 
     //Check that the graph loaded properly.
     QCOMPARE(gfaGraphLoaded, true);
@@ -129,8 +157,7 @@ void BandageTests::loadGFAWithPlaceholders()
 void BandageTests::loadLastGraph()
 {
     QSKIP("LastGraph is deprecated");
-    createGlobals();
-    bool lastGraphLoaded = g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
+    bool lastGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test.LastGraph"));
 
     //Check that the graph loaded properly.
     QCOMPARE(lastGraphLoaded, true);
@@ -150,8 +177,7 @@ void BandageTests::loadLastGraph()
 
 void BandageTests::loadTrinity()
 {
-    createGlobals();
-    bool trinityLoaded = g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.Trinity.fasta");
+    bool trinityLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test.Trinity.fasta"));
 
     //Check that the graph loaded properly.
     QCOMPARE(trinityLoaded, true);
@@ -173,8 +199,7 @@ void BandageTests::loadTrinity()
 void BandageTests::pathFunctionsOnLastGraph()
 {
     QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.LastGraph"));
 
     QString pathStringFailure;
     Path testPath1 = Path::makeFromString("(1996) 9+, 13+ (5)", false, &pathStringFailure);
@@ -220,8 +245,7 @@ void BandageTests::pathFunctionsOnLastGraph()
 //the overlap has to be removed from the path sequence.
 void BandageTests::pathFunctionsOnFastg()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
 
     QString pathStringFailure;
     Path testPath1 = Path::makeFromString("(50234) 6+, 26+, 23+, 26+, 24+ (200)", false, &pathStringFailure);
@@ -237,8 +261,7 @@ void BandageTests::pathFunctionsOnFastg()
 //file.
 void BandageTests::pathFunctionsOnGfaSequencesInGraph()
 {
-    createGlobals();
-    bool gfaLoaded = g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_plasmids.gfa");
+    bool gfaLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_plasmids.gfa"));
     QCOMPARE(gfaLoaded, true);
 
     //Check that the number of nodes/edges.
@@ -261,8 +284,7 @@ void BandageTests::pathFunctionsOnGfaSequencesInGraph()
 //separate FASTA file.
 void BandageTests::pathFunctionsOnGfaSequencesInFasta()
 {
-    createGlobals();
-    bool gfaLoaded = g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_plasmids_separate_sequences.gfa");
+    bool gfaLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_plasmids_separate_sequences.gfa"));
     QCOMPARE(gfaLoaded, true);
 
     //Check that the number of nodes/edges.
@@ -305,8 +327,7 @@ void BandageTests::graphLocationFunctions()
     //First do some tests with a FASTG, where the overlap results in a simpler
     //sitations: all positions have a reverse complement position in the
     //reverse complement node.
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
     DeBruijnNode * node12Plus = g_assemblyGraph->m_deBruijnGraphNodes["12+"];
     DeBruijnNode * node3Plus = g_assemblyGraph->m_deBruijnGraphNodes["3+"];
 
@@ -335,8 +356,7 @@ void BandageTests::graphLocationFunctions()
     //Now look at a LastGraph file which is more complex.  Because of the
     //offset, reverse complement positions can be in different nodes and may
     //not even exist.
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.LastGraph"));
     int kmer = g_assemblyGraph->m_kmer;
     DeBruijnNode * node13Plus = g_assemblyGraph->m_deBruijnGraphNodes["13+"];
     DeBruijnNode * node8Minus = g_assemblyGraph->m_deBruijnGraphNodes["8-"];
@@ -365,13 +385,12 @@ void BandageTests::graphLocationFunctions()
 
 void BandageTests::loadCsvData()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
 
     QString errormsg;
     QStringList columns;
     bool coloursLoaded = false;
-    g_assemblyGraph->loadCSV(getTestDirectory() + "test.csv", &columns, &errormsg, &coloursLoaded);
+    g_assemblyGraph->loadCSV(testFile("test.csv"), &columns, &errormsg, &coloursLoaded);
 
     DeBruijnNode * node6Plus = g_assemblyGraph->m_deBruijnGraphNodes["6+"];
     DeBruijnNode * node6Minus = g_assemblyGraph->m_deBruijnGraphNodes["6-"];
@@ -431,13 +450,12 @@ void BandageTests::loadCsvData()
 
 void BandageTests::loadCsvDataTrinity()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.Trinity.fasta");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.Trinity.fasta"));
 
     QString errormsg;
     QStringList columns;
     bool coloursLoaded = false;
-    g_assemblyGraph->loadCSV(getTestDirectory() + "test.Trinity.csv", &columns, &errormsg, &coloursLoaded);
+    g_assemblyGraph->loadCSV(testFile("test.Trinity.csv"), &columns, &errormsg, &coloursLoaded);
 
     DeBruijnNode * node3912Plus = g_assemblyGraph->m_deBruijnGraphNodes["19|c0_3912+"];
     DeBruijnNode * node3912Minus = g_assemblyGraph->m_deBruijnGraphNodes["19|c0_3912-"];
@@ -460,9 +478,8 @@ void BandageTests::loadCsvDataTrinity()
 
 void BandageTests::blastSearch()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
-    g_settings->blastQueryFilename = getTestDirectory() + "test_queries1.fasta";
+    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    g_settings->blastQueryFilename = testFile("test_queries1.fasta");
     createBlastTempDirectory();
 
     auto errorString = g_blastSearch->doAutoBlastSearch();
@@ -501,17 +518,14 @@ void BandageTests::blastSearch()
     QCOMPARE(one_mismatchHit->m_percentIdentity < 100.0, true);
     QCOMPARE(one_insertionHit->m_percentIdentity < 100.0, true);
     QCOMPARE(one_deletionHit->m_percentIdentity < 100.0, true);
-
-    deleteBlastTempDirectory();
 }
 
 
 
 void BandageTests::blastSearchFilters()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
-    g_settings->blastQueryFilename = getTestDirectory() + "test_queries2.fasta";
+    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    g_settings->blastQueryFilename = testFile("test_queries2.fasta");
     createBlastTempDirectory();
 
     //First do the search with no filters
@@ -548,16 +562,13 @@ void BandageTests::blastSearchFilters()
     g_settings->blastQueryCoverageFilter = 90.0;
     g_blastSearch->doAutoBlastSearch();
     QCOMPARE(g_blastSearch->m_allHits.size(), 5);
-
-    deleteBlastTempDirectory();
 }
 
 
 
 void BandageTests::graphScope()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
 
     QString errorTitle;
     QString errorMessage;
@@ -678,7 +689,7 @@ void BandageTests::graphScope()
 
     createBlastTempDirectory();
 
-    g_settings->blastQueryFilename = getTestDirectory() + "test_queries1.fasta";
+    g_settings->blastQueryFilename = testFile("test_queries1.fasta");
     g_blastSearch->doAutoBlastSearch();
 
     g_settings->graphScope = AROUND_BLAST_HITS;
@@ -707,13 +718,10 @@ void BandageTests::graphScope()
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 9);
-
-    deleteBlastTempDirectory();
 }
 
 void BandageTests::commandLineSettings()
 {
-    createGlobals();
     QStringList commandLineSettings;
 
     commandLineSettings = QString("--scope entire").split(" ");
@@ -1082,8 +1090,7 @@ void BandageTests::sciNotComparisons()
 
 void BandageTests::graphEdits()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 88);
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 118);
@@ -1131,8 +1138,7 @@ void BandageTests::velvetToGfa()
           "and GFA loader thinks that sequence is in .fasta file.");
     //First load the graph as a LastGraph and pull out some information and a
     //circular path sequence.
-    createGlobals();
-    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "big_test.LastGraph"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("big_test.LastGraph")));
 
     int lastGraphNodeCount = g_assemblyGraph->m_nodeCount;
     int lastGraphEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1147,9 +1153,9 @@ void BandageTests::velvetToGfa()
     QByteArray lastGraphTestPath2Sequence = lastGraphTestPath2.getPathSequence();
 
     //Now save the graph as a GFA and reload it and grab the same information.
-    QVERIFY(g_assemblyGraph->saveEntireGraphToGfa(getTestDirectory() + "big_test_temp.gfa"));
-    createGlobals();
-    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "big_test_temp.gfa"));
+    QVERIFY(g_assemblyGraph->saveEntireGraphToGfa(tempFile("big_test_temp.gfa")));
+
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(tempFile("big_test_temp.gfa")));
 
     int gfaNodeCount = g_assemblyGraph->m_nodeCount;
     int gfaEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1172,9 +1178,6 @@ void BandageTests::velvetToGfa()
     QCOMPARE(lastGraphLongestContig + 50, gfaLongestContig);
     QCOMPARE(lastGraphTestPath1Sequence, gfaTestPath1Sequence);
     QCOMPARE(lastGraphTestPath2Sequence, gfaTestPath2Sequence);
-
-    //Finally, delete the gfa file.
-    QFile::remove(getTestDirectory() + "big_test_temp.gfa");
 }
 
 
@@ -1182,8 +1185,7 @@ void BandageTests::spadesToGfa()
 {
     //First load the graph as a FASTG and pull out some information and a
     //path sequence.
-    createGlobals();
-    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
 
     int fastgNodeCount = g_assemblyGraph->m_nodeCount;
     int fastgEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1198,9 +1200,8 @@ void BandageTests::spadesToGfa()
     QByteArray fastgTestPath2Sequence = fastgTestPath2.getPathSequence();
 
     //Now save the graph as a GFA and reload it and grab the same information.
-    QVERIFY(g_assemblyGraph->saveEntireGraphToGfa(getTestDirectory() + "test_temp.gfa"));
-    createGlobals();
-    QVERIFY(g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_temp.gfa"));
+    QVERIFY(g_assemblyGraph->saveEntireGraphToGfa(tempFile("test_temp.gfa")));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(tempFile("test_temp.gfa")));
 
     int gfaNodeCount = g_assemblyGraph->m_nodeCount;
     int gfaEdgeCount= g_assemblyGraph->m_edgeCount;
@@ -1223,16 +1224,12 @@ void BandageTests::spadesToGfa()
     QCOMPARE(fastgLongestContig, gfaLongestContig);
     QCOMPARE(fastgTestPath1Sequence, gfaTestPath1Sequence);
     QCOMPARE(fastgTestPath2Sequence, gfaTestPath2Sequence);
-
-    //Finally, delete the gfa file.
-    QFile::remove(getTestDirectory() + "test_temp.gfa");
 }
 
 
 void BandageTests::mergeNodesOnGfa()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_plasmids.gfa");
+    g_assemblyGraph->loadGraphFromFile(testFile("test_plasmids.gfa"));
 
     DeBruijnNode * node6Plus = g_assemblyGraph->m_deBruijnGraphNodes["6+"];
     DeBruijnNode * node280Plus = g_assemblyGraph->m_deBruijnGraphNodes["280+"];
@@ -1290,8 +1287,7 @@ void BandageTests::mergeNodesOnGfa()
 
 void BandageTests::changeNodeNames()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
 
     DeBruijnNode * node6Plus = g_assemblyGraph->m_deBruijnGraphNodes["6+"];
     DeBruijnNode * node6Minus = g_assemblyGraph->m_deBruijnGraphNodes["6-"];
@@ -1310,8 +1306,7 @@ void BandageTests::changeNodeNames()
 
 void BandageTests::changeNodeDepths()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
 
     DeBruijnNode * node6Plus = g_assemblyGraph->m_deBruijnGraphNodes["6+"];
     DeBruijnNode * node6Minus = g_assemblyGraph->m_deBruijnGraphNodes["6-"];
@@ -1337,12 +1332,11 @@ void BandageTests::changeNodeDepths()
 
 void BandageTests::blastQueryPaths()
 {
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test_query_paths.gfa");
+    g_assemblyGraph->loadGraphFromFile(testFile("test_query_paths.gfa"));
 
     Settings defaultSettings;
-    g_settings->blastQueryFilename = getTestDirectory() + "test_query_paths.fasta";
-    defaultSettings.blastQueryFilename = getTestDirectory() + "test_query_paths.fasta";
+    g_settings->blastQueryFilename = testFile("test_query_paths.fasta");
+    defaultSettings.blastQueryFilename = testFile("test_query_paths.fasta");
 
     createBlastTempDirectory();
 
@@ -1482,8 +1476,7 @@ void BandageTests::bandageInfo()
     int componentCount = 0;
     int largestComponentLength = 0;
 
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.fastg");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
     g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
     g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
     QCOMPARE(44, g_assemblyGraph->m_nodeCount);
@@ -1496,8 +1489,7 @@ void BandageTests::bandageInfo()
     QCOMPARE(1, componentCount);
     QCOMPARE(214441, largestComponentLength);
 
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.Trinity.fasta");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.Trinity.fasta"));
     g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
     g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
     QCOMPARE(149, g_assemblyGraph->getDeadEndCount());
@@ -1505,8 +1497,7 @@ void BandageTests::bandageInfo()
     QCOMPARE(9398, largestComponentLength);
 
     QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
-    createGlobals();
-    g_assemblyGraph->loadGraphFromFile(getTestDirectory() + "test.LastGraph");
+    g_assemblyGraph->loadGraphFromFile(testFile("test.LastGraph"));
     g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
     g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
     QCOMPARE(17, g_assemblyGraph->m_nodeCount);
@@ -1518,110 +1509,6 @@ void BandageTests::bandageInfo()
     QCOMPARE(2000, longestNode);
     QCOMPARE(1, componentCount);
     QCOMPARE(29939, largestComponentLength);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void BandageTests::createGlobals()
-{
-    g_settings.reset(new Settings());
-    g_memory.reset(new Memory());
-    g_blastSearch.reset(new BlastSearch());
-    g_assemblyGraph.reset(new AssemblyGraph());
-    g_graphicsView = new MyGraphicsView();
-    g_annotationsManager = std::make_shared<AnnotationsManager>();
-}
-
-bool BandageTests::createBlastTempDirectory()
-{
-    //Running from the command line, it makes more sense to put the temp
-    //directory in the current directory.
-    g_blastSearch->m_tempDirectory = "bandage_temp-" + QString::number(QCoreApplication::applicationPid()) + "/";
-
-    if (!QDir().mkdir(g_blastSearch->m_tempDirectory))
-        return false;
-
-    g_blastSearch->m_blastQueries.createTempQueryFiles();
-    return true;
-}
-
-void BandageTests::deleteBlastTempDirectory()
-{
-    if (g_blastSearch->m_tempDirectory != "" &&
-        QDir(g_blastSearch->m_tempDirectory).exists() &&
-        QDir(g_blastSearch->m_tempDirectory).dirName().contains("bandage_temp"))
-        QDir(g_blastSearch->m_tempDirectory).removeRecursively();
-}
-
-QString BandageTests::getTestDirectory()
-{
-    QDir directory = QDir::current();
-
-    //We want to find a directory "Bandage/tests/".  Keep backing up in the
-    //directory structure until we find it.
-    QString path;
-    while (true)
-    {
-        path = directory.path() + "/BandageNG/tests/";
-        if (QDir(path).exists())
-            return path;
-        if (!directory.cdUp())
-            return "";
-    }
-
-    return "";
-}
-
-DeBruijnEdge * BandageTests::getEdgeFromNodeNames(QString startingNodeName,
-                                                  QString endingNodeName)
-{
-    DeBruijnNode * startingNode = g_assemblyGraph->m_deBruijnGraphNodes[startingNodeName.toStdString()];
-    DeBruijnNode * endingNode = g_assemblyGraph->m_deBruijnGraphNodes[endingNodeName.toStdString()];
-
-    QPair<DeBruijnNode*, DeBruijnNode*> nodePair(startingNode, endingNode);
-
-    if (g_assemblyGraph->m_deBruijnGraphEdges.contains(nodePair))
-        return g_assemblyGraph->m_deBruijnGraphEdges[nodePair];
-    else
-        return 0;
-}
-
-
-//This function checks to see if two circular sequences match.  It needs to
-//check each possible rotation, as well as reverse complements.
-bool BandageTests::doCircularSequencesMatch(QByteArray s1, QByteArray s2)
-{
-    for (int i = 0; i < s1.length() - 1; ++i)
-    {
-        QByteArray rotatedS1 = s1.right(s1.length() - i) + s1.left(i);
-        if (rotatedS1 == s2)
-            return true;
-    }
-
-    //If the code got here, then all possible rotations of s1 failed to match
-    //s2.  Now we try the reverse complement.
-    QByteArray s1Rc = AssemblyGraph::getReverseComplement(s1);
-    for (int i = 0; i < s1Rc.length() - 1; ++i)
-    {
-        QByteArray rotatedS1Rc = s1Rc.right(s1Rc.length() - i) + s1Rc.left(i);
-        if (rotatedS1Rc == s2)
-            return true;
-    }
-
-    return false;
 }
 
 void BandageTests::sequenceInit() {
@@ -1697,6 +1584,91 @@ void BandageTests::sequenceDoubleReverseComplement() {
     Sequence sequence{"ATGCNATGCN"};
 
     QCOMPARE(sequence, sequence.GetReverseComplement().GetReverseComplement());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool BandageTests::createBlastTempDirectory()
+{
+    //Running from the command line, it makes more sense to put the temp
+    //directory in the current directory.
+    g_blastSearch->m_tempDirectory = "bandage_temp-" + QString::number(QCoreApplication::applicationPid()) + "/";
+
+    if (!QDir().mkdir(g_blastSearch->m_tempDirectory))
+        return false;
+
+    g_blastSearch->m_blastQueries.createTempQueryFiles();
+    return true;
+}
+
+QString BandageTests::getTestDirectory() const
+{
+    QDir directory = QDir::current();
+
+    //We want to find a directory "Bandage/tests/".  Keep backing up in the
+    //directory structure until we find it.
+    QString path;
+    while (true)
+    {
+        path = directory.path() + "/BandageNG/tests/";
+        if (QDir(path).exists())
+            return path;
+        if (!directory.cdUp())
+            return "";
+    }
+
+    return "";
+}
+
+DeBruijnEdge * BandageTests::getEdgeFromNodeNames(QString startingNodeName,
+                                                  QString endingNodeName) const
+{
+    DeBruijnNode * startingNode = g_assemblyGraph->m_deBruijnGraphNodes[startingNodeName.toStdString()];
+    DeBruijnNode * endingNode = g_assemblyGraph->m_deBruijnGraphNodes[endingNodeName.toStdString()];
+
+    QPair<DeBruijnNode*, DeBruijnNode*> nodePair(startingNode, endingNode);
+
+    if (g_assemblyGraph->m_deBruijnGraphEdges.contains(nodePair))
+        return g_assemblyGraph->m_deBruijnGraphEdges[nodePair];
+    else
+        return 0;
+}
+
+
+//This function checks to see if two circular sequences match.  It needs to
+//check each possible rotation, as well as reverse complements.
+bool BandageTests::doCircularSequencesMatch(QByteArray s1, QByteArray s2) const
+{
+    for (int i = 0; i < s1.length() - 1; ++i)
+    {
+        QByteArray rotatedS1 = s1.right(s1.length() - i) + s1.left(i);
+        if (rotatedS1 == s2)
+            return true;
+    }
+
+    //If the code got here, then all possible rotations of s1 failed to match
+    //s2.  Now we try the reverse complement.
+    QByteArray s1Rc = AssemblyGraph::getReverseComplement(s1);
+    for (int i = 0; i < s1Rc.length() - 1; ++i)
+    {
+        QByteArray rotatedS1Rc = s1Rc.right(s1Rc.length() - i) + s1Rc.left(i);
+        if (rotatedS1Rc == s2)
+            return true;
+    }
+
+    return false;
 }
 
 QTEST_MAIN(BandageTests)

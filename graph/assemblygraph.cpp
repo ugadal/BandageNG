@@ -81,10 +81,12 @@ void AssemblyGraph::cleanUp()
         m_deBruijnGraphNodes.clear();
     }
 
-    for (auto &entry : m_deBruijnGraphEdges) {
-        delete entry.second;
+    {
+        for (auto &entry : m_deBruijnGraphEdges) {
+            delete entry.second;
+        }
+        m_deBruijnGraphEdges.clear();
     }
-    m_deBruijnGraphEdges.clear();
 
     m_contiguitySearchDone = false;
 
@@ -642,6 +644,8 @@ QString AssemblyGraph::getNodeNameFromString(QString string)
 
 // Returns true if successful, false if not.
 bool AssemblyGraph::loadGraphFromFile(QString filename) {
+    cleanUp();
+    
     auto builder = AssemblyGraphBuilder::get(filename);
     if (!builder)
         return false;
