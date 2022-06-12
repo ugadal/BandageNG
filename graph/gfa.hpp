@@ -66,7 +66,7 @@ struct tag {
 struct header {
     std::vector<gfa::tag> tags;
 
-    header() {}
+    header() = default;
 
     explicit header(std::vector<gfa::tag> t)
             : tags(std::move(t)) {}
@@ -95,7 +95,7 @@ struct segment {
     void print() const {
         std::fputs("S", stdout);
         std::fprintf(stdout, "\t%s", std::string(name).c_str());
-        std::fprintf(stdout, "\t%s", seq.size() ? std::string(seq).c_str() : "*");
+        std::fprintf(stdout, "\t%s", !seq.empty() ? std::string(seq).c_str() : "*");
         for (const auto &tag : tags) {
             fputs("\t", stdout);
             tag.print();
@@ -139,7 +139,7 @@ struct link {
         std::fprintf(stdout, "\t%s\t%c", std::string(rhs).c_str(), rhs_revcomp ? '-' : '+');
 
         std::fputc('\t', stdout);
-        if (overlap.size() == 0)
+        if (overlap.empty())
             std::fputc('*', stdout);
         else {
             for (const auto &ovl : overlap)
@@ -175,7 +175,7 @@ struct path {
         }
 
         std::fputc('\t', stdout);
-        if (overlaps.size() == 0)
+        if (overlaps.empty())
             std::fputc('*', stdout);
         else {
             for (size_t i = 0; i < overlaps.size(); ++i) {

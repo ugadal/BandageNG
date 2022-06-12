@@ -67,8 +67,8 @@ public:
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
     OgdfNode * getOgdfNode() const {return m_ogdfNode;}
     GraphicsItemNode * getGraphicsItemNode() const {return m_graphicsItemNode;}
-    bool thisOrReverseComplementHasGraphicsItemNode() const {return (m_graphicsItemNode != 0 || getReverseComplement()->m_graphicsItemNode != 0);}
-    bool hasGraphicsItem() const {return m_graphicsItemNode != 0;}
+    bool thisOrReverseComplementHasGraphicsItemNode() const {return (m_graphicsItemNode != nullptr || getReverseComplement()->m_graphicsItemNode != nullptr);}
+    bool hasGraphicsItem() const {return m_graphicsItemNode != nullptr;}
 
     auto edgeBegin() { return m_edges.begin(); }
     const auto edgeBegin() const { return m_edges.begin(); }
@@ -88,8 +88,8 @@ public:
     bool isNotDrawn() const {return !m_drawn;}
     bool isPositiveNode() const;
     bool isNegativeNode() const;
-    bool inOgdf() const {return m_ogdfNode != 0;}
-    bool notInOgdf() const {return m_ogdfNode == 0;}
+    bool inOgdf() const {return m_ogdfNode != nullptr;}
+    bool notInOgdf() const {return m_ogdfNode == nullptr;}
     bool thisOrReverseComplementInOgdf() const {return (inOgdf() || getReverseComplement()->inOgdf());}
     bool thisOrReverseComplementNotInOgdf() const {return !thisOrReverseComplementInOgdf();}
     bool isNodeConnected(DeBruijnNode * node) const;

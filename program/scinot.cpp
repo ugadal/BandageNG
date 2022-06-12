@@ -16,9 +16,9 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "QStringList"
 #include "scinot.h"
-#include "math.h"
+#include <QStringList>
+#include <cmath>
 
 SciNot::SciNot() :
     m_coefficient(0.0), m_exponent(0)
@@ -33,11 +33,11 @@ SciNot::SciNot(double coefficient, int exponent) :
 }
 
 
-SciNot::SciNot(QString sciNotString) :
+SciNot::SciNot(const QString& sciNotString) :
     m_coefficient(0.0), m_exponent(0)
 {
     QStringList parts = sciNotString.split('e');
-    if (parts.size() < 1)
+    if (parts.empty())
         return;
     if (parts.size() < 2)
         m_coefficient = parts[0].toDouble();
@@ -159,7 +159,7 @@ double SciNot::toDouble() const
     return m_coefficient * pow(10.0, m_exponent);
 }
 
-bool SciNot::isValidSciNotString(QString sciNotString)
+bool SciNot::isValidSciNotString(const QString& sciNotString)
 {
     QStringList parts = sciNotString.split('e');
     if (parts.size() != 2)

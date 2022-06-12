@@ -22,12 +22,12 @@
 #include "ui/mygraphicsscene.h"
 #include "ui/mygraphicsview.h"
 #include "graph/assemblygraph.h"
-#include <vector>
-#include "program/settings.h"
+#include "blast/blastsearch.h"
+#include <QDir>
 #include <QPainter>
 #include <QSvgGenerator>
-#include <QDir>
-#include "blast/blastsearch.h"
+
+#include <vector>
 
 int bandageReduce(QStringList arguments)
 {

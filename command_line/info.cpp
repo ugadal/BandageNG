@@ -40,7 +40,7 @@ int bandageInfo(QStringList arguments)
         return 0;
     }
 
-    if (arguments.size() < 1)
+    if (arguments.empty())
     {
         printInfoUsage(&err, false);
         return 1;
@@ -204,7 +204,7 @@ QString checkForInvalidInfoOptions(QStringList arguments)
 
 
 
-void parseInfoOptions(QStringList arguments, bool * tsv)
+void parseInfoOptions(const QStringList& arguments, bool * tsv)
 {
     int tsvIndex = arguments.indexOf("--tsv");
     *tsv = (tsvIndex > -1);

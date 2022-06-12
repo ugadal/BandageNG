@@ -18,7 +18,7 @@
 
 #include "tablewidgetitemdouble.h"
 
-TableWidgetItemDouble::TableWidgetItemDouble(QString text, double value) :
+TableWidgetItemDouble::TableWidgetItemDouble(const QString& text, double value) :
     QTableWidgetItem(text), m_double(value)
 {
 }
@@ -27,7 +27,7 @@ TableWidgetItemDouble::TableWidgetItemDouble(QString text, double value) :
 
 bool TableWidgetItemDouble::operator<(QTableWidgetItem const &other) const
 {
-    TableWidgetItemDouble const *item = dynamic_cast<TableWidgetItemDouble const*>(&other);
+    auto const *item = dynamic_cast<TableWidgetItemDouble const*>(&other);
     if(item)
         return m_double < item->m_double;
     else

@@ -24,11 +24,11 @@
 class TableWidgetItemShown : public QTableWidgetItem
 {
 public:
-    TableWidgetItemShown(bool shown);
+    explicit TableWidgetItemShown(bool shown);
 
     bool m_shown;
 
-    virtual bool operator<(QTableWidgetItem const &other) const;
+    bool operator<(QTableWidgetItem const &other) const override;
 };
 
 #endif // TABLEWIDGETITEMSHOWN_H

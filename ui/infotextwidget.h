@@ -27,9 +27,9 @@ class InfoTextWidget : public QWidget
     Q_OBJECT
 public:
     explicit InfoTextWidget(QWidget * parent);
-    explicit InfoTextWidget(QWidget * parent, QString infoText);
+    explicit InfoTextWidget(QWidget * parent, const QString& infoText);
 
-    void setInfoText(QString infoText);
+    void setInfoText(const QString& infoText);
 
 protected:
     void paintEvent(QPaintEvent *);

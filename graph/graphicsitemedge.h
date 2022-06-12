@@ -44,7 +44,7 @@ public:
 
     void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *);
     QPainterPath shape() const;
-    QPointF extendLine(QPointF start, QPointF end, double extensionLength);
+    static QPointF extendLine(QPointF start, QPointF end, double extensionLength);
     void calculateAndSetPath();
     void setControlPointLocations();
     void setStartingPoints(QPointF startingLocation, QPointF beforeStartingLocation) {m_startingLocation = startingLocation; m_beforeStartingLocation = beforeStartingLocation;}

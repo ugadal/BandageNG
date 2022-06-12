@@ -9,7 +9,7 @@
 
 class CollapseButton : public QToolButton {
 public:
-  CollapseButton(QWidget *parent) : QToolButton(parent), content_(nullptr) {
+  explicit CollapseButton(QWidget *parent = nullptr) : QToolButton(parent), content_(nullptr) {
     setCheckable(true);
     setStyleSheet("background:none");
     setIconSize(QSize(8, 8));

@@ -17,14 +17,16 @@
 
 
 #include "myprogressdialog.h"
+
+#include <utility>
 #include "ui_myprogressdialog.h"
 #include "program/globals.h"
 
-MyProgressDialog::MyProgressDialog(QWidget * parent, QString message, bool showCancelButton,
-                                   QString cancelButtonText, QString cancelMessage, QString cancelInfoText) :
+MyProgressDialog::MyProgressDialog(QWidget * parent, const QString& message, bool showCancelButton,
+                                   const QString& cancelButtonText, QString cancelMessage, const QString& cancelInfoText) :
     QDialog(parent),
     ui(new Ui::MyProgressDialog),
-    m_cancelMessage(cancelMessage),
+    m_cancelMessage(std::move(cancelMessage)),
     m_cancelled(false)
 {
     setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);

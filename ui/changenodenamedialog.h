@@ -13,7 +13,7 @@ class ChangeNodeNameDialog : public QDialog
 
 public:
     explicit ChangeNodeNameDialog(QWidget * parent, QString oldName);
-    ~ChangeNodeNameDialog();
+    ~ChangeNodeNameDialog() override;
 
     QString getNewName() const;
 

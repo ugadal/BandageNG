@@ -19,10 +19,8 @@
 #include "debruijnnode.h"
 #include "debruijnedge.h"
 #include "ogdfnode.h"
-#include "graphicsitemnode.h"
 #include <cmath>
 #include "blast/blasthit.h"
-#include "blast/blastquery.h"
 #include "assemblygraph.h"
 #include "sequenceutils.hpp"
 #include <set>

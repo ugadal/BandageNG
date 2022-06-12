@@ -12,8 +12,8 @@ class BlastHitFiltersDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit BlastHitFiltersDialog(QWidget *parent = 0);
-    ~BlastHitFiltersDialog();
+    explicit BlastHitFiltersDialog(QWidget *parent = nullptr);
+    ~BlastHitFiltersDialog() override;
 
     void setWidgetsFromSettings();
     void setSettingsFromWidgets();

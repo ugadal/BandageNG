@@ -29,9 +29,7 @@ NodeWidthVisualAid::NodeWidthVisualAid(QWidget *parent) : QWidget(parent)
 }
 
 NodeWidthVisualAid::~NodeWidthVisualAid()
-{
-
-}
+= default;
 
 void NodeWidthVisualAid::paintEvent(QPaintEvent * /*event*/)
 {
@@ -70,7 +68,7 @@ void NodeWidthVisualAid::paintEvent(QPaintEvent * /*event*/)
 
     for (int i = 0; i < width(); ++i)
     {
-        double x = double(i);
+        auto x = double(i);
         double depthRelativeToMeanDrawnDepth = 2.0 * x / width();
         double y = height() -GraphicsItemNode::getNodeWidth(depthRelativeToMeanDrawnDepth, m_depthPower, m_depthEffectOnWidth, width() / 2.0);
         graphLine.lineTo(x, y);

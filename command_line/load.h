@@ -26,6 +26,6 @@
 int bandageLoad(QStringList arguments);
 void printLoadUsage(QTextStream * out, bool all);
 QString checkForInvalidLoadOptions(QStringList arguments);
-void parseLoadOptions(QStringList arguments, bool *drawGraph);
+void parseLoadOptions(const QStringList& arguments, bool *drawGraph);
 
 #endif // LOAD_H

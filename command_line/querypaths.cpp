@@ -168,9 +168,8 @@ int bandageQueryPaths(QStringList arguments)
     QList<QString> hitSequenceIDs;
     QList<QByteArray> hitSequences;
 
-    for (size_t i = 0; i < g_blastSearch->m_blastQueries.m_queries.size(); ++i)
+    for (auto query : g_blastSearch->m_blastQueries.m_queries)
     {
-        BlastQuery * query = g_blastSearch->m_blastQueries.m_queries[i];
         QList<BlastQueryPath> queryPaths = query->getPaths();
 
         for (int j = 0; j < queryPaths.size(); ++j)
@@ -306,7 +305,7 @@ QString checkForInvalidQueryPathsOptions(QStringList arguments)
 
 
 
-void parseQueryPathsOptions(QStringList arguments, bool * pathFasta,
+void parseQueryPathsOptions(const QStringList& arguments, bool * pathFasta,
                             bool * hitsFasta)
 {
     int pathFastaIndex = arguments.indexOf("--pathfasta");

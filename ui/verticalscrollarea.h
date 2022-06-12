@@ -14,8 +14,8 @@ class VerticalScrollArea : public QScrollArea
 {
     Q_OBJECT
 public:
-    explicit VerticalScrollArea(QWidget *parent = 0);
-    virtual bool eventFilter(QObject *o, QEvent *e);
+    explicit VerticalScrollArea(QWidget *parent = nullptr);
+    bool eventFilter(QObject *o, QEvent *e) override;
 };
 
 #endif // VERTICALSCROLLAREA_H

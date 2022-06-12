@@ -37,7 +37,7 @@ int bandageLoad(QStringList arguments)
         return 0;
     }
 
-    if (arguments.size() == 0)
+    if (arguments.empty())
     {
         printLoadUsage(&err, false);
         return 1;
@@ -104,7 +104,7 @@ QString checkForInvalidLoadOptions(QStringList arguments)
 
 
 
-void parseLoadOptions(QStringList arguments, bool * drawGraph)
+void parseLoadOptions(const QStringList& arguments, bool * drawGraph)
 {
     int drawIndex = arguments.indexOf("--draw");
     *drawGraph = (drawIndex > -1);

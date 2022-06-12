@@ -67,6 +67,8 @@ std::vector<Line> load(const std::filesystem::path &path) {
         for (size_t i = 0; i < row.size(); ++i) {
             auto cell = row[i];
             switch (i) {
+            default:
+                break;
             case 0:
                 bedLine.chrom = cell.get();
                 break;

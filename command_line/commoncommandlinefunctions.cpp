@@ -25,8 +25,7 @@
 #include "program/memory.h"
 
 #include <QDir>
-#include <QApplication>
-#include <QRegularExpression>
+#include <utility>
 
 
 QStringList getArgumentList(int argc, char *argv[])
@@ -166,22 +165,20 @@ void getSettingsUsage(QStringList * text)
 
 
 
-void outputText(QString text, QTextStream * out)
+void outputText(const QString& text, QTextStream * out)
 {
     QStringList list;
     list << text;
     outputText(list, out);
 }
 
-void outputText(QStringList text, QTextStream * out)
+void outputText(const QStringList& text, QTextStream * out)
 {
     QStringList wrapped;
 
     bool seenHeaderOrList = false;
-    for (int i = 0; i < text.size(); ++i)
+    for (const auto& line : text)
     {
-        QString line = text[i];
-
         if (isSectionHeader(line) || isListItem(line))
             seenHeaderOrList = true;
 
@@ -204,9 +201,9 @@ void outputText(QStringList text, QTextStream * out)
     }
 
     *out << Qt::endl;
-    for (int i = 0; i < wrapped.size(); ++i)
+    for (auto & i : wrapped)
     {
-        *out << wrapped[i];
+        *out << i;
         *out << Qt::endl;
     }
 }
@@ -656,7 +653,7 @@ void parseSettings(QStringList arguments)
 
 
 
-bool checkForHelp(QStringList arguments)
+bool checkForHelp(const QStringList& arguments)
 {
     int h1 = arguments.indexOf("-h");
     int h2 = arguments.indexOf("-help");
@@ -665,12 +662,12 @@ bool checkForHelp(QStringList arguments)
     return (h1 != -1 || h2 != -1 || h3 != -1);
 }
 
-bool checkForHelpAll(QStringList arguments)
+bool checkForHelpAll(const QStringList& arguments)
 {
     return (arguments.indexOf("--helpall") != -1);
 }
 
-bool checkForVersion(QStringList arguments)
+bool checkForVersion(const QStringList& arguments)
 {
     int v1 = arguments.indexOf("-v");
     int v2 = arguments.indexOf("-version");
@@ -686,7 +683,7 @@ bool checkForVersion(QStringList arguments)
 //Returns empty string if everything is okay and an error message if there's a
 //problem.  If everything is okay, it also removes the option and its value from
 //arguments.
-QString checkOptionForInt(QString option, QStringList * arguments, IntSetting setting, bool offOkay)
+QString checkOptionForInt(const QString& option, QStringList * arguments, IntSetting setting, bool offOkay)
 {
     int optionIndex = arguments->indexOf(option);
 
@@ -732,7 +729,7 @@ QString checkOptionForInt(QString option, QStringList * arguments, IntSetting se
 //Returns empty string if everything is okay and an error message if there's a
 //problem.  If everything is okay, it also removes the option and its value from
 //arguments.
-QString checkOptionForFloat(QString option, QStringList * arguments, FloatSetting setting, bool offOkay)
+QString checkOptionForFloat(const QString& option, QStringList * arguments, FloatSetting setting, bool offOkay)
 {
     int optionIndex = arguments->indexOf(option);
 
@@ -779,7 +776,7 @@ QString checkOptionForFloat(QString option, QStringList * arguments, FloatSettin
 //Returns empty string if everything is okay and an error message if there's a
 //problem.  If everything is okay, it also removes the option and its value from
 //arguments.
-QString checkOptionForSciNot(QString option, QStringList * arguments,
+QString checkOptionForSciNot(const QString& option, QStringList * arguments,
                              SciNotSetting setting, bool offOkay)
 {
     int optionIndex = arguments->indexOf(option);
@@ -803,7 +800,7 @@ QString checkOptionForSciNot(QString option, QStringList * arguments,
     if (!offOkay && !optionIsSciNot)
         return option + " must be followed by a number in scientific notation";
 
-    SciNot optionSciNot = SciNot(arguments->at(sciNotIndex));
+    SciNot optionSciNot(arguments->at(sciNotIndex));
 
     //Check the range of the option.
     if (optionIsSciNot)
@@ -826,7 +823,7 @@ QString checkOptionForSciNot(QString option, QStringList * arguments,
 //Returns empty string if everything is okay and an error
 //message if there's a problem.  If everything is okay, it
 //also removes the option and its value from arguments.
-QString checkOptionForString(QString option, QStringList * arguments, QStringList validOptionsList, QString validDescription)
+QString checkOptionForString(const QString& option, QStringList * arguments, const QStringList& validOptionsList, QString validDescription)
 {
     int optionIndex = arguments->indexOf(option);
 
@@ -846,16 +843,16 @@ QString checkOptionForString(QString option, QStringList * arguments, QStringLis
             validOptions += ", ";
     }
     if (validOptions == "")
-        validOptions = validDescription;
+        validOptions = std::move(validDescription);
 
     //If nothing follows the option, that's a problem.
     if (stringIndex >= arguments->size())
         return option + " must be followed by " + validOptions;
 
     //If the thing following the option isn't a valid choice, that's a problem.
-    if (validOptionsList.size() > 0)
+    if (!validOptionsList.empty())
     {
-        QString value = arguments->at(stringIndex);
+        const QString& value = arguments->at(stringIndex);
         if (!validOptionsList.contains(value, Qt::CaseInsensitive))
             return option + " must be followed by " + validOptions;
     }
@@ -869,7 +866,7 @@ QString checkOptionForString(QString option, QStringList * arguments, QStringLis
 }
 
 
-QString checkOptionForColour(QString option, QStringList * arguments)
+QString checkOptionForColour(const QString& option, QStringList * arguments)
 {
     int optionIndex = arguments->indexOf(option);
 
@@ -897,7 +894,7 @@ QString checkOptionForColour(QString option, QStringList * arguments)
 }
 
 
-QString checkOptionForFile(QString option, QStringList * arguments)
+QString checkOptionForFile(const QString& option, QStringList * arguments)
 {
     int optionIndex = arguments->indexOf(option);
 
@@ -924,7 +921,7 @@ QString checkOptionForFile(QString option, QStringList * arguments)
 }
 
 
-bool checkIfFileExists(QString filename)
+bool checkIfFileExists(const QString& filename)
 {
     QFileInfo checkFile(filename);
     return (checkFile.exists() && checkFile.isFile());
@@ -932,7 +929,7 @@ bool checkIfFileExists(QString filename)
 
 
 //This function simply removes an option from arguments if it is found.
-void checkOptionWithoutValue(QString option, QStringList * arguments)
+void checkOptionWithoutValue(const QString& option, QStringList * arguments)
 {
     int optionIndex = arguments->indexOf(option);
 
@@ -949,7 +946,7 @@ void checkOptionWithoutValue(QString option, QStringList * arguments)
 //This function checks to make sure either both or neither of the options
 //are used.  It can also optionally check to make sure the second is larger
 //than the first.
-QString checkTwoOptionsForFloats(QString option1, QString option2, QStringList * arguments,
+QString checkTwoOptionsForFloats(const QString& option1, const QString& option2, QStringList * arguments,
                                  FloatSetting setting1, FloatSetting setting2,
                                  bool secondMustBeEqualOrLarger)
 {
@@ -980,12 +977,12 @@ QString checkTwoOptionsForFloats(QString option1, QString option2, QStringList *
 
 
 
-bool isOptionPresent(QString option, QStringList * arguments)
+bool isOptionPresent(const QString& option, QStringList * arguments)
 {
     return (arguments->indexOf(option) > -1);
 }
 
-bool isOptionAndValuePresent(QString option, QString value, QStringList * arguments)
+bool isOptionAndValuePresent(const QString& option, const QString& value, QStringList * arguments)
 {
     int optionIndex = arguments->indexOf(option);
     if (optionIndex == -1)
@@ -995,13 +992,13 @@ bool isOptionAndValuePresent(QString option, QString value, QStringList * argume
     if (valueIndex >= arguments->size())
         return false;
 
-    QString optionValue = arguments->at(valueIndex);
+    const QString& optionValue = arguments->at(valueIndex);
     return (optionValue == value);
 }
 
 
 
-int getIntOption(QString option, QStringList * arguments)
+int getIntOption(const QString& option, QStringList * arguments)
 {
     int optionIndex = arguments->indexOf(option);
     if (optionIndex == -1)
@@ -1014,7 +1011,7 @@ int getIntOption(QString option, QStringList * arguments)
     return arguments->at(integerIndex).toInt();
 }
 
-double getFloatOption(QString option, QStringList * arguments)
+double getFloatOption(const QString& option, QStringList * arguments)
 {
      int optionIndex = arguments->indexOf(option);
      if (optionIndex == -1)
@@ -1028,7 +1025,7 @@ double getFloatOption(QString option, QStringList * arguments)
 }
 
 
-SciNot getSciNotOption(QString option, QStringList * arguments)
+SciNot getSciNotOption(const QString& option, QStringList * arguments)
 {
      int optionIndex = arguments->indexOf(option);
      if (optionIndex == -1)
@@ -1036,12 +1033,12 @@ SciNot getSciNotOption(QString option, QStringList * arguments)
 
      int sciNotIndex = optionIndex + 1;
      if (sciNotIndex >= arguments->size())
-         return SciNot();
+         return {};
 
-     return SciNot(arguments->at(sciNotIndex));
+     return {arguments->at(sciNotIndex)};
 }
 
-NodeColourScheme getColourSchemeOption(QString option, QStringList * arguments)
+NodeColourScheme getColourSchemeOption(const QString& option, QStringList * arguments)
 {
     NodeColourScheme defaultScheme = RANDOM_COLOURS;
 
@@ -1068,7 +1065,7 @@ NodeColourScheme getColourSchemeOption(QString option, QStringList * arguments)
 }
 
 
-std::set<ViewId> getBlastAnnotationViews(QString option, QStringList * arguments) {
+std::set<ViewId> getBlastAnnotationViews(const QString& option, QStringList * arguments) {
     int optionIndex = arguments->indexOf(option);
     if (optionIndex == -1)
         return {};
@@ -1087,7 +1084,7 @@ std::set<ViewId> getBlastAnnotationViews(QString option, QStringList * arguments
 }
 
 
-GraphScope getGraphScopeOption(QString option, QStringList * arguments)
+GraphScope getGraphScopeOption(const QString& option, QStringList * arguments)
 {
     int optionIndex = arguments->indexOf(option);
     if (optionIndex == -1)
@@ -1112,21 +1109,21 @@ GraphScope getGraphScopeOption(QString option, QStringList * arguments)
 }
 
 
-QColor getColourOption(QString option, QStringList * arguments)
+QColor getColourOption(const QString& option, QStringList * arguments)
 {
     int optionIndex = arguments->indexOf(option);
     if (optionIndex == -1)
-        return QColor();
+        return {};
 
     int colIndex = optionIndex + 1;
     if (colIndex >= arguments->size())
-        return QColor();
+        return {};
 
-    return QColor(arguments->at(colIndex));
+    return {arguments->at(colIndex)};
 }
 
 
-QString getStringOption(QString option, QStringList * arguments)
+QString getStringOption(const QString& option, QStringList * arguments)
 {
     int optionIndex = arguments->indexOf(option);
     if (optionIndex == -1)
@@ -1146,9 +1143,9 @@ QString getStringOption(QString option, QStringList * arguments)
 
 //This function generates an error if excess arguments are left after
 //parsing.
-QString checkForExcessArguments(QStringList arguments)
+QString checkForExcessArguments(const QStringList& arguments)
 {
-    if (arguments.size() == 0)
+    if (arguments.empty())
         return "";
 
     QString invalidOptionText = "Invalid option";
@@ -1199,7 +1196,7 @@ void deleteBlastTempDirectory()
 
 
 
-QString getElapsedTime(QDateTime start, QDateTime end)
+QString getElapsedTime(const QDateTime& start, const QDateTime& end)
 {
     int msecElapsed = start.msecsTo(end);
     int secElapsed = msecElapsed / 1000;
@@ -1267,16 +1264,16 @@ QString rstrip(const QString& str)
 }
 
 QString getRangeAndDefault(IntSetting setting) {return (setting.on) ? getRangeAndDefault(setting.min, setting.max, setting.val) : getRangeAndDefault(setting.min, setting.max, "off");}
-QString getRangeAndDefault(IntSetting setting, QString defaultVal) {return getRangeAndDefault(setting.min, setting.max, defaultVal);}
+QString getRangeAndDefault(IntSetting setting, QString defaultVal) {return getRangeAndDefault(setting.min, setting.max, std::move(defaultVal));}
 QString getRangeAndDefault(FloatSetting setting) {return (setting.on) ? getRangeAndDefault(setting.min, setting.max, setting.val) : getRangeAndDefault(setting.min, setting.max, "off");}
-QString getRangeAndDefault(FloatSetting setting, QString defaultVal) {return getRangeAndDefault(setting.min, setting.max, defaultVal);}
+QString getRangeAndDefault(FloatSetting setting, QString defaultVal) {return getRangeAndDefault(setting.min, setting.max, std::move(defaultVal));}
 QString getRangeAndDefault(SciNotSetting setting) {return (setting.on) ? getRangeAndDefault(setting.min.asString(true), setting.max.asString(true), setting.val.asString(true)) : getRangeAndDefault(setting.min.asString(true), setting.max.asString(true), "off");}
 QString getRangeAndDefault(int min, int max, int defaultVal) { return getRangeAndDefault(double(min), double(max), QString::number(defaultVal));}
-QString getRangeAndDefault(int min, int max, QString defaultVal) {return getRangeAndDefault(double(min), double(max), defaultVal);}
+QString getRangeAndDefault(int min, int max, QString defaultVal) {return getRangeAndDefault(double(min), double(max), std::move(defaultVal));}
 QString getRangeAndDefault(double min, double max, double defaultVal) {return getRangeAndDefault(min, max, QString::number(defaultVal));}
-QString getRangeAndDefault(double min, double max, QString defaultVal) {return getRangeAndDefault(QString::number(min), QString::number(max), defaultVal);}
+QString getRangeAndDefault(double min, double max, QString defaultVal) {return getRangeAndDefault(QString::number(min), QString::number(max), std::move(defaultVal));}
 
-QString getRangeAndDefault(QString min, QString max, QString defaultVal)
+QString getRangeAndDefault(const QString& min, QString max, QString defaultVal)
 {
     return "(" + min + " to " + max + ", default: " + defaultVal + ")";
 }
@@ -1299,7 +1296,7 @@ bool isOption(QString text)
     return option || text.contains(rx);
 }
 
-bool isSectionHeader(QString text)
+bool isSectionHeader(const QString& text)
 {
     //Make an exception:
     if (text.startsWith("Node widths are determined")) {
@@ -1316,7 +1313,7 @@ bool isListItem(QString text)
     return (text.length() > 1 && text[0] == '*' && text[1] == ' ');
 }
 
-bool isCommand(QString text)
+bool isCommand(const QString& text)
 {
     return text.startsWith("load   ") ||
             text.startsWith("info   ") ||
@@ -1326,7 +1323,7 @@ bool isCommand(QString text)
 }
 
 
-bool isError(QString text)
+bool isError(const QString& text)
 {
     return text.startsWith("Bandage-NG error");
 }

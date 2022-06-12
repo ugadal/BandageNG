@@ -17,15 +17,15 @@
 
 
 #include "mygraphicsview.h"
-#include <QMouseEvent>
+#include "graph/graphicsitemnode.h"
 #include "program/globals.h"
 #include "program/settings.h"
-#include <QFont>
 #include "graphicsviewzoom.h"
-#include <qmath.h>
+#include <QMouseEvent>
+#include <QFont>
 #include <QMessageBox>
-#include <math.h>
-#include "graph/graphicsitemnode.h"
+#include <qmath.h>
+#include <cmath>
 
 MyGraphicsView::MyGraphicsView(QObject * /*parent*/) :
     QGraphicsView(), m_rotation(0.0)
@@ -87,8 +87,8 @@ void MyGraphicsView::mouseDoubleClickEvent(QMouseEvent * event)
     //Find the node beneath the cursor.
     QGraphicsItem * item = itemAt(event->pos());
 
-    GraphicsItemNode * graphicsItemNode = dynamic_cast<GraphicsItemNode *>(item);
-    if (graphicsItemNode != 0)
+    auto * graphicsItemNode = dynamic_cast<GraphicsItemNode *>(item);
+    if (graphicsItemNode != nullptr)
         emit doubleClickedNode(graphicsItemNode->m_deBruijnNode);
 }
 

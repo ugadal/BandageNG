@@ -24,7 +24,7 @@
 class TableWidgetItemInt : public QTableWidgetItem
 {
 public:
-    TableWidgetItemInt(QString text, int value);
+    TableWidgetItemInt(const QString& text, int value);
 
     int m_int;
 

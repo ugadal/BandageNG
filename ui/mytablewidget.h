@@ -26,15 +26,15 @@ class MyTableWidget : public QTableWidget
 {
     Q_OBJECT
 public:
-    explicit MyTableWidget(QWidget *parent = 0);
+    explicit MyTableWidget(QWidget *parent = nullptr);
 
     void resizeColumns();
     bool m_smallFirstColumn;
     bool m_smallSecondColumn;
 
 protected:
-    void showEvent(QShowEvent * event);
-    void keyPressEvent(QKeyEvent* event);
+    void showEvent(QShowEvent * event) override;
+    void keyPressEvent(QKeyEvent* event) override;
 
 };
 

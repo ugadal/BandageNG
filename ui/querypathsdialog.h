@@ -33,7 +33,7 @@ class QueryPathsDialog : public QDialog
 
 public:
     explicit QueryPathsDialog(QWidget *parent, BlastQuery * query);
-    ~QueryPathsDialog();
+    ~QueryPathsDialog() override;
 
 private:
     Ui::QueryPathsDialog *ui;

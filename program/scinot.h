@@ -31,7 +31,7 @@ public:
     // CREATORS
     SciNot();
     SciNot(double coefficient, int exponent);
-    SciNot(QString sciNotString);
+    SciNot(const QString& sciNotString);
     SciNot(double num);
 
     // ACCESSORS
@@ -53,7 +53,7 @@ public:
     void power(double p);
 
     // STATIC
-    static bool isValidSciNotString(QString sciNotString);
+    static bool isValidSciNotString(const QString& sciNotString);
 
 private:
     double m_coefficient;

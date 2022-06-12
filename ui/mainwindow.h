@@ -48,7 +48,7 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QString fileToLoadOnStartup = "", bool drawGraphAfterLoad = false);
-    ~MainWindow();
+    ~MainWindow() override;
 
 private:
     Ui::MainWindow *ui;
@@ -70,7 +70,6 @@ private:
     void clearGraphDetails();
     void resetScene();
     void layoutGraph();
-    void addGraphicsItemsToScene();
     void zoomToFitRect(QRectF rect);
     void zoomToFitScene();
     void setZoomSpinBoxStep();
@@ -78,8 +77,7 @@ private:
                              QString & selectedNodeListText, QString & selectedNodeLengthText, QString &selectedNodeDepthText,
                              QString &selectNodeTagText);
     QString getSelectedEdgeListText();
-    std::vector<DeBruijnNode *> getNodesFromLineEdit(QLineEdit * lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph = 0);
-    void setSceneRectangle();
+    std::vector<DeBruijnNode *> getNodesFromLineEdit(QLineEdit * lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph = nullptr);
     void setInfoTexts();
     void setUiState(UiState uiState);
     void selectBasedOnContiguity(ContiguityStatus contiguityStatus);
@@ -98,9 +96,6 @@ private:
     void setDepthRangeWidgetVisibility(bool visible);
     void setPathSelectionWidgetVisibility(bool visible);
     static QByteArray makeStringUrlSafe(QByteArray s);
-    void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> * nodes, bool reverseComplement);
-    void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> * edges, bool reverseComplement);
-    void removeAllGraphicsEdgesFromNode(DeBruijnNode * node, bool reverseComplement);
     std::vector<DeBruijnNode *> addComplementaryNodes(std::vector<DeBruijnNode *> nodes);
 
 private slots:
@@ -171,7 +166,7 @@ private slots:
     void openGraphInfoDialog();
 
 protected:
-      void showEvent(QShowEvent *ev);
+      void showEvent(QShowEvent *ev) override;
 
 signals:
       void windowLoaded();

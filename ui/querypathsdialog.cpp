@@ -70,45 +70,45 @@ QueryPathsDialog::QueryPathsDialog(QWidget * parent, BlastQuery * query) :
     {
         BlastQueryPath * queryPath = &paths[i];
 
-        QTableWidgetItem * pathString = new QTableWidgetItem(queryPath->getPath().getString(true));
+        auto * pathString = new QTableWidgetItem(queryPath->getPath().getString(true));
         pathString->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         int length = queryPath->getPath().getLength();
-        TableWidgetItemInt * pathLength = new TableWidgetItemInt(formatIntForDisplay(length), length);
+        auto * pathLength = new TableWidgetItemInt(formatIntForDisplay(length), length);
         pathLength->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         double queryCoveragePath = queryPath->getPathQueryCoverage();
-        TableWidgetItemDouble * pathQueryCoveragePath = new TableWidgetItemDouble(formatDoubleForDisplay(100.0 * queryCoveragePath, 2) + "%", queryCoveragePath);
+        auto * pathQueryCoveragePath = new TableWidgetItemDouble(formatDoubleForDisplay(100.0 * queryCoveragePath, 2) + "%", queryCoveragePath);
         pathQueryCoveragePath->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
         pathLength->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         double queryCoverageHits = queryPath->getHitsQueryCoverage();
-        TableWidgetItemDouble * pathQueryCoverageHits = new TableWidgetItemDouble(formatDoubleForDisplay(100.0 * queryCoverageHits, 2) + "%", queryCoverageHits);
+        auto * pathQueryCoverageHits = new TableWidgetItemDouble(formatDoubleForDisplay(100.0 * queryCoverageHits, 2) + "%", queryCoverageHits);
         pathQueryCoverageHits->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         double percIdentity = queryPath->getMeanHitPercIdentity();
-        TableWidgetItemDouble * pathPercIdentity = new TableWidgetItemDouble(formatDoubleForDisplay(percIdentity, 2) + "%", percIdentity);
+        auto * pathPercIdentity = new TableWidgetItemDouble(formatDoubleForDisplay(percIdentity, 2) + "%", percIdentity);
         pathPercIdentity->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         int mismatches = queryPath->getTotalHitMismatches();
-        TableWidgetItemInt * pathMismatches = new TableWidgetItemInt(formatIntForDisplay(mismatches), mismatches);
+        auto * pathMismatches = new TableWidgetItemInt(formatIntForDisplay(mismatches), mismatches);
         pathMismatches->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         int gapOpens = queryPath->getTotalHitGapOpens();
-        TableWidgetItemInt * pathGapOpens = new TableWidgetItemInt(formatIntForDisplay(gapOpens), gapOpens);
+        auto * pathGapOpens = new TableWidgetItemInt(formatIntForDisplay(gapOpens), gapOpens);
         pathGapOpens->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         double relativeLength = queryPath->getRelativePathLength();
-        TableWidgetItemDouble * pathRelativeLength = new TableWidgetItemDouble(formatDoubleForDisplay(100.0 * relativeLength, 2) + "%", relativeLength);
+        auto * pathRelativeLength = new TableWidgetItemDouble(formatDoubleForDisplay(100.0 * relativeLength, 2) + "%", relativeLength);
         pathRelativeLength->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         int lengthDisc = queryPath->getAbsolutePathLengthDifference();
         QString lengthDiscString = queryPath->getAbsolutePathLengthDifferenceString(true);
-        TableWidgetItemInt * pathLengthDisc = new TableWidgetItemInt(lengthDiscString, lengthDisc);
+        auto * pathLengthDisc = new TableWidgetItemInt(lengthDiscString, lengthDisc);
         pathLengthDisc->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         SciNot evalueProduct = queryPath->getEvalueProduct();
-        TableWidgetItemDouble * pathEvalueProduct = new TableWidgetItemDouble(evalueProduct.asString(false), evalueProduct.toDouble());
+        auto * pathEvalueProduct = new TableWidgetItemDouble(evalueProduct.asString(false), evalueProduct.toDouble());
         pathEvalueProduct->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         QByteArray pathSequence = queryPath->getPath().getPathSequence();
@@ -118,8 +118,8 @@ QueryPathsDialog::QueryPathsDialog(QWidget * parent, BlastQuery * query) :
         else
             pathStart = pathSequence.left(8) + "...";
 
-        QTableWidgetItem * sequenceCopy = new QTableWidgetItem(pathStart);
-        QueryPathSequenceCopyButton * sequenceCopyButton = new QueryPathSequenceCopyButton(pathSequence, pathStart);
+        auto * sequenceCopy = new QTableWidgetItem(pathStart);
+        auto * sequenceCopyButton = new QueryPathSequenceCopyButton(pathSequence, pathStart);
 
         ui->tableWidget->setItem(i, 0, pathString);
         ui->tableWidget->setItem(i, 1, pathLength);
@@ -201,15 +201,15 @@ void QueryPathsDialog::tableSelectionChanged()
 {
     QList<QTableWidgetSelectionRange> selection = ui->tableWidget->selectedRanges();
     int totalSelectedRows = 0;
-    for (int i = 0; i < selection.size(); ++i)
-        totalSelectedRows += selection[i].rowCount();
+    for (auto & i : selection)
+        totalSelectedRows += i.rowCount();
 
     g_memory->queryPaths.clear();
 
     QList<int> selectedRows;
-    for (int i = 0; i < selection.size(); ++i)
+    for (auto & i : selection)
     {
-        QTableWidgetSelectionRange * selectionRange = &(selection[i]);
+        QTableWidgetSelectionRange * selectionRange = &i;
         int top = selectionRange->topRow();
         int bottom = selectionRange->bottomRow();
 
@@ -220,9 +220,8 @@ void QueryPathsDialog::tableSelectionChanged()
         }
     }
 
-    for (int i = 0; i < selectedRows.size(); ++i)
+    for (int row : selectedRows)
     {
-        int row = selectedRows[i];
         QString pathString = ui->tableWidget->item(row, 0)->text();
         QString pathStringFailure;
         g_memory->queryPaths.push_back(Path::makeFromString(pathString, false, &pathStringFailure));

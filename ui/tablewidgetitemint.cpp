@@ -18,7 +18,7 @@
 
 #include "tablewidgetitemint.h"
 
-TableWidgetItemInt::TableWidgetItemInt(QString text, int value) :
+TableWidgetItemInt::TableWidgetItemInt(const QString& text, int value) :
     QTableWidgetItem(text), m_int(value)
 {
 }
@@ -27,7 +27,7 @@ TableWidgetItemInt::TableWidgetItemInt(QString text, int value) :
 
 bool TableWidgetItemInt::operator<(QTableWidgetItem const &other) const
 {
-    TableWidgetItemInt const *item = dynamic_cast<TableWidgetItemInt const*>(&other);
+    auto const *item = dynamic_cast<TableWidgetItemInt const*>(&other);
     if(item)
         return m_int < item->m_int;
     else

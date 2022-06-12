@@ -4,11 +4,12 @@
 #include "program/globals.h"
 #include "graph/assemblygraph.h"
 #include <QPushButton>
+#include <utility>
 
 ChangeNodeNameDialog::ChangeNodeNameDialog(QWidget * parent, QString oldName) :
     QDialog(parent),
     ui(new Ui::ChangeNodeNameDialog),
-    m_oldName(oldName)
+    m_oldName(std::move(oldName))
 {
     ui->setupUi(this);
 

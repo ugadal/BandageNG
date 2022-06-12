@@ -74,7 +74,7 @@ bool GraphicsViewZoom::eventFilter(QObject *object, QEvent *event)
 {
     if (event->type() == QEvent::MouseMove)
     {
-        QMouseEvent * mouseEvent = static_cast<QMouseEvent*>(event);
+        auto * mouseEvent = dynamic_cast<QMouseEvent*>(event);
         QPointF delta = targetViewportPos - mouseEvent->pos();
         if (qAbs(delta.x()) > 5 || qAbs(delta.y()) > 5)
         {
@@ -84,7 +84,7 @@ bool GraphicsViewZoom::eventFilter(QObject *object, QEvent *event)
     }
     else if (event->type() == QEvent::Wheel)
     {
-        QWheelEvent * wheelEvent = static_cast<QWheelEvent*>(event);
+        auto * wheelEvent = dynamic_cast<QWheelEvent*>(event);
         if (QApplication::keyboardModifiers() == m_modifiers)
         {
             double angle = wheelEvent->angleDelta().y();
@@ -98,7 +98,7 @@ bool GraphicsViewZoom::eventFilter(QObject *object, QEvent *event)
     }
     else if (event->type() == QEvent::NativeGesture)
     {
-        QNativeGestureEvent * gestureEvent = static_cast<QNativeGestureEvent *>(event);
+        auto * gestureEvent = dynamic_cast<QNativeGestureEvent *>(event);
         if (gestureEvent->gestureType() == Qt::ZoomNativeGesture)
         {
             double factor = 1.0 + gestureEvent->value();

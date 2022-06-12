@@ -26,7 +26,7 @@ class QueryPathSequenceCopyButton : public QPushButton
     Q_OBJECT
 
 public:
-    QueryPathSequenceCopyButton(QByteArray pathSequence, QString pathStart);
+    QueryPathSequenceCopyButton(QByteArray pathSequence, const QString& pathStart);
 
 private:
     QByteArray m_pathSequence;

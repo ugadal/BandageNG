@@ -20,7 +20,7 @@ public:
     drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement, int64_t start,
                int64_t end) const = 0;
 
-    virtual QString getTypeName() const = 0;
+    [[nodiscard]] virtual QString getTypeName() const = 0;
 
     virtual ~IAnnotationView() = default;
 };
@@ -51,7 +51,7 @@ public:
         painter.drawPath(graphicsItemNode.makePartialPath(fractionStart, fractionEnd));
     }
 
-    QString getTypeName() const override {
+    [[nodiscard]] QString getTypeName() const override {
         return "Solid";
     }
 
@@ -59,7 +59,6 @@ private:
     const double m_widthMultiplier;
     const QColor m_color;
 };
-
 
 class RainbowBlastHitView : public IAnnotationView {
 public:
@@ -112,7 +111,7 @@ public:
         }
     }
 
-    QString getTypeName() const override {
+    [[nodiscard]] QString getTypeName() const override {
         return "Rainbow";
     }
 
@@ -132,7 +131,7 @@ public:
         SolidView::drawFigure(painter, graphicsItemNode, reverseComplement, m_thickStart, m_thickEnd);
     }
 
-    QString getTypeName() const override {
+    [[nodiscard]] QString getTypeName() const override {
         return "BED Thick";
     }
 
@@ -159,7 +158,7 @@ public:
         }
     }
 
-    QString getTypeName() const override {
+    [[nodiscard]] QString getTypeName() const override {
         return "BED Blocks";
     }
 
@@ -200,7 +199,7 @@ public:
         m_views.emplace_back(std::move(view));
     }
 
-    const std::vector<std::unique_ptr<IAnnotationView>> &getViews() const {
+    [[nodiscard]] const std::vector<std::unique_ptr<IAnnotationView>> &getViews() const {
         return m_views;
     }
 

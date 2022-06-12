@@ -19,6 +19,7 @@
 
 #include "assemblygraph.h"
 #include <QString>
+#include <utility>
 
 class AssemblyGraphBuilder {
   public:    
@@ -27,13 +28,13 @@ class AssemblyGraphBuilder {
 
     static std::unique_ptr<AssemblyGraphBuilder> get(const QString &fullFileName);
 
-    bool hasCustomLables() const { return hasCustomLabels_; }
-    bool hasCustomColours() const { return hasCustomColours_; }
-    bool hasComplexOverlaps() const { return hasComplexOverlaps_; }
+    [[nodiscard]] bool hasCustomLables() const { return hasCustomLabels_; }
+    [[nodiscard]] bool hasCustomColours() const { return hasCustomColours_; }
+    [[nodiscard]] bool hasComplexOverlaps() const { return hasComplexOverlaps_; }
     
   protected:
-    AssemblyGraphBuilder(const QString &fileName)
-            : fileName_(fileName) {}
+    explicit AssemblyGraphBuilder(QString fileName)
+            : fileName_(std::move(fileName)) {}
 
     QString fileName_;
     bool hasCustomLabels_ = false;

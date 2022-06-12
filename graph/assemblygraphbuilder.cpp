@@ -35,7 +35,7 @@
 
 #include <zlib.h>
 
-static bool checkFirstLineOfFile(QString fullFileName, QString regExp) {
+static bool checkFirstLineOfFile(const QString& fullFileName, const QString& regExp) {
     QFile inputFile(fullFileName);
     if (inputFile.open(QIODevice::ReadOnly)) {
         QTextStream in(&inputFile);
@@ -51,22 +51,22 @@ static bool checkFirstLineOfFile(QString fullFileName, QString regExp) {
 }
 
 // Cursory look to see if file appears to be a LastGraph file.
-static bool checkFileIsLastGraph(QString fullFileName) {
-    return checkFirstLineOfFile(fullFileName, "^\\d+\\s+\\d+\\s+\\d+\\s+\\d+");
+static bool checkFileIsLastGraph(const QString& fullFileName) {
+    return checkFirstLineOfFile(fullFileName, R"(^\d+\s+\d+\s+\d+\s+\d+)");
 }
 
 //Cursory look to see if file appears to be a FASTG file.
-static bool checkFileIsFastG(QString fullFileName) {
+static bool checkFileIsFastG(const QString& fullFileName) {
     return checkFirstLineOfFile(fullFileName, "^>(NODE|EDGE).*;");
 }
 
 //Cursory look to see if file appears to be a FASTA file.
-static bool checkFileIsFasta(QString fullFileName) {
+static bool checkFileIsFasta(const QString& fullFileName) {
     return checkFirstLineOfFile(fullFileName, "^>");
 }
 
 //Cursory look to see if file appears to be a GFA file.
-static bool checkFileIsGfa(QString fullFileName) {
+static bool checkFileIsGfa(const QString& fullFileName) {
     QFileInfo gfaFileInfo(fullFileName);
     if (gfaFileInfo.isFile()) {
         return fullFileName.endsWith(".gfa") ||
@@ -77,12 +77,12 @@ static bool checkFileIsGfa(QString fullFileName) {
 }
 
 //Cursory look to see if file appears to be a Trinity.fasta file.
-static bool checkFileIsTrinityFasta(QString fullFileName) {
+static bool checkFileIsTrinityFasta(const QString& fullFileName) {
     return checkFirstLineOfFile(fullFileName, "path=\\[");
 }
 
 //Cursory look to see if file appears to be an ASQG file.
-static bool checkFileIsAsqg(QString fullFileName) {
+static bool checkFileIsAsqg(const QString& fullFileName) {
     return checkFirstLineOfFile(fullFileName, "^HT\t");
 }
 
@@ -170,7 +170,7 @@ static bool attemptToLoadSequencesFromFasta(AssemblyGraph &graph) {
     std::vector<QString> names;
     std::vector<QByteArray> sequences;
     // FIXME: this does not belong here
-    graph.readFastaFile(fastaName, &names, &sequences);
+    AssemblyGraph::readFastaFile(fastaName, &names, &sequences);
 
     for (size_t i = 0; i < names.size(); ++i) {
         QString name = names[i];
@@ -196,7 +196,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         return (unsigned)name[0] << 8 | name[1];
     }
 
-    bool isStandardTag(const char name[2]) {
+    static bool isStandardTag(const char name[2]) {
         switch (makeTag(name)) {
             case makeTag("DP"):
             case makeTag("LN"):
@@ -214,7 +214,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
     }
 
 
-    DeBruijnNode *maybeAddSegment(const std::string &nodeName,
+    static DeBruijnNode *maybeAddSegment(const std::string &nodeName,
                                   double nodeDepth, Sequence sequence,
                                   AssemblyGraph &graph) {
         auto nodeStorage = graph.m_deBruijnGraphNodes.find(nodeName);
@@ -234,7 +234,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         return (graph.m_deBruijnGraphNodes[nodeName] = new DeBruijnNode(nodeName.c_str(), nodeDepth, sequence));
     }
 
-    auto
+    static auto
     addSegmentPair(const std::string &nodeName,
                    double nodeDepth, Sequence sequence,
                    AssemblyGraph &graph) {
@@ -321,6 +321,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
                 continue;
             graph.m_nodeTags[nodePtr].push_back(tag);
             graph.m_nodeTags[oppositeNodePtr].push_back(tag);
+            tagsInserted = true;
         }
         if (tagsInserted) {
             graph.m_nodeTags[nodePtr].shrink_to_fit();
@@ -401,6 +402,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
             graph.m_edgeTags[edgePtr].push_back(tag);
             if (rcEdgePtr)
                 graph.m_edgeTags[rcEdgePtr].push_back(tag);
+            tagsInserted = true;
         }
         if (tagsInserted) {
             graph.m_edgeTags[edgePtr].shrink_to_fit();
@@ -410,8 +412,8 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
     }
 
-    void handlePath(const gfa::path &record,
-                    AssemblyGraph &graph) {
+    static void handlePath(const gfa::path &record,
+                           AssemblyGraph &graph) {
         QList<DeBruijnNode *> pathNodes;
         pathNodes.reserve(record.segments.size());
 
@@ -499,7 +501,7 @@ class FastaAssemblyGraphBuilder : public AssemblyGraphBuilder {
     using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
     // This function adjusts a node name to make sure it is valid for use in Bandage.
-    QString cleanNodeName(QString name) const {
+    [[nodiscard]] static QString cleanNodeName(QString name) {
         //Replace whitespace with underscores
         name = name.replace(QRegularExpression("\\s"), "_");
 
@@ -520,7 +522,7 @@ class FastaAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         std::vector<QString> names;
         std::vector<QByteArray> sequences;
-        graph.readFastaFile(fileName_, &names, &sequences);
+        AssemblyGraph::readFastaFile(fileName_, &names, &sequences);
 
         std::vector<QString> circularNodeNames;
         for (size_t i = 0; i < names.size(); ++i) {
@@ -629,7 +631,7 @@ class FastgAssemblyGraphBuilder : public AssemblyGraphBuilder {
                     line.chop(1); //Remove ';' from end
                     QStringList nodeDetails = line.split(":");
 
-                    QString thisNode = nodeDetails.at(0);
+                    const QString& thisNode = nodeDetails.at(0);
 
                     //A single quote as the last character indicates a negative node.
                     bool negativeNode = thisNode.at(thisNode.size() - 1) == '\'';
@@ -665,9 +667,7 @@ class FastgAssemblyGraphBuilder : public AssemblyGraphBuilder {
                     if (nodeDetails.size() == 1 || nodeDetails.at(1).isEmpty())
                         continue;
                     QStringList edgeNodes = nodeDetails.at(1).split(",");
-                    for (int i = 0; i < edgeNodes.size(); ++i) {
-                        QString edgeNode = edgeNodes.at(i);
-
+                    for (auto edgeNode : edgeNodes) {
                         QChar lastChar = edgeNode.at(edgeNode.size() - 1);
                         bool negativeNode = false;
                         if (lastChar == '\'') {
@@ -728,7 +728,7 @@ class FastgAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         graph.autoDetermineAllEdgesExactOverlap();
 
-        if (graph.m_deBruijnGraphNodes.size() == 0)
+        if (graph.m_deBruijnGraphNodes.empty())
             throw "load error";
     }
 };
@@ -760,7 +760,7 @@ class AsqgAssemblyGraphBuilder : public AssemblyGraphBuilder {
                 QString line = in.readLine();
 
                 QStringList lineParts = line.split(QRegularExpression("\t"));
-                if (lineParts.size() < 1)
+                if (lineParts.empty())
                     continue;
 
                 // Lines beginning with "VT" are sequence (node) lines
@@ -867,7 +867,7 @@ class AsqgAssemblyGraphBuilder : public AssemblyGraphBuilder {
             }
         }
 
-        if (graph.m_deBruijnGraphNodes.size() == 0)
+        if (graph.m_deBruijnGraphNodes.empty())
             throw "load error";
 
         // return badEdgeCount;
@@ -884,7 +884,7 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         std::vector<QString> names;
         std::vector<QByteArray> sequences;
-        graph.readFastaFile(fileName_, &names, &sequences);
+        AssemblyGraph::readFastaFile(fileName_, &names, &sequences);
 
         std::vector<QString> edgeStartingNodeNames;
         std::vector<QString> edgeEndingNodeNames;
@@ -939,7 +939,7 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
             //Each path part is a node
             QString previousNodeName;
             for (int i = 0; i < pathParts.length(); ++i) {
-                QString pathPart = pathParts.at(i);
+                const QString& pathPart = pathParts.at(i);
                 QStringList nodeParts = pathPart.split(":");
                 if (nodeParts.size() < 2)
                     throw "load error";
@@ -955,7 +955,7 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
                 //If the node doesn't yet exist, make it now.
                 if (!graph.m_deBruijnGraphNodes.count(nodeName.toStdString())) {
-                    QString nodeRange = nodeParts.at(1);
+                    const QString& nodeRange = nodeParts.at(1);
                     QStringList nodeRangeParts = nodeRange.split("-");
 
                     if (nodeRangeParts.size() < 2)
@@ -963,7 +963,6 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
                     int nodeRangeStart = nodeRangeParts.at(0).toInt();
                     int nodeRangeEnd = nodeRangeParts.at(1).toInt();
-                    int nodeLength = nodeRangeEnd - nodeRangeStart + 1;
 
                     Sequence nodeSequence = sequence.Subseq(nodeRangeStart, nodeRangeEnd + 1);
 
@@ -1005,7 +1004,7 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         graph.setAllEdgesExactOverlap(0);
 
-        if (graph.m_deBruijnGraphNodes.size() == 0)
+        if (graph.m_deBruijnGraphNodes.empty())
             throw "load error";
     }
 };
@@ -1015,7 +1014,7 @@ class LastGraphAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
     // This function takes a normal number string like "5" or "-6" and changes
     // it to "5+" or "6-" - the format of Bandage node names.
-    QString convertNormalNumberStringToBandageNodeName(QString number) const {
+    [[nodiscard]] static QString convertNormalNumberStringToBandageNodeName(QString number) {
         if (number.at(0) == '-') {
             number.remove(0, 1);
             return number + "-";
@@ -1050,7 +1049,7 @@ class LastGraphAssemblyGraphBuilder : public AssemblyGraphBuilder {
                     if (nodeDetails.size() < 4)
                         throw "load error";
 
-                    QString nodeName = nodeDetails.at(1);
+                    const QString& nodeName = nodeDetails.at(1);
                     QString posNodeName = nodeName + "+";
                     QString negNodeName = nodeName + "-";
 
@@ -1099,7 +1098,7 @@ class LastGraphAssemblyGraphBuilder : public AssemblyGraphBuilder {
             graph.setAllEdgesExactOverlap(0);
         }
 
-        if (graph.m_deBruijnGraphNodes.size() == 0)
+        if (graph.m_deBruijnGraphNodes.empty())
             throw "load error";
     }
 };

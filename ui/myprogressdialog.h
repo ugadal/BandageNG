@@ -32,8 +32,8 @@ class MyProgressDialog : public QDialog
 
 public:
     //CREATORS
-    explicit MyProgressDialog(QWidget * parent, QString message, bool showCancelButton,
-                              QString cancelButtonText = "", QString cancelMessage = "", QString cancelInfoText = "");
+    explicit MyProgressDialog(QWidget * parent, const QString& message, bool showCancelButton,
+                              const QString& cancelButtonText = "", QString cancelMessage = "", const QString& cancelInfoText = "");
     ~MyProgressDialog();
 
     //ACCESSORS

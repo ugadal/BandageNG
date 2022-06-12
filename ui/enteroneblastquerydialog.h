@@ -31,8 +31,8 @@ class EnterOneBlastQueryDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit EnterOneBlastQueryDialog(QWidget *parent = 0);
-    ~EnterOneBlastQueryDialog();
+    explicit EnterOneBlastQueryDialog(QWidget *parent = nullptr);
+    ~EnterOneBlastQueryDialog() override;
 
     QString getName();
     QString getSequence();

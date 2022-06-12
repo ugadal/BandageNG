@@ -18,15 +18,16 @@
 
 #include "graphicsitemedge.h"
 #include "debruijnedge.h"
+#include "debruijnnode.h"
+#include "ogdfnode.h"
+#include "graphicsitemnode.h"
+
+#include "program/globals.h"
+
 #include <QPainterPathStroker>
 #include <QPainter>
 #include <QPen>
-#include "program/globals.h"
-#include "program/settings.h"
-#include "debruijnnode.h"
-#include "ogdfnode.h"
 #include <QLineF>
-#include "graphicsitemnode.h"
 
 GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * parent) :
     QGraphicsPathItem(parent), m_deBruijnEdge(deBruijnEdge)
@@ -95,9 +96,9 @@ void GraphicsItemEdge::calculateAndSetPath()
     if (startingNode == endingNode)
     {
         GraphicsItemNode * graphicsItemNode = startingNode->getGraphicsItemNode();
-        if (graphicsItemNode == 0)
+        if (graphicsItemNode == nullptr)
             graphicsItemNode = startingNode->getReverseComplement()->getGraphicsItemNode();
-        if (graphicsItemNode != 0 && graphicsItemNode->m_linePoints.size() == 2)
+        if (graphicsItemNode != nullptr && graphicsItemNode->m_linePoints.size() == 2)
         {
             makeSpecialPathConnectingNodeToSelf();
             return;

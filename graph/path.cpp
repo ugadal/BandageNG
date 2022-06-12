@@ -19,35 +19,33 @@
 #include "path.h"
 #include "debruijnnode.h"
 #include "debruijnedge.h"
-#include "blast/blasthit.h"
-#include "blast/blastquery.h"
-#include <QRegularExpression>
 #include "assemblygraph.h"
 #include "sequenceutils.hpp"
+
+#include <QRegularExpression>
 #include <QStringList>
 #include <QApplication>
 #include <limits>
-
-
+#include <utility>
 
 //These will try to produce a path using the given nodes.
 //They will only succeed if the nodes produce one and only one path.
 //If they are disconnected, branching or ambiguous, they will fail
-//and only contruct an empty Path.
+//and only construct an empty Path.
 Path Path::makeFromUnorderedNodes(QList<DeBruijnNode *> nodes,
                                   bool strandSpecific)
 {
     Path path;
-    path.buildUnambiguousPathFromNodes(nodes, strandSpecific);
+    path.buildUnambiguousPathFromNodes(std::move(nodes), strandSpecific);
     return path;
 }
 
-Path Path::makeFromUnorderedNodes(std::vector<DeBruijnNode *> nodes,
+Path Path::makeFromUnorderedNodes(const std::vector<DeBruijnNode *>& nodes,
                                   bool strandSpecific)
 {
     QList<DeBruijnNode *> nodesList;
-    for (size_t i = 0; i < nodes.size(); ++i)
-        nodesList.push_back(nodes[i]);
+    for (auto & node : nodes)
+        nodesList.push_back(node);
 
     Path path;
     path.buildUnambiguousPathFromNodes(nodesList, strandSpecific);
@@ -65,7 +63,7 @@ Path Path::makeFromOrderedNodes(QList<DeBruijnNode *> nodes, bool circular)
 {
     Path path;
 
-    path.m_nodes = nodes;
+    path.m_nodes = std::move(nodes);
 
     int targetNumberOfEdges = path.m_nodes.size() - 1;
     if (circular)
@@ -113,12 +111,12 @@ Path Path::makeFromOrderedNodes(QList<DeBruijnNode *> nodes, bool circular)
 
 
 
-Path Path::makeFromString(QString pathString, bool circular,
+Path Path::makeFromString(const QString& pathString, bool circular,
                           QString * pathStringFailure)
 {
     Path path;
 
-    QRegularExpression re("^(?:\\(([0-9]+)\\) ?)*((?:[^,]+[-\\+], ?)*[^,]+[-\\+])(?: ?\\(([0-9]+)\\))*$");
+    QRegularExpression re(R"(^(?:\(([0-9]+)\) ?)*((?:[^,]+[-\+], ?)*[^,]+[-\+])(?: ?\(([0-9]+)\))*$)");
     QRegularExpressionMatch match = re.match(pathString);
 
     //If the string failed to match the regex, return an empty path.
@@ -150,9 +148,9 @@ Path Path::makeFromString(QString pathString, bool circular,
     //Find which node names are and are not actually in the graph. 
     QList<DeBruijnNode *> nodesInGraph;
     QStringList nodesNotInGraph;
-    for (int i = 0; i < nodeNameList.size(); ++i)
+    for (auto & i : nodeNameList)
     {
-        QString nodeName = nodeNameList[i].simplified();
+        QString nodeName = i.simplified();
         if (g_assemblyGraph->m_deBruijnGraphNodes.count(nodeName.toStdString()))
             nodesInGraph.push_back(g_assemblyGraph->m_deBruijnGraphNodes[nodeName.toStdString()]);
         else
@@ -160,7 +158,7 @@ Path Path::makeFromString(QString pathString, bool circular,
     }
 
     //If the path contains nodes not in the graph, we fail.
-    if (nodesNotInGraph.size() > 0)
+    if (!nodesNotInGraph.empty())
     {
         *pathStringFailure = "the following nodes are not in the graph: ";
         for (int i = 0; i < nodesNotInGraph.size(); ++i)
@@ -198,7 +196,7 @@ Path Path::makeFromString(QString pathString, bool circular,
         if (startPos < 1 || startPos > firstNode->getLength())
         {
             *pathStringFailure = "starting node position not valid";
-            return Path();
+            return {};
         }
 
         path.m_startLocation = GraphLocation(firstNode, startPos);
@@ -213,7 +211,7 @@ Path Path::makeFromString(QString pathString, bool circular,
         if (endPos < 1 || endPos > lastNode->getLength())
         {
             *pathStringFailure = "ending node position not valid";
-            return Path();
+            return {};
         }
 
         path.m_endLocation = GraphLocation(lastNode, endPos);
@@ -235,7 +233,7 @@ void Path::buildUnambiguousPathFromNodes(QList<DeBruijnNode *> nodes,
     //Loop through the nodes, trying to add them to the Path.  If a node can't
     //be added, then we fail and make an empty Path.  If one can be added, we
     //quit the loop and try again with the remaining nodes.
-    while (nodes.size() > 0)
+    while (!nodes.empty())
     {
         bool addSuccess = false;
         for (int i = 0; i < nodes.size(); ++i)
@@ -293,7 +291,7 @@ bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircula
             //If there is an edge connecting the node to itself, then add that
             //too to make a circular path.
             DeBruijnEdge * selfLoopingEdge = newNode->getSelfLoopingEdge();
-            if (selfLoopingEdge != 0)
+            if (selfLoopingEdge != nullptr)
                 m_edges.push_back(selfLoopingEdge);
         }
 
@@ -323,8 +321,8 @@ bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircula
 
     //If not strand-specific, then we also check to see if the reverse
     //complement of the new node can be added.
-    DeBruijnEdge * revCompEdgeIntoFirst = 0;
-    DeBruijnEdge * revCompEdgeAwayFromLast = 0;
+    DeBruijnEdge * revCompEdgeIntoFirst = nullptr;
+    DeBruijnEdge * revCompEdgeAwayFromLast = nullptr;
     if (!strandSpecific)
     {
         revCompEdgeIntoFirst = firstNode->doesNodeLeadIn(newNode->getReverseComplement());
@@ -336,12 +334,12 @@ bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircula
     //    indicates the node extends a linear path.
     // 2) there is both an edge away from the last and an edge into the first.
     //    This indicates that the node completes a circular Path.
-    if (edgeIntoFirst == 0 && edgeAwayFromLast == 0 &&
-            revCompEdgeIntoFirst == 0 && revCompEdgeAwayFromLast == 0)
+    if (edgeIntoFirst == nullptr && edgeAwayFromLast == nullptr &&
+            revCompEdgeIntoFirst == nullptr && revCompEdgeAwayFromLast == nullptr)
         return false;
 
-    if (edgeIntoFirst != 0 && edgeAwayFromLast == 0 &&
-            revCompEdgeIntoFirst == 0 && revCompEdgeAwayFromLast == 0)
+    if (edgeIntoFirst != nullptr && edgeAwayFromLast == nullptr &&
+            revCompEdgeIntoFirst == nullptr && revCompEdgeAwayFromLast == nullptr)
     {
         m_nodes.push_front(newNode);
         m_startLocation = GraphLocation::startOfNode(newNode);
@@ -349,8 +347,8 @@ bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircula
         return true;
     }
 
-    if (edgeIntoFirst == 0 && edgeAwayFromLast != 0 &&
-            revCompEdgeIntoFirst == 0 && revCompEdgeAwayFromLast == 0)
+    if (edgeIntoFirst == nullptr && edgeAwayFromLast != nullptr &&
+            revCompEdgeIntoFirst == nullptr && revCompEdgeAwayFromLast == nullptr)
     {
         m_nodes.push_back(newNode);
         m_endLocation = GraphLocation::endOfNode(newNode);
@@ -358,8 +356,8 @@ bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircula
         return true;
     }
 
-    if (edgeIntoFirst == 0 && edgeAwayFromLast == 0 &&
-            revCompEdgeIntoFirst != 0 && revCompEdgeAwayFromLast == 0)
+    if (edgeIntoFirst == nullptr && edgeAwayFromLast == nullptr &&
+            revCompEdgeIntoFirst != nullptr && revCompEdgeAwayFromLast == nullptr)
     {
         newNode = newNode->getReverseComplement();
         m_nodes.push_front(newNode);
@@ -368,8 +366,8 @@ bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircula
         return true;
     }
 
-    if (edgeIntoFirst == 0 && edgeAwayFromLast == 0 &&
-            revCompEdgeIntoFirst == 0 && revCompEdgeAwayFromLast != 0)
+    if (edgeIntoFirst == nullptr && edgeAwayFromLast == nullptr &&
+            revCompEdgeIntoFirst == nullptr && revCompEdgeAwayFromLast != nullptr)
     {
         newNode = newNode->getReverseComplement();
         m_nodes.push_back(newNode);
@@ -378,8 +376,8 @@ bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircula
         return true;
     }
 
-    if (edgeIntoFirst != 0 && edgeAwayFromLast != 0 &&
-            revCompEdgeIntoFirst == 0 && revCompEdgeAwayFromLast == 0)
+    if (edgeIntoFirst != nullptr && edgeAwayFromLast != nullptr &&
+            revCompEdgeIntoFirst == nullptr && revCompEdgeAwayFromLast == nullptr)
     {
         m_edges.push_back(edgeAwayFromLast);
         m_nodes.push_back(newNode);
@@ -387,8 +385,8 @@ bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircula
         return true;
     }
 
-    if (edgeIntoFirst == 0 && edgeAwayFromLast == 0 &&
-            revCompEdgeIntoFirst != 0 && revCompEdgeAwayFromLast != 0)
+    if (edgeIntoFirst == nullptr && edgeAwayFromLast == nullptr &&
+            revCompEdgeIntoFirst != nullptr && revCompEdgeAwayFromLast != nullptr)
     {
         m_edges.push_back(revCompEdgeAwayFromLast);
         m_nodes.push_back(newNode->getReverseComplement());
@@ -410,12 +408,10 @@ bool Path::checkForOtherEdges()
     //First compile a list of all edges which connect any
     //node in the Path to any other node in the Path.
     QList<DeBruijnEdge *> allConnectingEdges;
-    for (int i = 0; i < m_nodes.size(); ++i)
+    for (auto startingNode : m_nodes)
     {
-        DeBruijnNode * startingNode = m_nodes[i];
-        for (int j = 0; j < m_nodes.size(); ++j)
+        for (auto endingNode : m_nodes)
         {
-            DeBruijnNode * endingNode = m_nodes[j];
             for (auto *edge : startingNode->edges()) {
                 if (edge->getStartingNode() == startingNode &&
                     edge->getEndingNode() == endingNode)
@@ -481,7 +477,7 @@ QByteArray Path::getPathSequence() const
 
 //This function will trim bases from the start of a sequence (in the case of
 //positive overlap) or add Ns to the start (in the case of negative overlap).
-QByteArray Path::modifySequenceUsingOverlap(QByteArray sequence, int overlap) const
+QByteArray Path::modifySequenceUsingOverlap(QByteArray sequence, int overlap)
 {
     if (overlap > 0)
     {
@@ -499,11 +495,11 @@ QByteArray Path::modifySequenceUsingOverlap(QByteArray sequence, int overlap) co
 int Path::getLength() const
 {
     int length = 0;
-    for (int i = 0; i < m_nodes.size(); ++i)
-        length += m_nodes[i]->getLength();
+    for (auto m_node : m_nodes)
+        length += m_node->getLength();
 
-    for (int i = 0; i < m_edges.size(); ++i)
-        length -= m_edges[i]->getOverlap();
+    for (auto m_edge : m_edges)
+        length -= m_edge->getOverlap();
 
     length -= m_startLocation.getPosition() - 1;
 
@@ -525,9 +521,9 @@ QString Path::getFasta() const
 
     QString pathSequence = getPathSequence();
     int charactersOnLine = 0;
-    for (int i = 0; i < pathSequence.length(); ++i)
+    for (auto i : pathSequence)
     {
-        fasta += pathSequence.at(i);
+        fasta += i;
         ++charactersOnLine;
         if (charactersOnLine >= 70)
         {
@@ -702,8 +698,8 @@ QList<Path> Path::getAllPossiblePaths(GraphLocation startLocation,
 
         //Make new unfinished paths by extending each of the paths.
         QList<Path> newUnfinishedPaths;
-        for (int j = 0; j < unfinishedPaths.size(); ++j)
-            newUnfinishedPaths.append(unfinishedPaths[j].extendPathInAllPossibleWays());
+        for (auto & unfinishedPath : unfinishedPaths)
+            newUnfinishedPaths.append(unfinishedPath.extendPathInAllPossibleWays());
         unfinishedPaths = newUnfinishedPaths;
     }
 
@@ -728,9 +724,8 @@ QList<Path> Path::extendPathInAllPossibleWays() const
 
     DeBruijnNode * lastNode = m_nodes.back();
     std::vector<DeBruijnEdge *> nextEdges = lastNode->getLeavingEdges();
-    for (size_t i = 0; i < nextEdges.size(); ++i)
+    for (auto nextEdge : nextEdges)
     {
-        DeBruijnEdge * nextEdge = nextEdges[i];
         DeBruijnNode * nextNode = nextEdge->getEndingNode();
 
         Path newPath(*this);
@@ -745,23 +740,6 @@ QList<Path> Path::extendPathInAllPossibleWays() const
 }
 
 
-
-double Path::getMeanDepth() const
-{
-    long double depthTimesLengthSum = 0.0;
-    int nodeLengthTotal = 0;
-    for (int i = 0; i < m_nodes.size(); ++i)
-    {
-        DeBruijnNode * node = m_nodes[i];
-        depthTimesLengthSum += node->getDepth() * node->getLength();
-        nodeLengthTotal += node->getLength();
-    }
-
-    return depthTimesLengthSum / nodeLengthTotal;
-}
-
-
-
 bool Path::operator==(Path const &other) const
 {
     return (m_nodes == other.m_nodes &&
@@ -770,7 +748,7 @@ bool Path::operator==(Path const &other) const
 }
 
 
-bool Path::haveSameNodes(Path other) const
+bool Path::haveSameNodes(const Path& other) const
 {
     return (m_nodes == other.m_nodes);
 }
@@ -781,7 +759,7 @@ bool Path::haveSameNodes(Path other) const
 //entirely contained within) the other given path.
 //It ignores start/end type and position, looking only at the nodes.
 //If the two paths have the same nodes, it will return false.
-bool Path::hasNodeSubset(Path other) const
+bool Path::hasNodeSubset(const Path& other) const
 {
     //To contain this path, the other path should be have a larger number of
     //nodes.

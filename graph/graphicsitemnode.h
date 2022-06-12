@@ -87,7 +87,7 @@ public:
     QRectF boundingRect() const override;
     void shiftPointsLeft();
     void shiftPointsRight();
-    void fixEdgePaths(std::vector<GraphicsItemNode *> * nodes = 0) const;
+    void fixEdgePaths(std::vector<GraphicsItemNode *> * nodes = nullptr) const;
     double indexToFraction(int64_t pos) const;
 
 private:

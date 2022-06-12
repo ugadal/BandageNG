@@ -37,11 +37,11 @@ public:
     Path() {}
     static Path makeFromUnorderedNodes(QList<DeBruijnNode *> nodes,
                                        bool strandSpecific);
-    static Path makeFromUnorderedNodes(std::vector<DeBruijnNode *> nodes,
+    static Path makeFromUnorderedNodes(const std::vector<DeBruijnNode *>& nodes,
                                        bool strandSpecific);
     static Path makeFromOrderedNodes(QList<DeBruijnNode *> nodes,
                                      bool circular);
-    static Path makeFromString(QString pathString, bool circular,
+    static Path makeFromString(const QString& pathString, bool circular,
                                QString * pathStringFailure);
 
     //ACCESSORS
@@ -49,8 +49,8 @@ public:
     QList<DeBruijnEdge *> getEdges() const {return m_edges;}
     bool isEmpty() const {return m_nodes.empty();}
     bool isCircular() const;
-    bool haveSameNodes(Path other) const;
-    bool hasNodeSubset(Path other) const;
+    bool haveSameNodes(const Path& other) const;
+    bool hasNodeSubset(const Path& other) const;
     QByteArray getPathSequence() const;
     QString getFasta() const;
     QString getString(bool spaces) const;
@@ -58,7 +58,7 @@ public:
     QList<Path> extendPathInAllPossibleWays() const;
     bool canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const;
     bool canNodeFitAtStart(DeBruijnNode * node, Path * extendedPath) const;
-    double getMeanDepth() const;
+
     bool containsNode(DeBruijnNode * node) const;
     bool containsEntireNode(DeBruijnNode * node) const;
     bool isInMiddleOfPath(DeBruijnNode * node) const;
@@ -90,7 +90,7 @@ private:
 
     void buildUnambiguousPathFromNodes(QList<DeBruijnNode *> nodes,
                                        bool strandSpecific);
-    QByteArray modifySequenceUsingOverlap(QByteArray sequence, int overlap) const;
+    static QByteArray modifySequenceUsingOverlap(QByteArray sequence, int overlap) ;
     bool checkForOtherEdges();
 };
 

@@ -19,12 +19,10 @@
 #include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
-#include "graph/graphlocation.h"
-#include "graph/path.h"
+
 
 
 #include <QApplication>
-#include <QStringList>
 #include <QString>
 #include <QCommandLineParser>
 #include <QTextStream>
@@ -84,7 +82,7 @@ int main(int argc, char *argv[])
     QStringList arguments = getArgumentList(argc, argv);
 
     QString first;
-    if (arguments.size() > 0)
+    if (!arguments.empty())
         first = arguments[0];
 
     //When launched from the app bundle, OS X can pass a process serial number
@@ -93,7 +91,7 @@ int main(int argc, char *argv[])
     {
         arguments.pop_front();
         first = "";
-        if (arguments.size() > 0)
+        if (!arguments.empty())
             first = arguments[0];
     }
 
@@ -133,7 +131,7 @@ int main(int argc, char *argv[])
     QTextStream out(stdout);
     QTextStream err(stderr);
     //If the first argument was a recognised command, move to that command's function.
-    if (arguments.size() > 0)
+    if (!arguments.empty())
     {
         if (checkForVersion(arguments))
         {

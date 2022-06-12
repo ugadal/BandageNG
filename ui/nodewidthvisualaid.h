@@ -25,16 +25,16 @@ class NodeWidthVisualAid : public QWidget
 {
     Q_OBJECT
 public:
-    explicit NodeWidthVisualAid(QWidget *parent = 0);
-    ~NodeWidthVisualAid();
+    explicit NodeWidthVisualAid(QWidget *parent = nullptr);
+    ~NodeWidthVisualAid() override;
 
-    int heightForWidth(int w ) const {return w;}
+    int heightForWidth(int w ) const override {return w;}
 
     double m_depthPower;
     double m_depthEffectOnWidth;
 
 protected:
-    void paintEvent(QPaintEvent *);
+    void paintEvent(QPaintEvent *) override;
 
 signals:
 

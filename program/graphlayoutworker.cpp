@@ -17,9 +17,10 @@
 
 
 #include "graphlayoutworker.h"
-#include <time.h>
 #include "ogdf/basic/geometry.h"
+
 #include <QLineF>
+#include <ctime>
 
 GraphLayoutWorker::GraphLayoutWorker(ogdf::FMMMLayout * fmmm, ogdf::GraphAttributes * graphAttributes,
                                      ogdf::EdgeArray<double> * edgeArray, int graphLayoutQuality, bool linearLayout,

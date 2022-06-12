@@ -27,7 +27,7 @@ TableWidgetItemShown::TableWidgetItemShown(bool shown) :
 
 bool TableWidgetItemShown::operator<(QTableWidgetItem const &other) const
 {
-    TableWidgetItemShown const *item = dynamic_cast<TableWidgetItemShown const*>(&other);
+    auto const *item = dynamic_cast<TableWidgetItemShown const*>(&other);
     if (item)
         return !m_shown && item->m_shown;
     else

@@ -26,8 +26,8 @@ class BlastQuery;
 class TableWidgetItemName : public QTableWidgetItem
 {
 public:
-    TableWidgetItemName(BlastQuery * query);
-    BlastQuery * getQuery() const {return m_query;}
+    explicit TableWidgetItemName(BlastQuery * query);
+    [[nodiscard]] BlastQuery * getQuery() const {return m_query;}
 
 private:
     BlastQuery * m_query;

@@ -32,8 +32,8 @@ class PathSpecifyDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit PathSpecifyDialog(QWidget *parent = 0);
-    ~PathSpecifyDialog();
+    explicit PathSpecifyDialog(QWidget *parent = nullptr);
+    ~PathSpecifyDialog() override;
 
 public slots:
     void addNodeName(DeBruijnNode * node);

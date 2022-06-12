@@ -101,15 +101,15 @@ public:
     SequencesLoadedFromFasta m_sequencesLoadedFromFasta;
 
     void cleanUp();
-    void createDeBruijnEdge(QString node1Name, QString node2Name,
+    void createDeBruijnEdge(const QString& node1Name, const QString& node2Name,
                             int overlap = 0,
                             EdgeOverlapType overlapType = UNKNOWN_OVERLAP);
     void clearOgdfGraphAndResetNodes();
-    static QByteArray getReverseComplement(QByteArray forwardSequence);
+    static QByteArray getReverseComplement(const QByteArray& forwardSequence);
     void resetEdges();
     double getMeanDepth(bool drawnNodesOnly = false);
-    double getMeanDepth(std::vector<DeBruijnNode *> nodes);
-    double getMeanDepth(QList<DeBruijnNode *> nodes);
+    static double getMeanDepth(std::vector<DeBruijnNode *> nodes);
+    static double getMeanDepth(const QList<DeBruijnNode *>& nodes);
     void resetNodeContiguityStatus();
     void resetAllNodeColours();
     void clearAllBlastHitPointers();
@@ -118,36 +118,36 @@ public:
     void recalculateAllDepthsRelativeToDrawnMean();
     void recalculateAllNodeWidths();
 
-    bool loadGraphFromFile(QString filename);
-    void buildOgdfGraphFromNodesAndEdges(std::vector<DeBruijnNode *> startingNodes,
+    bool loadGraphFromFile(const QString& filename);
+    void buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNode *>& startingNodes,
                                          int nodeDistance);
     void addGraphicsItemsToScene(MyGraphicsScene * scene);
 
-    QStringList splitCsv(QString line, QString sep=",");
-    bool loadCSV(QString filename, QStringList * columns, QString * errormsg, bool * coloursLoaded);
+    static QStringList splitCsv(const QString& line, const QString& sep=",");
+    bool loadCSV(const QString& filename, QStringList * columns, QString * errormsg, bool * coloursLoaded);
     std::vector<DeBruijnNode *> getStartingNodes(QString * errorTitle,
                                                  QString * errorMessage,
                                                  bool doubleMode,
-                                                 QString nodesList,
-                                                 QString blastQueryName,
-                                                 QString pathName);
+                                                 const QString& nodesList,
+                                                 const QString& blastQueryName,
+                                                 const QString& pathName);
 
-    bool checkIfStringHasNodes(QString nodesString);
-    QString generateNodesNotFoundErrorMessage(std::vector<QString> nodesNotInGraph,
+    static bool checkIfStringHasNodes(QString nodesString);
+    static QString generateNodesNotFoundErrorMessage(std::vector<QString> nodesNotInGraph,
                                               bool exact);
     std::vector<DeBruijnNode *> getNodesFromString(QString nodeNamesString,
                                                    bool exactMatch,
                                                    std::vector<QString> * nodesNotInGraph = 0);
-    void layoutGraph();
+    void layoutGraph() const;
 
     void setAllEdgesExactOverlap(int overlap);
     void autoDetermineAllEdgesExactOverlap();
 
-    static void readFastaOrFastqFile(QString filename, std::vector<QString> * names,
+    static void readFastaOrFastqFile(const QString& filename, std::vector<QString> * names,
                                      std::vector<QByteArray> * sequences);
-    static void readFastaFile(QString filename, std::vector<QString> * names,
+    static void readFastaFile(const QString& filename, std::vector<QString> * names,
                               std::vector<QByteArray> * sequences);
-    static void readFastqFile(QString filename, std::vector<QString> * names,
+    static void readFastqFile(const QString& filename, std::vector<QString> * names,
                               std::vector<QByteArray> * sequences);
 
     int getDrawnNodeCount() const;
@@ -156,30 +156,30 @@ public:
     void duplicateNodePair(DeBruijnNode * node, MyGraphicsScene * scene);
     bool mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * scene,
                     bool recalulateDepth);
-    void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
+    static void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
                                  bool reverseComplement,
                                  MyGraphicsScene * scene);
-    void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
+    static void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
                                  bool reverseComplement,
                                  MyGraphicsScene * scene);
     int mergeAllPossible(MyGraphicsScene * scene = 0,
                          MyProgressDialog * progressDialog = 0);
 
-    void saveEntireGraphToFasta(QString filename);
-    void saveEntireGraphToFastaOnlyPositiveNodes(QString filename);
-    bool saveEntireGraphToGfa(QString filename);
-    bool saveVisibleGraphToGfa(QString filename);
-    void changeNodeName(QString oldName, QString newName);
-    NodeNameStatus checkNodeNameValidity(QString nodeName);
+    void saveEntireGraphToFasta(const QString& filename);
+    void saveEntireGraphToFastaOnlyPositiveNodes(const QString& filename);
+    bool saveEntireGraphToGfa(const QString& filename);
+    bool saveVisibleGraphToGfa(const QString& filename);
+    void changeNodeName(const QString& oldName, const QString& newName);
+    NodeNameStatus checkNodeNameValidity(const QString& nodeName) const;
     void changeNodeDepth(const std::vector<DeBruijnNode *> &nodes,
                          double newDepth);
 
-    static QByteArray addNewlinesToSequence(QByteArray sequence, int interval = 70);
+    static QByteArray addNewlinesToSequence(const QByteArray& sequence, int interval = 70);
     int getDeadEndCount() const;
     void getNodeStats(int * n50, int * shortestNode, int * firstQuartile, int * median, int * thirdQuartile, int * longestNode) const;
     void getGraphComponentCountAndLargestComponentSize(int * componentCount, int * largestComponentLength) const;
     double getMedianDepthByBase() const;
-    long long getEstimatedSequenceLength() const;
+
     long long getEstimatedSequenceLength(double medianDepthByBase) const;
     long long getTotalLengthMinusEdgeOverlaps() const;
     QPair<int, int> getOverlapRange() const;
@@ -203,38 +203,37 @@ public:
     QColor getCustomColourForDisplay(const DeBruijnNode *node) const;
     QStringList getCustomLabelForDisplay(const DeBruijnNode *node) const;
 
-    QString getGfaSegmentLine(const DeBruijnNode *node, QString depthTag) const;
+    QString getGfaSegmentLine(const DeBruijnNode *node, const QString& depthTag) const;
 
     QString getUniqueNodeName(QString baseName) const;
 private:
     template<typename T> double getValueUsingFractionalIndex(std::vector<T> * v, double index) const;
     QString convertNormalNumberStringToBandageNodeName(QString number);
-    QStringList removeNullStringsFromList(QStringList in);
-    std::vector<DeBruijnNode *> getNodesFromListExact(QStringList nodesList, std::vector<QString> * nodesNotInGraph);
-    std::vector<DeBruijnNode *> getNodesFromListPartial(QStringList nodesList, std::vector<QString> * nodesNotInGraph);
-    std::vector<DeBruijnNode *> getNodesFromBlastHits(QString queryName);
+    static QStringList removeNullStringsFromList(const QStringList& in);
+    std::vector<DeBruijnNode *> getNodesFromListExact(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph);
+    std::vector<DeBruijnNode *> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph);
+    static std::vector<DeBruijnNode *> getNodesFromBlastHits(const QString& queryName);
     std::vector<DeBruijnNode *> getNodesInDepthRange(double min, double max);
     std::vector<int> makeOverlapCountVector();
-    QString getOppositeNodeName(QString nodeName) const;
+    static QString getOppositeNodeName(QString nodeName) ;
     void clearAllCsvData();
-    QString getNodeNameFromString(QString string);
-    QString getNewNodeName(QString oldNodeName);
-    void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode, MyGraphicsScene * scene);
-    bool canAddNodeToStartOfMergeList(QList<DeBruijnNode *> * mergeList,
+    QString getNodeNameFromString(QString string) const;
+    QString getNewNodeName(QString oldNodeName) const;
+    static void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode, MyGraphicsScene * scene);
+    static bool canAddNodeToStartOfMergeList(QList<DeBruijnNode *> * mergeList,
                                       DeBruijnNode * potentialNode);
-    bool canAddNodeToEndOfMergeList(QList<DeBruijnNode *> * mergeList,
+    static bool canAddNodeToEndOfMergeList(QList<DeBruijnNode *> * mergeList,
                                     DeBruijnNode * potentialNode);
-    void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
+    static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
                             QList<DeBruijnNode *> * revCompOriginalNodes,
                             DeBruijnNode * newNode, MyGraphicsScene * scene);
-    bool mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
+    static bool mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
                              DeBruijnNode * newNode, MyGraphicsScene * scene);
-    void removeAllGraphicsEdgesFromNode(DeBruijnNode * node,
+    static void removeAllGraphicsEdgesFromNode(DeBruijnNode * node,
                                         bool reverseComplement,
                                         MyGraphicsScene * scene);
     QString cleanNodeName(QString name);
-    double findDepthAtIndex(QList<DeBruijnNode *> * nodeList, long long targetIndex) const;
-    bool allNodesStartWith(QString start) const;
+    static double findDepthAtIndex(QList<DeBruijnNode *> * nodeList, long long targetIndex) ;
 
 signals:
     void setMergeTotalCount(int totalCount);

@@ -19,14 +19,14 @@
 #include "pathspecifydialog.h"
 #include "ui_pathspecifydialog.h"
 #include "program/globals.h"
-#include "program/settings.h"
+#include "mygraphicsview.h"
+#include "program/memory.h"
 #include "graph/assemblygraph.h"
+
 #include <QClipboard>
 #include <QTextStream>
 #include <QFileDialog>
 #include <QFileInfo>
-#include "mygraphicsview.h"
-#include "program/memory.h"
 
 PathSpecifyDialog::PathSpecifyDialog(QWidget *parent) :
     QDialog(parent),
@@ -74,7 +74,7 @@ void PathSpecifyDialog::checkPathValidity()
     g_memory->userSpecifiedPath = Path();
 
     //If there is no graph loaded, then no path can be valid.
-    if (g_assemblyGraph->m_deBruijnGraphNodes.size() == 0)
+    if (g_assemblyGraph->m_deBruijnGraphNodes.empty())
     {
         ui->validPathLabel->setText("Invalid path: no graph is currently loaded");
         setPathValidityUiElements(false);

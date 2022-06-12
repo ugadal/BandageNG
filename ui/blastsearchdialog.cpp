@@ -21,7 +21,6 @@
 
 #include <QFileDialog>
 #include <QFile>
-#include <QTextStream>
 #include <QString>
 #include "blast/blasthit.h"
 #include "blast/blastquery.h"
@@ -36,7 +35,6 @@
 #include "graph/assemblygraph.h"
 #include "blast/blastsearch.h"
 #include <QProcessEnvironment>
-#include <QMessageBox>
 #include <QThread>
 #include "blast/buildblastdatabaseworker.h"
 #include "blast/runblastsearchworker.h"
@@ -53,11 +51,11 @@
 #include "blasthitfiltersdialog.h"
 #include "graph/annotationsmanager.hpp"
 
-BlastSearchDialog::BlastSearchDialog(QWidget *parent, QString autoQuery) :
+BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) :
     QDialog(parent),
     ui(new Ui::BlastSearchDialog),
     m_makeblastdbCommand("makeblastdb"), m_blastnCommand("blastn"),
-    m_tblastnCommand("tblastn"), m_queryPathsDialog(0)
+    m_tblastnCommand("tblastn"), m_queryPathsDialog(nullptr)
 {
     ui->setupUi(this);
 
@@ -109,14 +107,14 @@ BlastSearchDialog::BlastSearchDialog(QWidget *parent, QString autoQuery) :
     }
 
     //If queries already exist, display them and move to step 3.
-    if (g_blastSearch->m_blastQueries.m_queries.size() > 0)
+    if (!g_blastSearch->m_blastQueries.m_queries.empty())
     {
         fillQueriesTable();
         setUiStep(READY_FOR_BLAST_SEARCH);
     }
 
     //If results already exist, display them and move to step 4.
-    if (g_blastSearch->m_allHits.size() > 0)
+    if (!g_blastSearch->m_allHits.empty())
     {
         fillHitsTable();
         setUiStep(BLAST_SEARCH_COMPLETE);
@@ -205,14 +203,14 @@ void BlastSearchDialog::makeQueryRow(int row)
 
     BlastQuery * query = g_blastSearch->m_blastQueries.m_queries[row];
 
-    TableWidgetItemName * name = new TableWidgetItemName(query);
+    auto * name = new TableWidgetItemName(query);
     name->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
 
-    QTableWidgetItem * type = new QTableWidgetItem(query->getTypeString());
+    auto * type = new QTableWidgetItem(query->getTypeString());
     type->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
     int queryLength = query->getLength();
-    TableWidgetItemInt * length = new TableWidgetItemInt(formatIntForDisplay(queryLength), queryLength);
+    auto * length = new TableWidgetItemInt(formatIntForDisplay(queryLength), queryLength);
     length->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
     //If the search hasn't yet been run, some of the columns will just have
@@ -221,7 +219,7 @@ void BlastSearchDialog::makeQueryRow(int row)
     TableWidgetItemDouble * percent;
     QTableWidgetItem * paths;
 
-    QueryPathsPushButton * pathsButton = 0;
+    QueryPathsPushButton * pathsButton = nullptr;
     if (query->wasSearchedFor())
     {
         int hitCount = query->hitCount();
@@ -248,15 +246,15 @@ void BlastSearchDialog::makeQueryRow(int row)
     percent->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
     paths->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-    QTableWidgetItem * colour = new QTableWidgetItem(query->getColour().name());
-    ColourButton * colourButton = new ColourButton();
+    auto * colour = new QTableWidgetItem(query->getColour().name());
+    auto * colourButton = new ColourButton();
     colourButton->setColour(query->getColour());
     connect(colourButton, SIGNAL(colourChosen(QColor)), query, SLOT(setColour(QColor)));
     connect(colourButton, SIGNAL(colourChosen(QColor)), this, SLOT(fillHitsTable()));
 
-    QWidget * showCheckBoxWidget = new QWidget;
-    QCheckBox * showCheckBox = new QCheckBox();
-    QHBoxLayout * layout = new QHBoxLayout(showCheckBoxWidget);
+    auto * showCheckBoxWidget = new QWidget;
+    auto * showCheckBox = new QCheckBox();
+    auto * layout = new QHBoxLayout(showCheckBoxWidget);
     layout->addWidget(showCheckBox);
     layout->setAlignment(Qt::AlignCenter);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -278,7 +276,7 @@ void BlastSearchDialog::makeQueryRow(int row)
     ui->blastQueriesTableWidget->setItem(row, 5, hits);
     ui->blastQueriesTableWidget->setItem(row, 6, percent);
     ui->blastQueriesTableWidget->setItem(row, 7, paths);
-    if (pathsButton != 0)
+    if (pathsButton != nullptr)
         ui->blastQueriesTableWidget->setCellWidget(row, 7, pathsButton);
 }
 
@@ -382,16 +380,16 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread)
 
     QApplication::processEvents();
 
-    MyProgressDialog * progress = new MyProgressDialog(this, "Building BLAST database...", separateThread, "Cancel build", "Cancelling build...",
-                                                       "Clicking this button will stop the BLAST database from being "
-                                                       "built.");
+    auto * progress = new MyProgressDialog(this, "Building BLAST database...", separateThread, "Cancel build", "Cancelling build...",
+                                           "Clicking this button will stop the BLAST database from being "
+                                           "built.");
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
     if (separateThread)
     {
         m_buildBlastDatabaseThread = new QThread;
-        BuildBlastDatabaseWorker * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(m_makeblastdbCommand);
+        auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(m_makeblastdbCommand);
         buildBlastDatabaseWorker->moveToThread(m_buildBlastDatabaseThread);
 
         connect(progress, SIGNAL(halt()), this, SLOT(buildBlastDatabaseCancelled()));
@@ -416,7 +414,7 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread)
 
 
 
-void BlastSearchDialog::blastDatabaseBuildFinished(QString error)
+void BlastSearchDialog::blastDatabaseBuildFinished(const QString& error)
 {
     if (error != "")
     {
@@ -431,7 +429,7 @@ void BlastSearchDialog::blastDatabaseBuildFinished(QString error)
 void BlastSearchDialog::buildBlastDatabaseCancelled()
 {
     g_blastSearch->m_cancelBuildBlastDatabase = true;
-    if (g_blastSearch->m_makeblastdb != 0)
+    if (g_blastSearch->m_makeblastdb != nullptr)
         g_blastSearch->m_makeblastdb->kill();
 }
 
@@ -439,16 +437,16 @@ void BlastSearchDialog::loadBlastQueriesFromFastaFileButtonClicked()
 {
     QStringList fullFileNames = QFileDialog::getOpenFileNames(this, "Load queries FASTA", g_memory->rememberedPath);
 
-    if (fullFileNames.size() > 0) //User did not hit cancel
+    if (!fullFileNames.empty()) //User did not hit cancel
     {
-        for (int i = 0; i < fullFileNames.size(); ++i)
-            loadBlastQueriesFromFastaFile(fullFileNames.at(i));
+        for (const auto & fullFileName : fullFileNames)
+            loadBlastQueriesFromFastaFile(fullFileName);
     }
 }
 
-void BlastSearchDialog::loadBlastQueriesFromFastaFile(QString fullFileName)
+void BlastSearchDialog::loadBlastQueriesFromFastaFile(const QString& fullFileName)
 {
-    MyProgressDialog * progress = new MyProgressDialog(this, "Loading queries...", false);
+    auto * progress = new MyProgressDialog(this, "Loading queries...", false);
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
@@ -512,14 +510,14 @@ void BlastSearchDialog::clearSelectedQueries()
     QItemSelectionModel * select = ui->blastQueriesTableWidget->selectionModel();
     QModelIndexList selection = select->selectedIndexes();
     QSet<int> rowsWithSelectionSet;
-    for (int i = 0; i < selection.size(); ++i)
-        rowsWithSelectionSet.insert(selection[i].row());
+    for (auto & i : selection)
+        rowsWithSelectionSet.insert(i.row());
     for (QSet<int>::const_iterator i = rowsWithSelectionSet.constBegin(); i != rowsWithSelectionSet.constEnd(); ++i)
     {
         int row = *i;
         QTableWidgetItem * tableWidgetItem = ui->blastQueriesTableWidget->item(row, 2);
-        TableWidgetItemName * queryNameItem = dynamic_cast<TableWidgetItemName *>(tableWidgetItem);
-        if (queryNameItem == 0)
+        auto * queryNameItem = dynamic_cast<TableWidgetItemName *>(tableWidgetItem);
+        if (queryNameItem == nullptr)
             continue;
         BlastQuery * query = queryNameItem->getQuery();
         queriesToRemove.push_back(query);
@@ -563,7 +561,7 @@ void BlastSearchDialog::runBlastSearches(bool separateThread)
 
     clearBlastHits();
 
-    MyProgressDialog * progress = new MyProgressDialog(this, "Running BLAST search...", separateThread, "Cancel search", "Cancelling search...",
+    auto * progress = new MyProgressDialog(this, "Running BLAST search...", separateThread, "Cancel search", "Cancelling search...",
                                                        "Clicking this button will stop the BLAST search.");
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
@@ -571,7 +569,7 @@ void BlastSearchDialog::runBlastSearches(bool separateThread)
     if (separateThread)
     {
         m_blastSearchThread = new QThread;
-        RunBlastSearchWorker * runBlastSearchWorker = new RunBlastSearchWorker(m_blastnCommand, m_tblastnCommand, ui->parametersLineEdit->text().simplified());
+        auto * runBlastSearchWorker = new RunBlastSearchWorker(m_blastnCommand, m_tblastnCommand, ui->parametersLineEdit->text().simplified());
         runBlastSearchWorker->moveToThread(m_blastSearchThread);
 
         connect(progress, SIGNAL(halt()), this, SLOT(runBlastSearchCancelled()));
@@ -586,7 +584,7 @@ void BlastSearchDialog::runBlastSearches(bool separateThread)
     }
     else
     {
-        RunBlastSearchWorker runBlastSearchWorker(m_blastnCommand, m_tblastnCommand, ui->parametersLineEdit->text().simplified());;
+        RunBlastSearchWorker runBlastSearchWorker(m_blastnCommand, m_tblastnCommand, ui->parametersLineEdit->text().simplified());
         runBlastSearchWorker.runBlastSearch();
         progress->close();
         delete progress;
@@ -596,7 +594,7 @@ void BlastSearchDialog::runBlastSearches(bool separateThread)
 
 
 
-void BlastSearchDialog::runBlastSearchFinished(QString error)
+void BlastSearchDialog::runBlastSearchFinished(const QString& error)
 {
     if (error != "")
     {
@@ -617,7 +615,7 @@ void BlastSearchDialog::runBlastSearchFinished(QString error)
 void BlastSearchDialog::runBlastSearchCancelled()
 {
     g_blastSearch->m_cancelRunBlastSearch = true;
-    if (g_blastSearch->m_blast != 0)
+    if (g_blastSearch->m_blast != nullptr)
         g_blastSearch->m_blast->kill();
 }
 
@@ -852,11 +850,6 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
 
 void BlastSearchDialog::setInfoTexts()
 {
-    QString settingsDialogTitle = "settings";
-#ifdef Q_OS_MAC
-    settingsDialogTitle = "preferences";
-#endif
-
     ui->buildBlastDatabaseInfoText->setInfoText("This step runs makeblastdb on the contig sequences, "
                                                 "preparing them for a BLAST search.<br><br>"
                                                 "The database files generated are temporary and will "
@@ -960,13 +953,13 @@ void BlastSearchDialog::queryShownChanged()
     {
         QString queryName = ui->blastQueriesTableWidget->item(i, 2)->text();
         BlastQuery * query = g_blastSearch->m_blastQueries.getQueryFromName(queryName);
-        if (query == 0)
+        if (query == nullptr)
             continue;
         
         QTableWidgetItem * item = ui->blastQueriesTableWidget->item(i, 1);
-        TableWidgetItemShown * shownItem = dynamic_cast<TableWidgetItemShown *>(item);
+        auto * shownItem = dynamic_cast<TableWidgetItemShown *>(item);
 
-        if (shownItem == 0)
+        if (shownItem == nullptr)
             continue;
         shownItem->m_shown = query->isShown();
 
@@ -985,7 +978,7 @@ void BlastSearchDialog::queryShownChanged()
     {
         QString queryName = ui->blastHitsTableWidget->item(i, 1)->text();
         BlastQuery * query = g_blastSearch->m_blastQueries.getQueryFromName(queryName);
-        if (query == 0)
+        if (query == nullptr)
             continue;
 
         QColor colour = shownColour;
@@ -1025,9 +1018,8 @@ void BlastSearchDialog::showPathsDialog(BlastQuery * query)
 
 void BlastSearchDialog::deleteQueryPathsDialog()
 {
-    if (m_queryPathsDialog != 0)
-        delete m_queryPathsDialog;
-    m_queryPathsDialog = 0;
+    delete m_queryPathsDialog;
+    m_queryPathsDialog = nullptr;
 }
 
 void BlastSearchDialog::queryPathSelectionChangedSlot()

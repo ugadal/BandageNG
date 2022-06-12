@@ -63,7 +63,7 @@ class GraphicsViewZoom : public QObject
 {
     Q_OBJECT
 public:
-    GraphicsViewZoom(MyGraphicsView * view);
+    explicit GraphicsViewZoom(MyGraphicsView * view);
     void gentleZoom(double factor, ZoomSource zoomSource);
     void setModifiers(Qt::KeyboardModifiers modifiers);
     void setZoomFactorBase(double value);
@@ -73,7 +73,7 @@ private:
     MyGraphicsView * m_view;
     Qt::KeyboardModifiers m_modifiers;
     QPointF targetScenePos, targetViewportPos;
-    bool eventFilter(QObject * object, QEvent * event);
+    bool eventFilter(QObject * object, QEvent * event) override;
 
 signals:
     void zoomed();

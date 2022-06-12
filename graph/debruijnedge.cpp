@@ -17,16 +17,15 @@
 
 
 #include "debruijnedge.h"
-#include <math.h>
-#include "program/settings.h"
 #include "ogdfnode.h"
-#include <QApplication>
-#include "program/settings.h"
 #include "program/globals.h"
 #include "assemblygraph.h"
 
+#include <cmath>
+#include <QApplication>
+
 DeBruijnEdge::DeBruijnEdge(DeBruijnNode *startingNode, DeBruijnNode *endingNode) :
-    m_startingNode(startingNode), m_endingNode(endingNode), m_graphicsItemEdge(0),
+    m_startingNode(startingNode), m_endingNode(endingNode), m_graphicsItemEdge(nullptr), m_reverseComplement(nullptr),
     m_drawn(false), m_overlapType(UNKNOWN_OVERLAP), m_overlap(0)
 {
 }
@@ -120,7 +119,7 @@ void DeBruijnEdge::addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::EdgeArray<doubl
     //with the node segment (and created conflict with the node/edge length).
     if (m_startingNode == m_endingNode)
     {
-        if (m_startingNode->getNumberOfOgdfGraphEdges(m_startingNode->getDrawnNodeLength()) == 1)
+        if (DeBruijnNode::getNumberOfOgdfGraphEdges(m_startingNode->getDrawnNodeLength()) == 1)
             return;
     }
 
@@ -173,7 +172,7 @@ void DeBruijnEdge::tracePaths(bool forward,
 
     //If there are no next edges, then we are finished with the
     //path search, even though steps remain.
-    if (nextEdges.size() == 0)
+    if (nextEdges.empty())
     {
         allPaths->push_back(pathSoFar);
         return;
@@ -182,10 +181,8 @@ void DeBruijnEdge::tracePaths(bool forward,
     //Call this function on all of the next edges.
     //However, we also need to check to see if we are tracing a loop
     //and stop if that is the case.
-    for (size_t i = 0; i < nextEdges.size(); ++i)
+    for (auto nextEdge : nextEdges)
     {
-        DeBruijnEdge * nextEdge = nextEdges[i];
-
         //Determine the node that this next edge leads to.
         DeBruijnNode * nextNextNode;
         if (forward)
@@ -211,12 +208,12 @@ void DeBruijnEdge::tracePaths(bool forward,
 
 
 //This function counts how many times a node appears in a path
-int DeBruijnEdge::timesNodeInPath(DeBruijnNode * node, std::vector<DeBruijnNode *> * path) const
+int DeBruijnEdge::timesNodeInPath(DeBruijnNode * node, std::vector<DeBruijnNode *> * path)
 {
     int count = 0;
-    for (size_t i = 0; i < path->size(); ++i)
+    for (auto & i : *path)
     {
-        if ( (*path)[i] == node)
+        if ( i == node)
             ++count;
     }
 
@@ -271,17 +268,15 @@ bool DeBruijnEdge::leadsOnlyToNode(bool forward,
 
     //If there are no next edges, then the search failed, even
     //though steps remain.
-    if (nextEdges.size() == 0)
+    if (nextEdges.empty())
         return false;
 
     //In order for the search to succeed, this function needs to return true
     //for all of the nextEdges.
     //However, we also need to check to see if we are tracing a loop
     //and stop if that is the case.
-    for (size_t i = 0; i < nextEdges.size(); ++i)
+    for (auto nextEdge : nextEdges)
     {
-        DeBruijnEdge * nextEdge = nextEdges[i];
-
         //Determine the node that this next edge leads to.
         DeBruijnNode * nextNextNode;
         if (forward)
@@ -305,7 +300,7 @@ bool DeBruijnEdge::leadsOnlyToNode(bool forward,
 
 
 std::vector<DeBruijnEdge *> DeBruijnEdge::findNextEdgesInPath(DeBruijnNode * nextNode,
-                                                              bool forward) const
+                                                              bool forward)
 {
     std::vector<DeBruijnEdge *> nextEdges;
     for (DeBruijnEdge * edge : nextNode->edges()) {

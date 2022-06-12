@@ -28,7 +28,7 @@
 int bandageQueryPaths(QStringList arguments);
 void printQueryPathsUsage(QTextStream * out, bool all);
 QString checkForInvalidQueryPathsOptions(QStringList arguments);
-void parseQueryPathsOptions(QStringList arguments, bool *pathFasta,
+void parseQueryPathsOptions(const QStringList& arguments, bool *pathFasta,
                             bool * hitsFasta);
 
 #endif // QUERYPATHS_H

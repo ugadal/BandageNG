@@ -20,10 +20,8 @@
 #include <QFileDialog>
 #include <QLatin1String>
 #include <QTextStream>
-#include <QLocale>
 #include "ogdf/energybased/FMMMLayout.h"
 #include <iterator>
-#include <math.h>
 #include "program/settings.h"
 #include <QClipboard>
 #include <QTransform>
@@ -31,14 +29,12 @@
 #include <QColorDialog>
 #include <algorithm>
 #include <QFile>
-#include <QTextStream>
 #include <QScrollBar>
 #include "settingsdialog.h"
 #include <sstream>
 #include <stdexcept>
-#include <stdlib.h>
-#include <time.h>
-#include <QProgressDialog>
+#include <cstdlib>
+#include <ctime>
 #include <QThread>
 #include "program/graphlayoutworker.h"
 #include <QMessageBox>
@@ -72,17 +68,17 @@
 #include "graph/assemblygraphbuilder.h"
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
-    QMainWindow(0),
-    ui(new Ui::MainWindow), m_layoutThread(0), m_imageFilter("PNG (*.png)"),
+    QMainWindow(nullptr),
+    ui(new Ui::MainWindow), m_layoutThread(nullptr), m_imageFilter("PNG (*.png)"),
     m_fileToLoadOnStartup(fileToLoadOnStartup), m_drawGraphAfterLoad(drawGraphAfterLoad),
-    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(0), m_alreadyShown(false)
+    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(nullptr), m_alreadyShown(false), m_fmmm(nullptr)
 {
     ui->setupUi(this);
 
     QApplication::setWindowIcon(QIcon(QPixmap(":/icons/icon.png")));
     ui->graphicsViewWidget->layout()->addWidget(g_graphicsView);
 
-    srand(time(NULL));
+    srand(time(nullptr));
 
     //Make a temp directory to hold the BLAST files.
     //Since Bandage is running in GUI mode, we make it in the system's
@@ -208,7 +204,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
 
 
 //This function runs after the MainWindow has been shown.  This code is not
-//included in the contructor because it can perform a BLAST search, which
+//included in the constructor because it can perform a BLAST search, which
 //will fill the BLAST query combo box and screw up widget sizes.
 void MainWindow::afterMainWindowShow()
 {
@@ -233,7 +229,7 @@ void MainWindow::afterMainWindowShow()
 
     //If the draw option was used and the graph appears to have loaded (i.e. there
     //is at least one node), then draw the graph.
-    if (m_fileToLoadOnStartup != "" && m_drawGraphAfterLoad && g_assemblyGraph->m_deBruijnGraphNodes.size() > 0)
+    if (m_fileToLoadOnStartup != "" && m_drawGraphAfterLoad && !g_assemblyGraph->m_deBruijnGraphNodes.empty())
         drawGraph();
 
     //If a csv query filename is present, pull the info automatically.
@@ -274,10 +270,10 @@ void MainWindow::cleanUp()
     g_memory->userSpecifiedPathString = "";
     g_memory->userSpecifiedPathCircular = false;
 
-    if (m_blastSearchDialog != 0)
+    if (m_blastSearchDialog != nullptr)
     {
         delete m_blastSearchDialog;
-        m_blastSearchDialog = 0;
+        m_blastSearchDialog = nullptr;
     }
 
     ui->csvComboBox->clear();
@@ -453,7 +449,7 @@ void MainWindow::selectionChanged()
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
     std::vector<DeBruijnEdge *> selectedEdges = m_scene->getSelectedEdges();
 
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
     {
         ui->selectedNodesTextEdit->setPlainText("");
         setSelectedNodesWidgetsVisibility(false);
@@ -496,7 +492,7 @@ void MainWindow::selectionChanged()
     }
 
 
-    if (selectedEdges.size() == 0)
+    if (selectedEdges.empty())
     {
         ui->selectedEdgesTextEdit->setPlainText("");
         setSelectedEdgesWidgetsVisibility(false);
@@ -818,7 +814,7 @@ void MainWindow::drawGraph()
 void MainWindow::graphLayoutFinished()
 {
     delete m_fmmm;
-    m_layoutThread = 0;
+    m_layoutThread = nullptr;
     g_assemblyGraph->addGraphicsItemsToScene(m_scene);
     m_scene->setSceneRectangle();
     zoomToFitScene();
@@ -846,7 +842,7 @@ void MainWindow::resetScene()
     g_assemblyGraph->resetEdges();
     g_assemblyGraph->m_contiguitySearchDone = false;
 
-    g_graphicsView->setScene(0);
+    g_graphicsView->setScene(nullptr);
     delete m_scene;
     m_scene = new MyGraphicsScene(this);
 
@@ -869,17 +865,17 @@ std::vector<DeBruijnNode *> MainWindow::getNodesFromLineEdit(QLineEdit * lineEdi
 void MainWindow::layoutGraph()
 {
     //The actual layout is done in a different thread so the UI will stay responsive.
-    MyProgressDialog * progress = new MyProgressDialog(this, "Laying out graph...", true, "Cancel layout", "Cancelling layout...",
-                                                       "Clicking this button will halt the graph layout and display "
-                                                       "the graph in its current, incomplete state.<br><br>"
-                                                       "Layout can take a long time for very large graphs.  There are "
-                                                       "three strategies to reduce the amount of time required:<ul>"
-                                                       "<li>Change the scope of the graph from 'Entire graph' to either "
-                                                       "'Around nodes' or 'Around BLAST hits'.  This will reduce the "
-                                                       "number of nodes that are drawn to the screen.</li>"
-                                                       "<li>Increase the 'Base pairs per segment' setting.  This will "
-                                                       "result in shorter contigs which take less time to lay out.</li>"
-                                                       "<li>Reduce the 'Graph layout iterations' setting.</li></ul>");
+    auto *progress = new MyProgressDialog(this, "Laying out graph...", true, "Cancel layout", "Cancelling layout...",
+                                          "Clicking this button will halt the graph layout and display "
+                                          "the graph in its current, incomplete state.<br><br>"
+                                          "Layout can take a long time for very large graphs.  There are "
+                                          "three strategies to reduce the amount of time required:<ul>"
+                                          "<li>Change the scope of the graph from 'Entire graph' to either "
+                                          "'Around nodes' or 'Around BLAST hits'.  This will reduce the "
+                                          "number of nodes that are drawn to the screen.</li>"
+                                          "<li>Increase the 'Base pairs per segment' setting.  This will "
+                                          "result in shorter contigs which take less time to lay out.</li>"
+                                          "<li>Reduce the 'Graph layout iterations' setting.</li></ul>");
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
@@ -887,11 +883,11 @@ void MainWindow::layoutGraph()
 
     m_layoutThread = new QThread;
     double aspectRatio = double(g_graphicsView->width()) / g_graphicsView->height();
-    GraphLayoutWorker * graphLayoutWorker = new GraphLayoutWorker(m_fmmm, g_assemblyGraph->m_graphAttributes,
-                                                                  g_assemblyGraph->m_edgeArray,
-                                                                  g_settings->graphLayoutQuality,
-                                                                  g_assemblyGraph->useLinearLayout(),
-                                                                  g_settings->componentSeparation, aspectRatio);
+    auto *graphLayoutWorker = new GraphLayoutWorker(m_fmmm, g_assemblyGraph->m_graphAttributes,
+                                                    g_assemblyGraph->m_edgeArray,
+                                                    g_settings->graphLayoutQuality,
+                                                    g_assemblyGraph->useLinearLayout(),
+                                                    g_settings->componentSeparation, aspectRatio);
     graphLayoutWorker->moveToThread(m_layoutThread);
 
     connect(progress, SIGNAL(halt()), this, SLOT(graphLayoutCancelled()));
@@ -989,7 +985,7 @@ void MainWindow::zoomToFitRect(QRectF rect)
 void MainWindow::copySelectedSequencesToClipboardActionTriggered()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
         QMessageBox::information(this, "Copy sequences to clipboard", "No nodes are selected.\n\n"
                                                                       "You must first select nodes in the graph before you can copy their sequences to the clipboard.");
     else
@@ -1002,7 +998,7 @@ void MainWindow::copySelectedSequencesToClipboardActionTriggered()
 void MainWindow::copySelectedSequencesToClipboard()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
         return;
 
     QClipboard * clipboard = QApplication::clipboard();
@@ -1024,7 +1020,7 @@ void MainWindow::copySelectedSequencesToClipboard()
 void MainWindow::saveSelectedSequencesToFileActionTriggered()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
         QMessageBox::information(this, "Save sequences to FASTA", "No nodes are selected.\n\n"
                                                                   "You must first select nodes in the graph before you can save their sequences to a FASTA file.");
     else
@@ -1037,7 +1033,7 @@ void MainWindow::saveSelectedSequencesToFileActionTriggered()
 void MainWindow::saveSelectedSequencesToFile()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
         return;
 
     QString defaultFileNameAndPath = g_memory->rememberedPath + "/selected_sequences.fasta";
@@ -1050,8 +1046,8 @@ void MainWindow::saveSelectedSequencesToFile()
         file.open(QIODevice::WriteOnly | QIODevice::Text);
         QTextStream out(&file);
 
-        for (size_t i = 0; i < selectedNodes.size(); ++i)
-            out << selectedNodes[i]->getFasta(true);
+        for (auto & selectedNode : selectedNodes)
+            out << selectedNode->getFasta(true);
 
         g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
     }
@@ -1060,7 +1056,7 @@ void MainWindow::saveSelectedSequencesToFile()
 void MainWindow::copySelectedPathToClipboard()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
     {
         QMessageBox::information(this, "Copy path sequence to clipboard", "No nodes are selected.\n\n"
                                                                           "You must first select nodes in the graph which define a unambiguous "
@@ -1088,7 +1084,7 @@ void MainWindow::copySelectedPathToClipboard()
 void MainWindow::saveSelectedPathToFile()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
     {
         QMessageBox::information(this, "Save path sequence to FASTA", "No nodes are selected.\n\n"
                                                                       "You must first select nodes in the graph which define a unambiguous "
@@ -1170,14 +1166,14 @@ void MainWindow::determineContiguityFromSelectedNode()
     g_assemblyGraph->resetNodeContiguityStatus();
 
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() > 0)
+    if (!selectedNodes.empty())
     {
         MyProgressDialog progress(this, "Determining contiguity...", false);
         progress.setWindowModality(Qt::WindowModal);
         progress.show();
 
-        for (size_t i = 0; i < selectedNodes.size(); ++i)
-            (selectedNodes[i])->determineContiguity();
+        for (auto & selectedNode : selectedNodes)
+            selectedNode->determineContiguity();
 
         g_assemblyGraph->m_contiguitySearchDone = true;
         g_assemblyGraph->resetAllNodeColours();
@@ -1400,7 +1396,7 @@ void MainWindow::fontButtonPressed()
 void MainWindow::setNodeCustomColour()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
         return;
 
     QString dialogTitle = "Select custom colour for selected node";
@@ -1419,11 +1415,11 @@ void MainWindow::setNodeCustomColour()
         if (g_settings->nodeColourScheme != CUSTOM_COLOURS)
             setNodeColourSchemeComboBox(CUSTOM_COLOURS);
 
-        for (size_t i = 0; i < selectedNodes.size(); ++i)
+        for (auto & selectedNode : selectedNodes)
         {
-            g_assemblyGraph->setCustomColour(selectedNodes[i], newColour);
-            if (selectedNodes[i]->getGraphicsItemNode() != 0)
-                selectedNodes[i]->getGraphicsItemNode()->setNodeColour();
+            g_assemblyGraph->setCustomColour(selectedNode, newColour);
+            if (selectedNode->getGraphicsItemNode() != nullptr)
+                selectedNode->getGraphicsItemNode()->setNodeColour();
 
         }
         g_graphicsView->viewport()->update();
@@ -1433,7 +1429,7 @@ void MainWindow::setNodeCustomColour()
 void MainWindow::setNodeCustomLabel()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
         return;
 
     QString dialogMessage = "Type a custom label for selected node";
@@ -1450,8 +1446,8 @@ void MainWindow::setNodeCustomLabel()
         //If the custom label option isn't currently on, turn it on now.
         ui->nodeCustomLabelsCheckBox->setChecked(true);
 
-        for (size_t i = 0; i < selectedNodes.size(); ++i)
-            g_assemblyGraph->setCustomLabel(selectedNodes[i], newLabel);
+        for (auto & selectedNode : selectedNodes)
+            g_assemblyGraph->setCustomLabel(selectedNode, newLabel);
     }
 }
 
@@ -1461,8 +1457,8 @@ void MainWindow::setNodeCustomLabel()
 std::vector<DeBruijnNode *> MainWindow::addComplementaryNodes(std::vector<DeBruijnNode *> nodes)
 {
     std::vector<DeBruijnNode *> complementaryNodes;
-    for (size_t i = 0; i < nodes.size(); ++i)
-        complementaryNodes.push_back(nodes[i]->getReverseComplement());
+    for (auto & node : nodes)
+        complementaryNodes.push_back(node->getReverseComplement());
     nodes.insert(nodes.end(), complementaryNodes.begin(), complementaryNodes.end());
     return nodes;
 }
@@ -1533,10 +1529,10 @@ void MainWindow::doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
 
         //If the GraphicsItemNode isn't found, try the reverse complement.  This
         //is only done for single node mode.
-        if (graphicsItemNode == 0 && !g_settings->doubleMode)
+        if (graphicsItemNode == nullptr && !g_settings->doubleMode)
             graphicsItemNode = rcgraphicsItemNode;
 
-        if (graphicsItemNode != 0)
+        if (graphicsItemNode != nullptr)
         {
             if (recolor)
             {
@@ -1563,15 +1559,15 @@ void MainWindow::doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
     if (foundNodes > 0)
         zoomToSelection();
 
-    if (nodesNotInGraph.size() > 0 || nodesNotFound.size() > 0)
+    if (!nodesNotInGraph.empty() || !nodesNotFound.empty())
     {
         QString errorMessage;
-        if (nodesNotInGraph.size() > 0)
+        if (!nodesNotInGraph.empty())
         {
             errorMessage += g_assemblyGraph->generateNodesNotFoundErrorMessage(nodesNotInGraph,
                                                                                ui->selectionSearchNodesExactMatchRadioButton->isChecked());
         }
-        if (nodesNotFound.size() > 0)
+        if (!nodesNotFound.empty())
         {
             if (errorMessage.length() > 0)
                 errorMessage += "\n";
@@ -1622,8 +1618,8 @@ void MainWindow::selectPathNodes()
     std::vector<DeBruijnNode *> nodesToSelect;
 
     QList<DeBruijnNode *> nodes = g_assemblyGraph->m_deBruijnGraphPaths[ui->pathSelectionLineEdit2->displayText().toStdString()]->getNodes();
-    for (QList<DeBruijnNode *>::iterator i = nodes.begin(); i != nodes.end(); ++i)
-        nodesToSelect.push_back(*i);
+    for (auto & node : nodes)
+        nodesToSelect.push_back(node);
 
     doSelectNodes(nodesToSelect, nodesNotInGraph, ui->pathSelectionRecolorRadioButton->isChecked());
 }
@@ -1638,8 +1634,8 @@ void MainWindow::openAboutDialog()
 
 void MainWindow::openBlastSearchDialog()
 {
-    //If a BLAST search dialog does not current exist, make it.
-    if (m_blastSearchDialog == 0)
+    //If a BLAST search dialog does not currently exist, make it.
+    if (m_blastSearchDialog == nullptr)
     {
         m_blastSearchDialog = new BlastSearchDialog(this);
         connect(m_blastSearchDialog, SIGNAL(blastChanged()), this, SLOT(blastChanged()));
@@ -1657,11 +1653,11 @@ void MainWindow::blastChanged()
     QString blastQueryText = ui->blastQueryComboBox->currentText();
     BlastQuery * queryBefore = g_blastSearch->m_blastQueries.getQueryFromName(blastQueryText);
 
-    //If we didn't find a currently selected query but it isn't "none" or "all",
+    //If we didn't find a currently selected query, but it isn't "none" or "all",
     //then maybe the user changed the name of the currently selected query, and
     //that's why we didn't find it.  In that case, try to find it using the
     //index.
-    if (queryBefore == 0 && blastQueryText != "none" && blastQueryText != "all")
+    if (queryBefore == nullptr && blastQueryText != "none" && blastQueryText != "all")
     {
         int blastQueryIndex = ui->blastQueryComboBox->currentIndex();
         if (ui->blastQueryComboBox->count() > 1)
@@ -1677,7 +1673,7 @@ void MainWindow::blastChanged()
     //Look to see if the query selected before is still present.  If so,
     //set the combo box to have that query selected.  If not (or if no
     //query was previously selected), leave the combo box a index 0.
-    if (queryBefore != 0 && g_blastSearch->m_blastQueries.isQueryPresent(queryBefore))
+    if (queryBefore != nullptr && g_blastSearch->m_blastQueries.isQueryPresent(queryBefore))
     {
         int indexOfQuery = ui->blastQueryComboBox->findText(queryBefore->getName());
         if (indexOfQuery != -1)
@@ -1693,16 +1689,16 @@ void MainWindow::setupBlastQueryComboBox()
 {
     ui->blastQueryComboBox->clear();
     QStringList comboBoxItems;
-    for (size_t i = 0; i < g_blastSearch->m_blastQueries.m_queries.size(); ++i)
+    for (auto & query : g_blastSearch->m_blastQueries.m_queries)
     {
-        if (g_blastSearch->m_blastQueries.m_queries[i]->hasHits())
-            comboBoxItems.push_back(g_blastSearch->m_blastQueries.m_queries[i]->getName());
+        if (query->hasHits())
+            comboBoxItems.push_back(query->getName());
     }
 
     if (comboBoxItems.size() > 1)
         comboBoxItems.push_front("all");
 
-    if (comboBoxItems.size() > 0)
+    if (!comboBoxItems.empty())
     {
         ui->blastQueryComboBox->addItems(comboBoxItems);
         ui->blastQueryComboBox->setEnabled(true);
@@ -1843,7 +1839,7 @@ void MainWindow::setInfoTexts()
                                                "is ticked.");
     ui->minDepthInfoText->setInfoText("This is the lower bound for the depth range. Nodes with a read "
                                           "depth less than this value will not be drawn.");
-    ui->maxDepthInfoText->setInfoText("This is the uper bound for the depth range. Nodes with a read "
+    ui->maxDepthInfoText->setInfoText("This is the upper bound for the depth range. Nodes with a read "
                                           "depth greater than this value will not be drawn.");
 }
 
@@ -1905,7 +1901,7 @@ void MainWindow::bringSelectedNodesToFront()
     m_scene->blockSignals(true);
 
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
     {
         QMessageBox::information(this, "No nodes selected", "You must first select nodes in the graph before using "
                                                             "the 'Bring selected nodes to front' function.");
@@ -1915,11 +1911,11 @@ void MainWindow::bringSelectedNodesToFront()
     double topZ = m_scene->getTopZValue();
     double newZ = topZ + 1.0;
 
-    for (size_t i = 0; i < selectedNodes.size(); ++i)
+    for (auto & selectedNode : selectedNodes)
     {
-        GraphicsItemNode * graphicsItemNode = selectedNodes[i]->getGraphicsItemNode();
+        GraphicsItemNode * graphicsItemNode = selectedNode->getGraphicsItemNode();
 
-        if (graphicsItemNode == 0)
+        if (graphicsItemNode == nullptr)
             continue;
 
         graphicsItemNode->setZValue(newZ);
@@ -2006,7 +2002,7 @@ void MainWindow::selectNodesWithDeadEnds()
 
         GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
 
-        if (graphicsItemNode == 0)
+        if (graphicsItemNode == nullptr)
             continue;
 
         if (nodeHasDeadEnd)
@@ -2038,9 +2034,8 @@ void MainWindow::selectAll()
 {
     m_scene->blockSignals(true);
     QList<QGraphicsItem *> allItems = m_scene->items();
-    for (int i = 0; i < allItems.size(); ++i)
+    for (auto item : allItems)
     {
-        QGraphicsItem * item = allItems[i];
         item->setSelected(true);
     }
     m_scene->blockSignals(false);
@@ -2053,9 +2048,8 @@ void MainWindow::selectNone()
 {
     m_scene->blockSignals(true);
     QList<QGraphicsItem *> allItems = m_scene->items();
-    for (int i = 0; i < allItems.size(); ++i)
+    for (auto item : allItems)
     {
-        QGraphicsItem * item = allItems[i];
         item->setSelected(false);
     }
     m_scene->blockSignals(false);
@@ -2067,9 +2061,8 @@ void MainWindow::invertSelection()
 {
     m_scene->blockSignals(true);
     QList<QGraphicsItem *> allItems = m_scene->items();
-    for (int i = 0; i < allItems.size(); ++i)
+    for (auto item : allItems)
     {
-        QGraphicsItem * item = allItems[i];
         item->setSelected(!item->isSelected());
     }
     m_scene->blockSignals(false);
@@ -2082,7 +2075,7 @@ void MainWindow::invertSelection()
 void MainWindow::zoomToSelection()
 {
     QList<QGraphicsItem *> selection = m_scene->selectedItems();
-    if (selection.size() == 0)
+    if (selection.empty())
     {
         QMessageBox::information(this, "No nodes selected", "You must first select nodes in the graph before using "
                                                             "the 'Zoom to fit selection' function.");
@@ -2090,9 +2083,8 @@ void MainWindow::zoomToSelection()
     }
 
     QRectF boundingBox;
-    for (int i = 0; i < selection.size(); ++i)
+    for (auto selectedItem : selection)
     {
-        QGraphicsItem * selectedItem = selection[i];
         boundingBox = boundingBox | selectedItem->boundingRect();
     }
 
@@ -2136,7 +2128,7 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
         DeBruijnNode * node = entry;
         GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
 
-        if (graphicsItemNode == 0)
+        if (graphicsItemNode == nullptr)
             continue;
 
         //For single nodes, choose the greatest contiguity status of this
@@ -2261,7 +2253,7 @@ void MainWindow::openPathSpecifyDialog()
     if (g_memory->pathDialogIsVisible)
         return;
 
-    PathSpecifyDialog * pathSpecifyDialog = new PathSpecifyDialog(this);
+    auto *pathSpecifyDialog = new PathSpecifyDialog(this);
     connect(g_graphicsView, SIGNAL(doubleClickedNode(DeBruijnNode*)), pathSpecifyDialog, SLOT(addNodeName(DeBruijnNode*)));
     pathSpecifyDialog->show();
 }
@@ -2372,7 +2364,7 @@ void MainWindow::saveVisibleGraphToGfa()
 void MainWindow::webBlastSelectedNodes()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
     {
         QMessageBox::information(this, "Web BLAST selected nodes", "No nodes are selected.\n\n"
                                                                    "You must first select nodes in the graph before you can can use web BLAST.");
@@ -2380,8 +2372,8 @@ void MainWindow::webBlastSelectedNodes()
     }
 
     QByteArray selectedNodesFasta;
-    for (size_t i = 0; i < selectedNodes.size(); ++i)
-        selectedNodesFasta += selectedNodes[i]->getFasta(true, false);
+    for (auto & selectedNode : selectedNodes)
+        selectedNodesFasta += selectedNode->getFasta(true, false);
     selectedNodesFasta.chop(1); //remove last newline
 
     QByteArray urlSafeFasta = makeStringUrlSafe(selectedNodesFasta);
@@ -2457,7 +2449,7 @@ void MainWindow::removeSelection()
 void MainWindow::duplicateSelectedNodes()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
     {
         QMessageBox::information(this, "No nodes selected", "You must first select one or more nodes before using the 'Duplicate selected nodes' function.");
         return;
@@ -2466,17 +2458,16 @@ void MainWindow::duplicateSelectedNodes()
     //Nodes are always duplicated in pairs (both positive and negative), so we
     //want to compile a list of only positive nodes.
     QList<DeBruijnNode *> nodesToDuplicate;
-    for (size_t i = 0; i < selectedNodes.size(); ++i)
+    for (auto node : selectedNodes)
     {
-        DeBruijnNode * node = selectedNodes[i];
         if (node->isNegativeNode())
             node = node->getReverseComplement();
         if (!nodesToDuplicate.contains(node))
             nodesToDuplicate.push_back(node);
     }
 
-    for (int i = 0; i < nodesToDuplicate.size(); ++i)
-        g_assemblyGraph->duplicateNodePair(nodesToDuplicate[i], m_scene);
+    for (auto & i : nodesToDuplicate)
+        g_assemblyGraph->duplicateNodePair(i, m_scene);
 
     g_assemblyGraph->determineGraphInfo();
     displayGraphDetails();
@@ -2499,9 +2490,8 @@ void MainWindow::mergeSelectedNodes()
     //Nodes are always merged in pairs (both positive and negative), so we
     //want to compile a list of only positive nodes.
     QList<DeBruijnNode *> nodesToMerge;
-    for (size_t i = 0; i < selectedNodes.size(); ++i)
+    for (auto node : selectedNodes)
     {
-        DeBruijnNode * node = selectedNodes[i];
         if (node->isNegativeNode())
             node = node->getReverseComplement();
         if (!nodesToMerge.contains(node))
@@ -2586,7 +2576,7 @@ void MainWindow::cleanUpAllBlast()
 void MainWindow::changeNodeName()
 {
     DeBruijnNode * selectedNode = m_scene->getOnePositiveSelectedNode();
-    if (selectedNode == 0)
+    if (selectedNode == nullptr)
     {
         QMessageBox::information(this, "Improper selection", "You must select exactly one node in the graph before using this function.");
         return;
@@ -2606,7 +2596,7 @@ void MainWindow::changeNodeName()
 void MainWindow::changeNodeDepth()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedPositiveNodes();
-    if (selectedNodes.size() == 0)
+    if (selectedNodes.empty())
     {
         QMessageBox::information(this, "Improper selection", "You must select at least one node in the graph before using this function.");
         return;

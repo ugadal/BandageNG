@@ -78,9 +78,9 @@ private:
     int m_overlap : 29;
 
     bool edgeIsVisible() const;
-    int timesNodeInPath(DeBruijnNode * node, std::vector<DeBruijnNode *> * path) const;
-    std::vector<DeBruijnEdge *> findNextEdgesInPath(DeBruijnNode * nextNode,
-                                                    bool forward) const;
+    static int timesNodeInPath(DeBruijnNode * node, std::vector<DeBruijnNode *> * path) ;
+    static std::vector<DeBruijnEdge *> findNextEdgesInPath(DeBruijnNode * nextNode,
+                                                    bool forward) ;
 };
 
 #endif // DEBRUIJNEDGE_H

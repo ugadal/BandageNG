@@ -60,12 +60,12 @@ protected:
 private:
     double m_rotation;
 
-    double distance(double x1, double y1, double x2, double y2);
-    double angleBetweenTwoLines(QPointF line1Start, QPointF line1End, QPointF line2Start, QPointF line2End);
+    static double distance(double x1, double y1, double x2, double y2);
+    static double angleBetweenTwoLines(QPointF line1Start, QPointF line1End, QPointF line2Start, QPointF line2End);
     void getFourViewportCornersInSceneCoordinates(QPointF * c1, QPointF * c2, QPointF * c3, QPointF * c4);
-    bool differentSidesOfLine(QPointF p1, QPointF p2, QLineF line);
-    bool differentSidesOfLine(QPointF p1, QPointF p2, QPointF p3, QPointF p4, QLineF line);
-    bool sideOfLine(QPointF p, QLineF line);
+    static bool differentSidesOfLine(QPointF p1, QPointF p2, QLineF line);
+    static bool differentSidesOfLine(QPointF p1, QPointF p2, QPointF p3, QPointF p4, QLineF line);
+    static bool sideOfLine(QPointF p, QLineF line);
 
 signals:
     void doubleClickedNode(DeBruijnNode * node);

@@ -25,7 +25,7 @@
 
 
 GraphLocation::GraphLocation() :
-    m_node(0), m_position(0)
+    m_node(nullptr), m_position(0)
 {
 
 }
@@ -48,7 +48,7 @@ GraphLocation GraphLocation::startOfNode(DeBruijnNode * node)
 
 GraphLocation GraphLocation::endOfNode(DeBruijnNode * node)
 {
-    if (node == 0)
+    if (node == nullptr)
         return GraphLocation::null();
 
     int pos = node->getLength();
@@ -62,7 +62,7 @@ GraphLocation GraphLocation::endOfNode(DeBruijnNode * node)
 
 GraphLocation GraphLocation::null()
 {
-    return GraphLocation(0, 0);
+    return {nullptr, 0};
 }
 
 bool GraphLocation::isValid() const
@@ -77,7 +77,7 @@ bool GraphLocation::isValid() const
 
 bool GraphLocation::isNull() const
 {
-    return (m_node == 0 || m_position == 0);
+    return (m_node == nullptr || m_position == 0);
 }
 
 
@@ -122,9 +122,8 @@ void GraphLocation::moveForward(int change)
     //If there aren't enough bases left, then we recursively try with the
     //next nodes.
     std::vector<DeBruijnNode *> downstreamNodes = m_node->getDownstreamNodes();
-    for (size_t i = 0; i < downstreamNodes.size(); ++i)
+    for (auto node : downstreamNodes)
     {
-        DeBruijnNode * node = downstreamNodes[i];
         GraphLocation nextNodeLocation = GraphLocation::startOfNode(node);
         nextNodeLocation.moveForward(change - basesLeftInNode - 1);
 
@@ -138,9 +137,8 @@ void GraphLocation::moveForward(int change)
 
     //If the code got here, then we failed to move and we make this a null
     //position.
-    m_node = 0;
+    m_node = nullptr;
     m_position = 0;
-    return;
 }
 
 void GraphLocation::moveBackward(int change)
@@ -157,9 +155,8 @@ void GraphLocation::moveBackward(int change)
     //If there aren't enough bases left, then we recursively try with the
     //next nodes.
     std::vector<DeBruijnNode *> upstreamNodes = m_node->getUpstreamNodes();
-    for (size_t i = 0; i < upstreamNodes.size(); ++i)
+    for (auto node : upstreamNodes)
     {
-        DeBruijnNode * node = upstreamNodes[i];
         GraphLocation nextNodeLocation = GraphLocation::endOfNode(node);
         nextNodeLocation.moveBackward(change - basesLeftInNode - 1);
 
@@ -171,11 +168,10 @@ void GraphLocation::moveBackward(int change)
         }
     }
 
-    //If the code got here, then we failed to move and we make this a null
+    //If the code got here, then we failed to move, and we make this a null
     //position.
-    m_node = 0;
+    m_node = nullptr;
     m_position = 0;
-    return;
 }
 
 

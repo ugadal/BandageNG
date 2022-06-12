@@ -146,7 +146,7 @@ int bandageImage(QStringList arguments)
             return 1;
         }
 
-        if(coloursLoaded == false)
+        if(!coloursLoaded)
         {
             err << csvPath << " didn't contain color" << Qt::endl;
             return 1;

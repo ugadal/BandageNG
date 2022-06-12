@@ -21,7 +21,6 @@
 #include "graph/debruijnedge.h"
 #include "graph/graphicsitemnode.h"
 #include "graph/graphicsitemedge.h"
-#include "graph/debruijnnode.h"
 
 MyGraphicsScene::MyGraphicsScene(QObject *parent) :
     QGraphicsScene(parent)
@@ -57,11 +56,10 @@ std::vector<DeBruijnNode *> MyGraphicsScene::getSelectedNodes()
     std::vector<DeBruijnNode *> returnVector;
 
     QList<QGraphicsItem *> selection = selectedItems();
-    for (int i = 0; i < selection.size(); ++i)
+    for (auto selectedItem : selection)
     {
-        QGraphicsItem * selectedItem = selection[i];
-        GraphicsItemNode * selectedNodeItem = dynamic_cast<GraphicsItemNode *>(selectedItem);
-        if (selectedNodeItem != 0)
+        auto * selectedNodeItem = dynamic_cast<GraphicsItemNode *>(selectedItem);
+        if (selectedNodeItem != nullptr)
             returnVector.push_back(selectedNodeItem->m_deBruijnNode);
     }
 
@@ -81,9 +79,8 @@ std::vector<DeBruijnNode *> MyGraphicsScene::getSelectedPositiveNodes()
 
     //First turn all of the nodes to positive nodes.
     std::vector<DeBruijnNode *> allPositive;
-    for (size_t i = 0; i < selectedNodes.size(); ++i)
+    for (auto node : selectedNodes)
     {
-        DeBruijnNode * node = selectedNodes[i];
         if (node->isNegativeNode())
             node = node->getReverseComplement();
         allPositive.push_back(node);
@@ -95,7 +92,7 @@ std::vector<DeBruijnNode *> MyGraphicsScene::getSelectedPositiveNodes()
     for (size_t i = 0; i < allPositive.size(); ++i)
     {
         DeBruijnNode * node = allPositive[i];
-        DeBruijnNode * previousNode = 0;
+        DeBruijnNode * previousNode = nullptr;
         if (i > 0)
             previousNode = allPositive[i-1];
         if (node != previousNode)
@@ -111,11 +108,10 @@ std::vector<GraphicsItemNode *> MyGraphicsScene::getSelectedGraphicsItemNodes()
     std::vector<GraphicsItemNode *> returnVector;
 
     QList<QGraphicsItem *> selection = selectedItems();
-    for (int i = 0; i < selection.size(); ++i)
+    for (auto selectedItem : selection)
     {
-        QGraphicsItem * selectedItem = selection[i];
-        GraphicsItemNode * selectedNodeItem = dynamic_cast<GraphicsItemNode *>(selectedItem);
-        if (selectedNodeItem != 0)
+        auto * selectedNodeItem = dynamic_cast<GraphicsItemNode *>(selectedItem);
+        if (selectedNodeItem != nullptr)
             returnVector.push_back(selectedNodeItem);
     }
 
@@ -128,11 +124,10 @@ std::vector<DeBruijnEdge *> MyGraphicsScene::getSelectedEdges()
     std::vector<DeBruijnEdge *> returnVector;
 
     QList<QGraphicsItem *> selection = selectedItems();
-    for (int i = 0; i < selection.size(); ++i)
+    for (auto selectedItem : selection)
     {
-        QGraphicsItem * selectedItem = selection[i];
-        GraphicsItemEdge * selectedEdgeItem = dynamic_cast<GraphicsItemEdge *>(selectedItem);
-        if (selectedEdgeItem != 0)
+        auto * selectedEdgeItem = dynamic_cast<GraphicsItemEdge *>(selectedItem);
+        if (selectedEdgeItem != nullptr)
             returnVector.push_back(selectedEdgeItem->m_deBruijnEdge);
     }
 
@@ -144,8 +139,8 @@ std::vector<DeBruijnEdge *> MyGraphicsScene::getSelectedEdges()
 DeBruijnNode * MyGraphicsScene::getOneSelectedNode()
 {
     std::vector<DeBruijnNode *> selectedNodes = getSelectedNodes();
-    if (selectedNodes.size() == 0)
-        return 0;
+    if (selectedNodes.empty())
+        return nullptr;
     else
         return selectedNodes[0];
 }
@@ -153,8 +148,8 @@ DeBruijnNode * MyGraphicsScene::getOneSelectedNode()
 DeBruijnEdge * MyGraphicsScene::getOneSelectedEdge()
 {
     std::vector<DeBruijnEdge *> selectedEdges = getSelectedEdges();
-    if (selectedEdges.size() == 0)
-        return 0;
+    if (selectedEdges.empty())
+        return nullptr;
     else
         return selectedEdges[0];
 }
@@ -166,8 +161,8 @@ DeBruijnEdge * MyGraphicsScene::getOneSelectedEdge()
 DeBruijnNode * MyGraphicsScene::getOnePositiveSelectedNode()
 {
     std::vector<DeBruijnNode *> selectedNodes = getSelectedNodes();
-    if (selectedNodes.size() == 0)
-        return 0;
+    if (selectedNodes.empty())
+        return nullptr;
 
     else if (selectedNodes.size() == 1)
     {
@@ -190,10 +185,10 @@ DeBruijnNode * MyGraphicsScene::getOnePositiveSelectedNode()
                 return selectedNode2;
         }
         else
-            return 0;
+            return nullptr;
     }
 
-    return 0;
+    return nullptr;
 }
 
 double MyGraphicsScene::getTopZValue()
@@ -218,7 +213,7 @@ double MyGraphicsScene::getTopZValue()
 }
 
 
-//Expands the scene rectangle a bit beyond the items so they aren't drawn right to the edge.
+//Expands the scene rectangle a bit beyond the items, so they aren't drawn right to the edge.
 void MyGraphicsScene::setSceneRectangle()
 {
     QRectF boundingRect = itemsBoundingRect();
@@ -240,9 +235,8 @@ void MyGraphicsScene::possiblyExpandSceneRectangle(std::vector<GraphicsItemNode 
     QRectF currentSceneRect = sceneRect();
     QRectF newSceneRect = currentSceneRect;
 
-    for (size_t i = 0; i < movedNodes->size(); ++i)
+    for (auto node : *movedNodes)
     {
-        GraphicsItemNode * node = (*movedNodes)[i];
         QRectF nodeRect = node->boundingRect();
         newSceneRect = newSceneRect.united(nodeRect);
     }

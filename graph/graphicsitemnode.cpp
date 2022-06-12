@@ -21,7 +21,6 @@
 #include "ogdfnode.h"
 #include <QPainterPathStroker>
 #include "program/globals.h"
-#include "program/settings.h"
 #include <QPainter>
 #include <QPen>
 #include <QMessageBox>
@@ -36,9 +35,6 @@
 #include <set>
 #include "ui/mygraphicsview.h"
 #include <QTransform>
-#include <utility>
-#include "blast/blasthit.h"
-#include "blast/blastquery.h"
 #include "blast/blasthitpart.h"
 #include "assemblygraph.h"
 #include "program/memory.h"
@@ -187,7 +183,7 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
 
         for (int i = 0; i < nodeText.size(); ++i)
         {
-            QString text = nodeText.at(i);
+            const QString& text = nodeText.at(i);
             int stepsUntilLast = nodeText.size() - 1 - i;
             double shiftLeft = -metrics.boundingRect(text).width() / 2.0;
             textPath.addText(shiftLeft, -stepsUntilLast * fontHeight, g_settings->labelFont, text);
@@ -277,7 +273,7 @@ void GraphicsItemNode::setNodeColour()
     case RANDOM_COLOURS:
     {
         //Make a colour with a random hue.  Assign a colour to both this node and
-        //it complement so their hue matches.
+        //its complement so their hue matches.
         int hue = rand() % 360;
         QColor posColour;
         posColour.setHsl(hue,
@@ -515,7 +511,7 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) con
         GraphicsItemEdge * graphicsItemEdge = deBruijnEdge->getGraphicsItemEdge();
 
         //If this edge has a graphics item, adjust it now.
-        if (graphicsItemEdge != 0)
+        if (graphicsItemEdge != nullptr)
             graphicsItemEdge->calculateAndSetPath();
 
         //If this edge does not have a graphics item, then perhaps its

@@ -21,7 +21,6 @@
 #include <QToolTip>
 #include <QMouseEvent>
 
-
 InfoTextWidget::InfoTextWidget(QWidget * parent) :
     QWidget(parent)
 {
@@ -29,7 +28,7 @@ InfoTextWidget::InfoTextWidget(QWidget * parent) :
     setMouseTracking(true);
 }
 
-InfoTextWidget::InfoTextWidget(QWidget * parent, QString infoText) :
+InfoTextWidget::InfoTextWidget(QWidget * parent, const QString& infoText) :
     QWidget(parent)
 {
     setFixedSize(16, 16);
@@ -37,7 +36,7 @@ InfoTextWidget::InfoTextWidget(QWidget * parent, QString infoText) :
     setInfoText(infoText);
 }
 
-void InfoTextWidget::setInfoText(QString infoText)
+void InfoTextWidget::setInfoText(const QString& infoText)
 {
     //Convert text to a rich text format, which will let QToolTip wrap the text.
     m_infoText = "<html>" + infoText + "</html>";

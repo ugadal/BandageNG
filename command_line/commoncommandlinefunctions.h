@@ -31,41 +31,41 @@
 
 QStringList getArgumentList(int argc, char *argv[]);
 
-bool checkForHelp(QStringList arguments);
-bool checkForHelpAll(QStringList arguments);
-bool checkForVersion(QStringList arguments);
+bool checkForHelp(const QStringList& arguments);
+bool checkForHelpAll(const QStringList& arguments);
+bool checkForVersion(const QStringList& arguments);
 
-QString checkOptionForInt(QString option, QStringList * arguments, IntSetting setting, bool offOkay);
-QString checkOptionForFloat(QString option, QStringList * arguments, FloatSetting setting, bool offOkay);
-QString checkOptionForSciNot(QString option, QStringList * arguments, SciNotSetting setting, bool offOkay);
-QString checkOptionForString(QString option, QStringList * arguments,
-                             QStringList validOptionsList,
+QString checkOptionForInt(const QString& option, QStringList * arguments, IntSetting setting, bool offOkay);
+QString checkOptionForFloat(const QString& option, QStringList * arguments, FloatSetting setting, bool offOkay);
+QString checkOptionForSciNot(const QString& option, QStringList * arguments, SciNotSetting setting, bool offOkay);
+QString checkOptionForString(const QString& option, QStringList * arguments,
+                             const QStringList& validOptionsList,
                              QString validDescription = "");
-QString checkOptionForColour(QString option, QStringList * arguments);
-QString checkOptionForFile(QString option, QStringList * arguments);
-bool checkIfFileExists(QString filename);
-void checkOptionWithoutValue(QString option, QStringList * arguments);
-QString checkTwoOptionsForFloats(QString option1, QString option2,
+QString checkOptionForColour(const QString& option, QStringList * arguments);
+QString checkOptionForFile(const QString& option, QStringList * arguments);
+bool checkIfFileExists(const QString& filename);
+void checkOptionWithoutValue(const QString& option, QStringList * arguments);
+QString checkTwoOptionsForFloats(const QString& option1, const QString& option2,
                                  QStringList * arguments,
                                  FloatSetting setting1,
                                  FloatSetting setting2,
                                  bool secondMustBeEqualOrLarger = false);
 
-bool isOptionPresent(QString option, QStringList * arguments);
-bool isOptionAndValuePresent(QString option, QString value,
+bool isOptionPresent(const QString& option, QStringList * arguments);
+bool isOptionAndValuePresent(const QString& option, const QString& value,
                              QStringList * arguments);
 
-int getIntOption(QString option, QStringList * arguments);
-double getFloatOption(QString option, QStringList * arguments);
-SciNot getSciNotOption(QString option, QStringList * arguments);
-QColor getColourOption(QString option, QStringList * arguments);
-NodeColourScheme getColourSchemeOption(QString option, QStringList * arguments);
-std::set<ViewId> getBlastAnnotationViews(QString option, QStringList * arguments);
-GraphScope getGraphScopeOption(QString option, QStringList * arguments);
-QString getStringOption(QString option, QStringList * arguments);
+int getIntOption(const QString& option, QStringList * arguments);
+double getFloatOption(const QString& option, QStringList * arguments);
+SciNot getSciNotOption(const QString& option, QStringList * arguments);
+QColor getColourOption(const QString& option, QStringList * arguments);
+NodeColourScheme getColourSchemeOption(const QString& option, QStringList * arguments);
+std::set<ViewId> getBlastAnnotationViews(const QString& option, QStringList * arguments);
+GraphScope getGraphScopeOption(const QString& option, QStringList * arguments);
+QString getStringOption(const QString& option, QStringList * arguments);
 
 QString checkForInvalidOrExcessSettings(QStringList * arguments);
-QString checkForExcessArguments(QStringList arguments);
+QString checkForExcessArguments(const QStringList& arguments);
 
 void parseSettings(QStringList arguments);
 
@@ -75,7 +75,7 @@ void getSettingsUsage(QStringList *text);
 bool createBlastTempDirectory();
 void deleteBlastTempDirectory();
 
-QString getElapsedTime(QDateTime start, QDateTime end);
+QString getElapsedTime(const QDateTime& start, const QDateTime& end);
 
 void getGraphScopeOptions(QStringList * text);
 
@@ -93,17 +93,17 @@ QString getRangeAndDefault(int min, int max, int defaultVal);
 QString getRangeAndDefault(int min, int max, QString defaultVal);
 QString getRangeAndDefault(double min, double max, double defaultVal);
 QString getRangeAndDefault(double min, double max, QString defaultVal);
-QString getRangeAndDefault(QString min, QString max, QString defaultVal);
+QString getRangeAndDefault(const QString& min, QString max, QString defaultVal);
 QString getDefaultColour(QColor colour);
 
 QString getBandageTitleAsciiArt();
 bool isOption(QString text);
-bool isSectionHeader(QString text);
+bool isSectionHeader(const QString& text);
 bool isListItem(QString text);
-bool isCommand(QString text);
-bool isError(QString text);
-void outputText(QString text, QTextStream * out);
-void outputText(QStringList text, QTextStream * out);
+bool isCommand(const QString& text);
+bool isError(const QString& text);
+void outputText(const QString& text, QTextStream * out);
+void outputText(const QStringList& text, QTextStream * out);
 void getOnlineHelpMessage(QStringList * text);
 
 #endif // COMMANDCOMMANDLINEFUNCTIONS_H

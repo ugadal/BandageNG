@@ -17,13 +17,13 @@
 
 
 #include "settingsdialog.h"
-#include "ui_settingsdialog.h"
-#include <QColorDialog>
-#include <QMessageBox>
 #include "program/settings.h"
 #include "colourbutton.h"
 #include "graph/assemblygraph.h"
 #include "program/scinot.h"
+
+#include <QMessageBox>
+#include "ui_settingsdialog.h"
 
 SettingsDialog::SettingsDialog(QWidget *parent) :
     QDialog(parent),

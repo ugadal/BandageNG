@@ -17,7 +17,7 @@ public:
     explicit ChangeNodeDepthDialog(QWidget * parent,
                                        std::vector<DeBruijnNode *> *nodes,
                                        double oldDepth);
-    ~ChangeNodeDepthDialog();
+    ~ChangeNodeDepthDialog() override;
 
     double getNewDepth() const;
 

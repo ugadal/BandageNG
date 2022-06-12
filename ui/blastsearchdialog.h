@@ -38,8 +38,8 @@ class BlastSearchDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit BlastSearchDialog(QWidget *parent = 0, QString autoQuery = "");
-    ~BlastSearchDialog();
+    explicit BlastSearchDialog(QWidget *parent = nullptr, const QString& autoQuery = "");
+    ~BlastSearchDialog() override;
 
 private:
     Ui::BlastSearchDialog *ui;
@@ -54,7 +54,7 @@ private:
     void setUiStep(BlastUiState blastUiState);
     void clearBlastHits();
     void setInfoTexts();
-    void loadBlastQueriesFromFastaFile(QString fullFileName);
+    void loadBlastQueriesFromFastaFile(const QString& fullFileName);
     void buildBlastDatabase(bool separateThread);
     void runBlastSearches(bool separateThread);
     void makeQueryRow(int row);
@@ -72,8 +72,8 @@ private slots:
     void fillTablesAfterBlastSearch();
     void fillQueriesTable();
     void fillHitsTable();
-    void blastDatabaseBuildFinished(QString error);
-    void runBlastSearchFinished(QString error);
+    void blastDatabaseBuildFinished(const QString& error);
+    void runBlastSearchFinished(const QString& error);
     void buildBlastDatabaseCancelled();
     void runBlastSearchCancelled();
     void queryCellChanged(int row, int column);
