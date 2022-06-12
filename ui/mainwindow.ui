@@ -58,9 +58,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-658</y>
+         <y>-644</y>
          <width>283</width>
-         <height>1501</height>
+         <height>1487</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -1444,42 +1444,63 @@
          </spacer>
         </item>
         <item>
-         <widget class="CollapseButton" name="bedButton">
-          <property name="styleSheet">
-           <string notr="true">QToolButton {border: none; font: 13pt; font-weight: bold;}</string>
+         <widget class="QWidget" name="bedWidget" native="true">
+          <property name="enabled">
+           <bool>true</bool>
           </property>
-          <property name="text">
-           <string> BED</string>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>8</width>
-            <height>8</height>
-           </size>
-          </property>
-          <property name="popupMode">
-           <enum>QToolButton::InstantPopup</enum>
-          </property>
-          <property name="toolButtonStyle">
-           <enum>Qt::ToolButtonTextBesideIcon</enum>
-          </property>
-          <property name="autoRaise">
-           <bool>false</bool>
-          </property>
-          <property name="arrowType">
-           <enum>Qt::RightArrow</enum>
-          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_bed">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="CollapseButton" name="bedButton">
+             <property name="styleSheet">
+              <string notr="true">QToolButton {border: none; font: 13pt; font-weight: bold;}</string>
+             </property>
+             <property name="text">
+              <string> BED</string>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>8</width>
+               <height>8</height>
+              </size>
+             </property>
+             <property name="popupMode">
+              <enum>QToolButton::InstantPopup</enum>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonTextBesideIcon</enum>
+             </property>
+             <property name="autoRaise">
+              <bool>false</bool>
+             </property>
+             <property name="arrowType">
+              <enum>Qt::RightArrow</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="Line" name="line_11">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="BedWidget" name="bedLoadWidget" native="true"/>
+           </item>
+          </layout>
          </widget>
-        </item>
-        <item>
-         <widget class="Line" name="line_11">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="BedWidget" name="bedWidget" native="true"/>
         </item>
         <item>
          <spacer name="verticalSpacer_9">
@@ -1548,12 +1569,15 @@
          </widget>
         </item>
         <item>
+         <widget class="AnnotationsListWidget" name="annotationsListWidget"/>
+        </item>
+        <item>
          <spacer name="verticalSpacer_10">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
           <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
+           <enum>QSizePolicy::Ignored</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -1562,9 +1586,6 @@
            </size>
           </property>
          </spacer>
-        </item>
-        <item>
-         <widget class="AnnotationsListWidget" name="annotationsListWidget"/>
         </item>
         <item>
          <spacer name="verticalSpacer">
@@ -1630,7 +1651,7 @@
          <x>0</x>
          <y>0</y>
          <width>244</width>
-         <height>1039</height>
+         <height>1065</height>
         </rect>
        </property>
        <property name="sizePolicy">

@@ -126,7 +126,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     graphScopeChanged();
     switchColourScheme();
 
-    ui->bedButton->setContent(ui->bedWidget);
+    ui->bedButton->setContent(ui->bedLoadWidget);
     ui->annotationsButton->setContent(ui->annotationsListWidget);
     ui->blastDetailsButton->setContent(ui->blastDetailsWidget);
     
@@ -1861,6 +1861,8 @@ void MainWindow::setUiState(UiState uiState)
         ui->graphDisplayWidget->setEnabled(false);
         ui->nodeLabelsWidget->setEnabled(false);
         ui->blastSearchWidget->setEnabled(false);
+        ui->bedWidget->setEnabled(false);
+        ui->annotationSelectorWidget->setEnabled(false);
         ui->selectionScrollAreaWidgetContents->setEnabled(false);
         ui->actionLoad_CSV->setEnabled(false);
         break;
@@ -1870,6 +1872,8 @@ void MainWindow::setUiState(UiState uiState)
         ui->graphDisplayWidget->setEnabled(false);
         ui->nodeLabelsWidget->setEnabled(false);
         ui->blastSearchWidget->setEnabled(true);
+        ui->bedWidget->setEnabled(true);
+        ui->annotationSelectorWidget->setEnabled(true);
         ui->selectionScrollAreaWidgetContents->setEnabled(false);
         ui->actionLoad_CSV->setEnabled(true);
         break;
@@ -1879,6 +1883,8 @@ void MainWindow::setUiState(UiState uiState)
         ui->graphDisplayWidget->setEnabled(true);
         ui->nodeLabelsWidget->setEnabled(true);
         ui->blastSearchWidget->setEnabled(true);
+        ui->bedWidget->setEnabled(true);
+        ui->annotationSelectorWidget->setEnabled(true);
         ui->selectionScrollAreaWidgetContents->setEnabled(true);
         ui->actionZoom_to_selection->setEnabled(true);
         ui->actionLoad_CSV->setEnabled(true);
