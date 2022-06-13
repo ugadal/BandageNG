@@ -1594,8 +1594,13 @@ void MainWindow::selectPathNodes()
     std::vector<QString> nodesNotInGraph;
     std::vector<DeBruijnNode *> nodesToSelect;
 
-    QList<DeBruijnNode *> nodes = g_assemblyGraph->m_deBruijnGraphPaths[ui->pathSelectionLineEdit2->displayText().toStdString()]->getNodes();
-    for (auto & node : nodes)
+    QString pathName = ui->pathSelectionLineEdit2->displayText();
+    auto nodes = g_assemblyGraph->m_deBruijnGraphPaths.find(pathName.toStdString());
+    if (nodes == g_assemblyGraph->m_deBruijnGraphPaths.end()) {
+        QMessageBox::information(this, "Path not found", "Path named \"" + pathName + "\" is not found. Maybe you wanted to select nodes instead?");
+        return;
+    }
+    for (auto *node : (*nodes)->getNodes())
         nodesToSelect.push_back(node);
 
     doSelectNodes(nodesToSelect, nodesNotInGraph, ui->pathSelectionRecolorRadioButton->isChecked());

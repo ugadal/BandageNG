@@ -422,7 +422,7 @@
                  <bool>true</bool>
                 </property>
                 <property name="text">
-                 <string>Path:</string>
+                 <string>Name:</string>
                 </property>
                </widget>
               </item>
@@ -1926,7 +1926,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>Path:</string>
+              <string>Name:</string>
              </property>
             </widget>
            </item>
