@@ -195,6 +195,7 @@ public:
     QString getGfaSegmentLine(const DeBruijnNode *node, const QString& depthTag) const;
 
     QString getUniqueNodeName(QString baseName) const;
+    QString getNodeNameFromString(QString string) const;
 private:
     template<typename T> double getValueUsingFractionalIndex(std::vector<T> * v, double index) const;
     static QStringList removeNullStringsFromList(const QStringList& in);
@@ -205,7 +206,6 @@ private:
     std::vector<int> makeOverlapCountVector();
     static QString getOppositeNodeName(QString nodeName) ;
     void clearAllCsvData();
-    QString getNodeNameFromString(QString string) const;
     QString getNewNodeName(QString oldNodeName) const;
     static void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode, MyGraphicsScene * scene);
     static bool canAddNodeToStartOfMergeList(QList<DeBruijnNode *> * mergeList,

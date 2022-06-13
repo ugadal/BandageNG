@@ -10,7 +10,7 @@
 #include "graph/bedloader.hpp"
 #include "graph/annotationsmanager.h"
 #include "graph/assemblygraph.h"
-
+#include "graph/debruijnnode.h"
 
 inline constexpr double BED_MAIN_WIDTH = 1;
 inline constexpr double BED_THICK_WIDTH = 1.3;
@@ -32,10 +32,13 @@ BedWidget::BedWidget(QWidget *parent) : QWidget(parent) {
             auto bedLines = bed::load(bedFileName.toStdString());
             auto &annotationGroup = g_annotationsManager->createAnnotationGroup(g_settings->bedAnnotationGroupName);
             for (const auto &bedLine : bedLines) {
-                auto nodeName = bedLine.chrom + (bedLine.strand == bed::Strand::REVERSE_COMPLEMENT ? "-" : "+");
-                auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName);
+                auto nodeName = g_assemblyGraph->getNodeNameFromString(bedLine.chrom.c_str());
+                auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
                 if (it != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
-                    auto &annotation = annotationGroup.annotationMap[it.value()].emplace_back(
+                    DeBruijnNode *node = it.value();
+                    if (bedLine.strand == bed::Strand::REVERSE_COMPLEMENT)
+                        node = node->getReverseComplement();
+                    auto &annotation = annotationGroup.annotationMap[node].emplace_back(
                         std::make_unique<Annotation>(bedLine.chromStart, bedLine.chromEnd, bedLine.name));
                     annotation->addView(std::make_unique<SolidView>(BED_MAIN_WIDTH, bedLine.itemRgb.toQColor()));
                     annotation->addView(std::make_unique<BedThickView>(BED_THICK_WIDTH, bedLine.itemRgb.toQColor(), bedLine.thickStart, bedLine.thickEnd));
