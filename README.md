@@ -30,9 +30,10 @@ Bandage-NG documentation is available on the <a href="https://github.com/asl/Ban
 
 Bandage-NG help tips are also built into the program. Throughout the UI, you will find these icons next to controls and settings: <img src="http://rrwick.github.io/Bandage/images/helptext.png" alt="help text icon" width="16" height="16">. Click them to see a description of that element of Bandage.
 
-## Prerequisites
+## Prerequisites (for building from the source code)
   * Qt 6
-  * ...
+  * CMake
+  * C++17-compliant compiler
 
 ## Pre-built binaries
 
