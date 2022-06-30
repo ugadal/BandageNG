@@ -3,7 +3,7 @@ name: build-snapshots
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v*.*"
 env:
   BUILD_TYPE: Release
   QT_QPA_PLATFORM: offscreen
