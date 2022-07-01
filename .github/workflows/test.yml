@@ -50,12 +50,7 @@ jobs:
         shell: bash
 
       - name: Configure CMake
-        run: |
-             if [ "$RUNNER_OS" == "Linux" ]; then
-               cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-             elif [ "$RUNNER_OS" == "macOS" ]; then
-               cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
-             fi
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
