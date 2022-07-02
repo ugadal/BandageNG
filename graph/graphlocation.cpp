@@ -20,7 +20,6 @@
 
 #include "debruijnnode.h"
 #include "assemblygraph.h"
-#include "program/globals.h"
 
 
 GraphLocation::GraphLocation()
@@ -72,11 +71,6 @@ GraphLocation GraphLocation::reverseComplementLocation() const
 {
     int newPos = m_node->getLength() - m_position + 1;
     GraphLocation newLocation(m_node->getReverseComplement(), newPos);
-
-    //For Velvet graphs, the reverse complement location is shifted by the k-mer
-    //size and may not even be on the same node!
-    if (g_assemblyGraph->m_graphFileType == LAST_GRAPH)
-        newLocation.moveLocation(-g_assemblyGraph->m_kmer + 1);
 
     if (newLocation.isValid())
         return newLocation;

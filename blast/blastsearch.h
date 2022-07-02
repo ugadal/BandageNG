@@ -21,11 +21,14 @@
 
 #include "blasthit.h"
 #include "blastqueries.h"
-#include <vector>
+#include "program/scinot.h"
+
+#include <QProcess>
 #include <QString>
 #include <QList>
 #include <QSharedPointer>
-#include "program/scinot.h"
+
+#include <vector>
 
 //This is a class to hold all BLAST search related stuff.
 //An instance of it is made available to the whole program

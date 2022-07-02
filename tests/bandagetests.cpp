@@ -100,9 +100,9 @@ private slots:
     void loadFastg();
     void loadGFAWithPlaceholders();
     void loadGFA12();
-    void loadLastGraph();
+    void loadGFA();
     void loadTrinity();
-    void pathFunctionsOnLastGraph();
+    void pathFunctionsOnGFA();
     void pathFunctionsOnFastg();
     void pathFunctionsOnGfaSequencesInGraph();
     void pathFunctionsOnGfaSequencesInFasta();
@@ -115,8 +115,7 @@ private slots:
     void commandLineSettings();
     void sciNotComparisons();
     void graphEdits();
-    void velvetToGfa();
-    void spadesToGfa();
+    void fastgToGfa();
     void mergeNodesOnGfa();
     void changeNodeNames();
     void changeNodeDepths();
@@ -179,7 +178,7 @@ void BandageTests::loadGFAWithPlaceholders()
 
 void BandageTests::loadGFA12()
 {
-    bool gfaGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_gfa12.gfa"));
+    bool gfaGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_gfa12.gfa.gz"));
 
     //Check that the graph loaded properly.
     QCOMPARE(gfaGraphLoaded, true);
@@ -191,10 +190,9 @@ void BandageTests::loadGFA12()
 }
 
 
-void BandageTests::loadLastGraph()
+void BandageTests::loadGFA()
 {
-    QSKIP("LastGraph is deprecated");
-    bool lastGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test.LastGraph"));
+    bool lastGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test.gfa"));
 
     //Check that the graph loaded properly.
     QCOMPARE(lastGraphLoaded, true);
@@ -206,8 +204,8 @@ void BandageTests::loadLastGraph()
     //Check the length of a couple nodes.
     DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
     DeBruijnNode * node14 = g_assemblyGraph->m_deBruijnGraphNodes["14-"];
-    QCOMPARE(node1->getLength(), 2000);
-    QCOMPARE(node14->getLength(), 60);
+    QCOMPARE(node1->getLength(), 2060);
+    QCOMPARE(node14->getLength(), 120);
 }
 
 
@@ -233,16 +231,19 @@ void BandageTests::loadTrinity()
 
 //LastGraph files have no overlap in the edges, so these tests look at paths
 //where the connections are simple.
-void BandageTests::pathFunctionsOnLastGraph()
+void BandageTests::pathFunctionsOnGFA()
 {
-    QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
-    g_assemblyGraph->loadGraphFromFile(testFile("test.LastGraph"));
+    g_assemblyGraph->loadGraphFromFile(testFile("test.gfa"));
 
     QString pathStringFailure;
     Path testPath1 = Path::makeFromString("(1996) 9+, 13+ (5)", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     Path testPath2 = Path::makeFromString("(1996) 9+, 13+ (5)", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     Path testPath3 = Path::makeFromString("(1996) 9+, 13+ (6)", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     Path testPath4 = Path::makeFromString("9+, 13+, 14-", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
 
     DeBruijnNode * node4Minus = g_assemblyGraph->m_deBruijnGraphNodes["4-"];
     DeBruijnNode * node9Plus = g_assemblyGraph->m_deBruijnGraphNodes["9+"];
@@ -251,7 +252,7 @@ void BandageTests::pathFunctionsOnLastGraph()
     DeBruijnNode * node7Plus = g_assemblyGraph->m_deBruijnGraphNodes["7+"];
 
     QCOMPARE(testPath1.getLength(), 10);
-    QCOMPARE(testPath1.getPathSequence(), QByteArray("GACCTATAGA"));
+    QCOMPARE(testPath1.getPathSequence(), QByteArray("GGAAGAGAGC"));
     QCOMPARE(testPath1.isEmpty(), false);
     QCOMPARE(testPath1.isCircular(), false);
     QCOMPARE(testPath1 == testPath2, true);
@@ -286,7 +287,9 @@ void BandageTests::pathFunctionsOnFastg()
 
     QString pathStringFailure;
     Path testPath1 = Path::makeFromString("(50234) 6+, 26+, 23+, 26+, 24+ (200)", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     Path testPath2 = Path::makeFromString("26+, 23+", true, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QCOMPARE(testPath1.getLength(), 1764);
     QCOMPARE(testPath2.getLength(), 1387);
     QCOMPARE(testPath1.isCircular(), false);
@@ -309,8 +312,10 @@ void BandageTests::pathFunctionsOnGfaSequencesInGraph()
     QString pathStringFailure;
 
     Path testPath1 = Path::makeFromString("232+, 277+", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QByteArray testPath1Sequence = "CCTTATACGAAGCCCAGGTTAATCCTGGGCTTTTTGTTGAATCTGATCATTGGTAGCAAACAGATCAGGATTGGTAATTTTGATGTTTTCCTGACAACTCCTGCAAAGCATCAGCCCAGCAAAAAGTTGTACATGTTCCGTTGATTCACAGAAGGCACATGGCTTAGGAAAAGAGATGATATTGGCTGAATTGACTAATTCTGTTGACATAAGAAGTAACCTTGGATTGTACATATTTATTTTTAATAAATTTCAATACTTTATACCTAATTTAGCCACTAAAATTTGTACATTATTGTATAATCCATGTGTACATATTATTTTTTATAATTTTCATTCACTTAGACCCAAAATAGTATTTATTTTTGTACAACACCATGTACAGAACAATAATCATATAAATCAAATTTTTAGCATAAAAAAGTCCATTAATTTTGTACACAATTCTGAAACTTAAAAATCTAAACTTTCATCAATTTTTTTCATAATTTCAATAAATTAACCTTAATTTTAAGATATATTCTGAAATTTGGTTTGAAAGCTGTTTTTACATTATATTTCAATACTTTAAATCAAAAAATTGGATATTTTTTGAAAAACTCAATGAAAGTTTATTTTTTATTTAAAAACAACTAGTTATATTAGTTTTTATCCATTTTTTTGAAACAGTTTCTATATGATAAAAAAACCTATAAAAACCATATCTAGCAAAGGTTTGAGGGTTATCATCTTTAGATGCGTGGTGTGTGACAAAAAAATCCCGGCATGTGCCGGATTCTGGATTAGAAAATTGGCTAAAGTGACGTAGGACTGGTGCTTGGTTTTACATGGAAAAAAGTATTTATTTTCTGGTTTATAAAAACGTAAAAAGATCAGTTTTTGTTCATTCATCCAGGTTAAAAATTTCAACCTAAAACTTTAATTATGAAAAGCTTCACAGAAAGCATTCAAATGCGATTTAAGAGCCTTTATCTAAAAAACATAGATCTTATAGCGAAAAACAGAAAACAGCTCAAAAAACGCAAAAGAGAGTGAAGTAAAGAGATGTTTTGACTTTAGATAGCTGCATAGAGCGAGTGTCTACGAGCGAACTATCAAAATTTGCGTCTAGACTCTCTGAAAAACATTTTTTTGCCCTCTTTAGCCTAAGAAAGCTTAATTTTCATGCAGAAATTTGCTCCTGGACCGAGCGTAGCGAGAAAAAAAGCTCATGAGCGAAGCGAATTCCGAGTTGCTTTTGCTTTTTCTTAAAGTCACGCAAGTATTAACCAAAAAATTGCCCCGACGAACTGAGCGAAAGCGAAGTTCAATAGAGTTTGAGCGAAGCGAAAACCAAGGGC";
     Path testPath2 = Path::makeFromString("277-, 232-", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QByteArray testPath2Sequence = "GCCCTTGGTTTTCGCTTCGCTCAAACTCTATTGAACTTCGCTTTCGCTCAGTTCGTCGGGGCAATTTTTTGGTTAATACTTGCGTGACTTTAAGAAAAAGCAAAAGCAACTCGGAATTCGCTTCGCTCATGAGCTTTTTTTCTCGCTACGCTCGGTCCAGGAGCAAATTTCTGCATGAAAATTAAGCTTTCTTAGGCTAAAGAGGGCAAAAAAATGTTTTTCAGAGAGTCTAGACGCAAATTTTGATAGTTCGCTCGTAGACACTCGCTCTATGCAGCTATCTAAAGTCAAAACATCTCTTTACTTCACTCTCTTTTGCGTTTTTTGAGCTGTTTTCTGTTTTTCGCTATAAGATCTATGTTTTTTAGATAAAGGCTCTTAAATCGCATTTGAATGCTTTCTGTGAAGCTTTTCATAATTAAAGTTTTAGGTTGAAATTTTTAACCTGGATGAATGAACAAAAACTGATCTTTTTACGTTTTTATAAACCAGAAAATAAATACTTTTTTCCATGTAAAACCAAGCACCAGTCCTACGTCACTTTAGCCAATTTTCTAATCCAGAATCCGGCACATGCCGGGATTTTTTTGTCACACACCACGCATCTAAAGATGATAACCCTCAAACCTTTGCTAGATATGGTTTTTATAGGTTTTTTTATCATATAGAAACTGTTTCAAAAAAATGGATAAAAACTAATATAACTAGTTGTTTTTAAATAAAAAATAAACTTTCATTGAGTTTTTCAAAAAATATCCAATTTTTTGATTTAAAGTATTGAAATATAATGTAAAAACAGCTTTCAAACCAAATTTCAGAATATATCTTAAAATTAAGGTTAATTTATTGAAATTATGAAAAAAATTGATGAAAGTTTAGATTTTTAAGTTTCAGAATTGTGTACAAAATTAATGGACTTTTTTATGCTAAAAATTTGATTTATATGATTATTGTTCTGTACATGGTGTTGTACAAAAATAAATACTATTTTGGGTCTAAGTGAATGAAAATTATAAAAAATAATATGTACACATGGATTATACAATAATGTACAAATTTTAGTGGCTAAATTAGGTATAAAGTATTGAAATTTATTAAAAATAAATATGTACAATCCAAGGTTACTTCTTATGTCAACAGAATTAGTCAATTCAGCCAATATCATCTCTTTTCCTAAGCCATGTGCCTTCTGTGAATCAACGGAACATGTACAACTTTTTGCTGGGCTGATGCTTTGCAGGAGTTGTCAGGAAAACATCAAAATTACCAATCCTGATCTGTTTGCTACCAATGATCAGATTCAACAAAAAGCCCAGGATTAACCTGGGCTTCGTATAAGG";
     QCOMPARE(testPath1.getPathSequence(), testPath1Sequence);
     QCOMPARE(testPath2.getPathSequence(), testPath2Sequence);
@@ -341,8 +346,10 @@ void BandageTests::pathFunctionsOnGfaSequencesInFasta()
     //Check a couple short paths.
     QString pathStringFailure;
     Path testPath1 = Path::makeFromString("232+, 277+", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QByteArray testPath1Sequence = "CCTTATACGAAGCCCAGGTTAATCCTGGGCTTTTTGTTGAATCTGATCATTGGTAGCAAACAGATCAGGATTGGTAATTTTGATGTTTTCCTGACAACTCCTGCAAAGCATCAGCCCAGCAAAAAGTTGTACATGTTCCGTTGATTCACAGAAGGCACATGGCTTAGGAAAAGAGATGATATTGGCTGAATTGACTAATTCTGTTGACATAAGAAGTAACCTTGGATTGTACATATTTATTTTTAATAAATTTCAATACTTTATACCTAATTTAGCCACTAAAATTTGTACATTATTGTATAATCCATGTGTACATATTATTTTTTATAATTTTCATTCACTTAGACCCAAAATAGTATTTATTTTTGTACAACACCATGTACAGAACAATAATCATATAAATCAAATTTTTAGCATAAAAAAGTCCATTAATTTTGTACACAATTCTGAAACTTAAAAATCTAAACTTTCATCAATTTTTTTCATAATTTCAATAAATTAACCTTAATTTTAAGATATATTCTGAAATTTGGTTTGAAAGCTGTTTTTACATTATATTTCAATACTTTAAATCAAAAAATTGGATATTTTTTGAAAAACTCAATGAAAGTTTATTTTTTATTTAAAAACAACTAGTTATATTAGTTTTTATCCATTTTTTTGAAACAGTTTCTATATGATAAAAAAACCTATAAAAACCATATCTAGCAAAGGTTTGAGGGTTATCATCTTTAGATGCGTGGTGTGTGACAAAAAAATCCCGGCATGTGCCGGATTCTGGATTAGAAAATTGGCTAAAGTGACGTAGGACTGGTGCTTGGTTTTACATGGAAAAAAGTATTTATTTTCTGGTTTATAAAAACGTAAAAAGATCAGTTTTTGTTCATTCATCCAGGTTAAAAATTTCAACCTAAAACTTTAATTATGAAAAGCTTCACAGAAAGCATTCAAATGCGATTTAAGAGCCTTTATCTAAAAAACATAGATCTTATAGCGAAAAACAGAAAACAGCTCAAAAAACGCAAAAGAGAGTGAAGTAAAGAGATGTTTTGACTTTAGATAGCTGCATAGAGCGAGTGTCTACGAGCGAACTATCAAAATTTGCGTCTAGACTCTCTGAAAAACATTTTTTTGCCCTCTTTAGCCTAAGAAAGCTTAATTTTCATGCAGAAATTTGCTCCTGGACCGAGCGTAGCGAGAAAAAAAGCTCATGAGCGAAGCGAATTCCGAGTTGCTTTTGCTTTTTCTTAAAGTCACGCAAGTATTAACCAAAAAATTGCCCCGACGAACTGAGCGAAAGCGAAGTTCAATAGAGTTTGAGCGAAGCGAAAACCAAGGGC";
     Path testPath2 = Path::makeFromString("277-, 232-", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QByteArray testPath2Sequence = "GCCCTTGGTTTTCGCTTCGCTCAAACTCTATTGAACTTCGCTTTCGCTCAGTTCGTCGGGGCAATTTTTTGGTTAATACTTGCGTGACTTTAAGAAAAAGCAAAAGCAACTCGGAATTCGCTTCGCTCATGAGCTTTTTTTCTCGCTACGCTCGGTCCAGGAGCAAATTTCTGCATGAAAATTAAGCTTTCTTAGGCTAAAGAGGGCAAAAAAATGTTTTTCAGAGAGTCTAGACGCAAATTTTGATAGTTCGCTCGTAGACACTCGCTCTATGCAGCTATCTAAAGTCAAAACATCTCTTTACTTCACTCTCTTTTGCGTTTTTTGAGCTGTTTTCTGTTTTTCGCTATAAGATCTATGTTTTTTAGATAAAGGCTCTTAAATCGCATTTGAATGCTTTCTGTGAAGCTTTTCATAATTAAAGTTTTAGGTTGAAATTTTTAACCTGGATGAATGAACAAAAACTGATCTTTTTACGTTTTTATAAACCAGAAAATAAATACTTTTTTCCATGTAAAACCAAGCACCAGTCCTACGTCACTTTAGCCAATTTTCTAATCCAGAATCCGGCACATGCCGGGATTTTTTTGTCACACACCACGCATCTAAAGATGATAACCCTCAAACCTTTGCTAGATATGGTTTTTATAGGTTTTTTTATCATATAGAAACTGTTTCAAAAAAATGGATAAAAACTAATATAACTAGTTGTTTTTAAATAAAAAATAAACTTTCATTGAGTTTTTCAAAAAATATCCAATTTTTTGATTTAAAGTATTGAAATATAATGTAAAAACAGCTTTCAAACCAAATTTCAGAATATATCTTAAAATTAAGGTTAATTTATTGAAATTATGAAAAAAATTGATGAAAGTTTAGATTTTTAAGTTTCAGAATTGTGTACAAAATTAATGGACTTTTTTATGCTAAAAATTTGATTTATATGATTATTGTTCTGTACATGGTGTTGTACAAAAATAAATACTATTTTGGGTCTAAGTGAATGAAAATTATAAAAAATAATATGTACACATGGATTATACAATAATGTACAAATTTTAGTGGCTAAATTAGGTATAAAGTATTGAAATTTATTAAAAATAAATATGTACAATCCAAGGTTACTTCTTATGTCAACAGAATTAGTCAATTCAGCCAATATCATCTCTTTTCCTAAGCCATGTGCCTTCTGTGAATCAACGGAACATGTACAACTTTTTGCTGGGCTGATGCTTTGCAGGAGTTGTCAGGAAAACATCAAAATTACCAATCCTGATCTGTTTGCTACCAATGATCAGATTCAACAAAAAGCCCAGGATTAACCTGGGCTTCGTATAAGG";
 
     //Check the paths sequences. Doing so will trigger the loading of node
@@ -388,34 +395,6 @@ void BandageTests::graphLocationFunctions()
     GraphLocation location3;
     QCOMPARE(location2.isNull(), false);
     QCOMPARE(location3.isNull(), true);
-
-    QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
-    //Now look at a LastGraph file which is more complex.  Because of the
-    //offset, reverse complement positions can be in different nodes and may
-    //not even exist.
-    g_assemblyGraph->loadGraphFromFile(testFile("test.LastGraph"));
-    int kmer = g_assemblyGraph->m_kmer;
-    DeBruijnNode * node13Plus = g_assemblyGraph->m_deBruijnGraphNodes["13+"];
-    DeBruijnNode * node8Minus = g_assemblyGraph->m_deBruijnGraphNodes["8-"];
-
-    GraphLocation location4 = GraphLocation::startOfNode(node13Plus);
-    QCOMPARE(location4.getBase(), 'A');
-    QCOMPARE(location4.getPosition(), 1);
-
-    GraphLocation revCompLocation4 = location4.reverseComplementLocation();
-    QCOMPARE(revCompLocation4.getBase(), 'T');
-    QCOMPARE(revCompLocation4.getNode()->getName(), QString("13-"));
-    QCOMPARE(revCompLocation4.getPosition(), node13Plus->getLength() - kmer + 1);
-
-    GraphLocation location5 = GraphLocation::endOfNode(node8Minus);
-    GraphLocation location6 = location5;
-    location6.moveLocation(-60);
-    GraphLocation revCompLocation5 = location5.reverseComplementLocation();
-    GraphLocation revCompLocation6 = location6.reverseComplementLocation();
-    QCOMPARE(revCompLocation5.isNull(), true);
-    QCOMPARE(revCompLocation6.isNull(), false);
-    QCOMPARE(revCompLocation6.getNode()->getName(), QString("8+"));
-    QCOMPARE(revCompLocation6.getPosition(), 1);
 }
 
 
@@ -1213,6 +1192,7 @@ void BandageTests::graphEdits()
     //end.
     QString pathStringFailure;
     Path path = Path::makeFromString("6+, 26+, 23+, 26+, 24+", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QByteArray pathSequence = path.getPathSequence();
 
     g_assemblyGraph->duplicateNodePair(g_assemblyGraph->m_deBruijnGraphNodes["26+"], 0);
@@ -1244,58 +1224,8 @@ void BandageTests::graphEdits()
 }
 
 
-//Saving a Velvet graph to GFA is a bit complex because the node sequence offset
-//must be filled in.  This function tests aspects of that process.
-void BandageTests::velvetToGfa()
-{
-    QSKIP("LastGraph is deprecated. In this case 'big_test.LastGraph' file contains empty sequences "
-          "and GFA loader thinks that sequence is in .fasta file.");
-    //First load the graph as a LastGraph and pull out some information and a
-    //circular path sequence.
-    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("big_test.LastGraph")));
 
-    int lastGraphNodeCount = g_assemblyGraph->m_nodeCount;
-    int lastGraphEdgeCount= g_assemblyGraph->m_edgeCount;
-    long long lastGraphTotalLength = g_assemblyGraph->m_totalLength;
-    long long lastGraphShortestContig = g_assemblyGraph->m_shortestContig;
-    long long lastGraphLongestContig = g_assemblyGraph->m_longestContig;
-
-    QString pathStringFailure;
-    Path lastGraphTestPath1 = Path::makeFromString("3176-, 3176+, 4125+, 3178-, 3283+, 3180+, 3177-", true, &pathStringFailure);
-    Path lastGraphTestPath2 = Path::makeFromString("3368+, 3369+, 3230+, 3231+, 3370-, 3143+, 3144+, 3145+, 3240+, 3241+, 3788-, 3787-, 3231+, 3252+, 3241-, 3240-, 3145-, 4164-, 4220+, 3368-, 3367+", true, &pathStringFailure);
-    QByteArray lastGraphTestPath1Sequence = lastGraphTestPath1.getPathSequence();
-    QByteArray lastGraphTestPath2Sequence = lastGraphTestPath2.getPathSequence();
-
-    //Now save the graph as a GFA and reload it and grab the same information.
-    QVERIFY(g_assemblyGraph->saveEntireGraphToGfa(tempFile("big_test_temp.gfa")));
-
-    QVERIFY(g_assemblyGraph->loadGraphFromFile(tempFile("big_test_temp.gfa")));
-
-    int gfaNodeCount = g_assemblyGraph->m_nodeCount;
-    int gfaEdgeCount= g_assemblyGraph->m_edgeCount;
-    long long gfaTotalLength = g_assemblyGraph->m_totalLength;
-    long long gfaShortestContig = g_assemblyGraph->m_shortestContig;
-    long long gfaLongestContig = g_assemblyGraph->m_longestContig;
-
-    Path gfaTestPath1 = Path::makeFromString("3176-, 3176+, 4125+, 3178-, 3283+, 3180+, 3177-", true, &pathStringFailure);
-    Path gfaTestPath2 = Path::makeFromString("3368+, 3369+, 3230+, 3231+, 3370-, 3143+, 3144+, 3145+, 3240+, 3241+, 3788-, 3787-, 3231+, 3252+, 3241-, 3240-, 3145-, 4164-, 4220+, 3368-, 3367+", true, &pathStringFailure);
-    QByteArray gfaTestPath1Sequence = gfaTestPath1.getPathSequence();
-    QByteArray gfaTestPath2Sequence = gfaTestPath2.getPathSequence();
-
-    //Now we compare the LastGraph info to the GFA info to make sure they are
-    //the same (or appropriately different).  The k-mer size for this graph is
-    //51, so we expect each node to get 50 base pairs longer.
-    QCOMPARE(lastGraphNodeCount, gfaNodeCount);
-    QCOMPARE(lastGraphEdgeCount, gfaEdgeCount);
-    QCOMPARE(lastGraphTotalLength + 50 * lastGraphNodeCount, gfaTotalLength);
-    QCOMPARE(lastGraphShortestContig + 50, gfaShortestContig);
-    QCOMPARE(lastGraphLongestContig + 50, gfaLongestContig);
-    QCOMPARE(lastGraphTestPath1Sequence, gfaTestPath1Sequence);
-    QCOMPARE(lastGraphTestPath2Sequence, gfaTestPath2Sequence);
-}
-
-
-void BandageTests::spadesToGfa()
+void BandageTests::fastgToGfa()
 {
     //First load the graph as a FASTG and pull out some information and a
     //path sequence.
@@ -1309,7 +1239,9 @@ void BandageTests::spadesToGfa()
 
     QString pathStringFailure;
     Path fastgTestPath1 = Path::makeFromString("24+, 14+, 39-, 43-, 42-, 2-, 4+, 33+, 35-, 31-, 44-, 27+, 9-, 28-, 44+, 31+, 36+", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     Path fastgTestPath2 = Path::makeFromString("16+, 7+, 13+, 37+, 41-, 40-, 42+, 43+, 39+, 14-, 22-, 20+, 7-, 25-, 32-, 38+, 3-", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QByteArray fastgTestPath1Sequence = fastgTestPath1.getPathSequence();
     QByteArray fastgTestPath2Sequence = fastgTestPath2.getPathSequence();
 
@@ -1324,7 +1256,9 @@ void BandageTests::spadesToGfa()
     long long gfaLongestContig = g_assemblyGraph->m_longestContig;
 
     Path gfaTestPath1 = Path::makeFromString("24+, 14+, 39-, 43-, 42-, 2-, 4+, 33+, 35-, 31-, 44-, 27+, 9-, 28-, 44+, 31+, 36+", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     Path gfaTestPath2 = Path::makeFromString("16+, 7+, 13+, 37+, 41-, 40-, 42+, 43+, 39+, 14-, 22-, 20+, 7-, 25-, 32-, 38+, 3-", false, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QByteArray gfaTestPath1Sequence = gfaTestPath1.getPathSequence();
     QByteArray gfaTestPath2Sequence = gfaTestPath2.getPathSequence();
 
@@ -1358,6 +1292,7 @@ void BandageTests::mergeNodesOnGfa()
     //Create a path before merging the nodes.
     QString pathStringFailure;
     Path testPath1 = Path::makeFromString("6+, 280+, 232-, 333+, 289+, 283+", true, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QByteArray path1Sequence = testPath1.getPathSequence();
 
     int path1Length = testPath1.getLength();
@@ -1389,6 +1324,7 @@ void BandageTests::mergeNodesOnGfa()
     //If we make a circular path with this node, its length should be equal to
     //the length of the path made before.
     Path testPath2 = Path::makeFromString(lastNode->getName(), true, &pathStringFailure);
+    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QCOMPARE(path1Length, testPath2.getLength());
 
     //The sequence of this second path should also match the sequence of the
@@ -1610,19 +1546,18 @@ void BandageTests::bandageInfo()
     QCOMPARE(66, componentCount);
     QCOMPARE(9398, largestComponentLength);
 
-    QSKIP("LastGraph is deprecated. File 'test.LastGraph' contains non-reverse complement sequences.");
-    g_assemblyGraph->loadGraphFromFile(testFile("test.LastGraph"));
+    g_assemblyGraph->loadGraphFromFile(testFile("test.gfa"));
     g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
     g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
     QCOMPARE(17, g_assemblyGraph->m_nodeCount);
     QCOMPARE(16, g_assemblyGraph->m_edgeCount);
-    QCOMPARE(29939, g_assemblyGraph->m_totalLength);
+    QCOMPARE(30959, g_assemblyGraph->m_totalLength);
     QCOMPARE(10, g_assemblyGraph->getDeadEndCount());
-    QCOMPARE(2000, n50);
-    QCOMPARE(59, shortestNode);
-    QCOMPARE(2000, longestNode);
+    QCOMPARE(2060, n50);
+    QCOMPARE(119, shortestNode);
+    QCOMPARE(2060, longestNode);
     QCOMPARE(1, componentCount);
-    QCOMPARE(29939, largestComponentLength);
+    QCOMPARE(30959, largestComponentLength);
 }
 
 void BandageTests::sequenceInit() {

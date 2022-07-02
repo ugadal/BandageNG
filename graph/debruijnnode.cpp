@@ -21,8 +21,6 @@
 #include "assemblygraph.h"
 #include "sequenceutils.h"
 
-#include "blast/blasthit.h"
-
 #include <cmath>
 
 #include <set>
@@ -270,48 +268,14 @@ QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) co
     return fasta;
 }
 
-//This function gets the node's sequence for a GFA file.  It has two main
-//differences from getSequence:
-//  -If the graph is from Velvet, it will extend the node sequences
-//  -If the sequence is missing, it will just give "*"
+// This function gets the node's sequence for a GFA file.
+// If the sequence is missing, it will just give "*"
 QByteArray DeBruijnNode::getSequenceForGfa() const
 {
     if (sequenceIsMissing())
         return {"*"};
 
-    QByteArray sequence = utils::sequenceToQByteArray(getSequence());
-
-    if (g_assemblyGraph->m_graphFileType != LAST_GRAPH)
-        return sequence;
-
-    //If the code got here, then we are getting a full sequence from a Velvet
-    //LastGraph graph, so we need to extend the beginning of the sequence.
-    int extensionLength = g_assemblyGraph->m_kmer - 1;
-
-    //If the node is at least k-1 in length, then the necessary sequence can be
-    //deduced from the reverse complement node.
-    if (getLength() >= extensionLength)
-    {
-        QByteArray revCompSeq = utils::sequenceToQByteArray(getReverseComplement()->getSequence());
-        QByteArray endOfRevCompSeq = revCompSeq.right(extensionLength);
-        QByteArray extension = AssemblyGraph::getReverseComplement(endOfRevCompSeq);
-        return extension + sequence;
-    }
-
-    //If the node is not long enough, then we must look in upstream nodes for
-    //the rest of the sequence.
-    else
-    {
-        QByteArray extension = getUpstreamSequence(extensionLength);
-        if (extension.length() < extensionLength)
-        {
-            int additionalBases = extensionLength - extension.length();
-            QByteArray n;
-            n.fill('N', additionalBases);
-            extension = n + extension;
-        }
-        return extension + sequence;
-    }
+    return utils::sequenceToQByteArray(getSequence());
 }
 
 
@@ -349,15 +313,6 @@ QByteArray DeBruijnNode::getUpstreamSequence(int upstreamSequenceLength) const
     //If the code got here, that means that not enough upstream sequence was
     //found in any path!  Return what we have managed to get so far.
     return bestUpstreamNodeSequence;
-}
-
-
-int DeBruijnNode::getFullLength() const
-{
-    if (g_assemblyGraph->m_graphFileType != LAST_GRAPH)
-        return getLength();
-    else
-        return getLength() + g_assemblyGraph->m_kmer - 1;
 }
 
 

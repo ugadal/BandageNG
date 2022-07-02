@@ -342,7 +342,6 @@ void MainWindow::loadGraph(QString fullFileName)
         fullFileName =
                 QFileDialog::getOpenFileName(this, "Load graph", g_memory->rememberedPath,
                                              "Any supported graph (*);;"
-                                             "LastGraph (*LastGraph*);;"
                                              "FASTG (*.fastg);;"
                                              "GFA (*.gfa);;"
                                              "Trinity.fasta (*.fasta);;"
@@ -2280,7 +2279,6 @@ QString MainWindow::convertGraphFileTypeToString(GraphFileType graphFileType)
     QString graphFileTypeString;
     switch (graphFileType)
     {
-    case LAST_GRAPH: graphFileTypeString = "LastGraph"; break;
     case FASTG: graphFileTypeString = "FASTG"; break;
     case GFA: graphFileTypeString = "GFA"; break;
     case TRINITY: graphFileTypeString = "Trinity.fasta"; break;

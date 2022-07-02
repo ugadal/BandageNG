@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "debruijnedge.h"
 #include "gfa.h"
 #include "path.h"
 #include "annotation.hpp"

@@ -148,7 +148,7 @@ static void addToOgdfGraph(DeBruijnNode *node,
         return;
 
     // Each node in the graph sense is made up of multiple nodes in the
-    // OGDF sense.  This way, Velvet nodes appear as lines whose length
+    // OGDF sense.  This way, graph nodes appear as lines whose length
     // corresponds to the sequence length.
     double drawnNodeLength = getDrawnNodeLength(node);
     int numberOfGraphEdges = getNumberOfOgdfGraphEdges(drawnNodeLength);

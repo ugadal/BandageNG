@@ -22,7 +22,6 @@
 #include <colormap/tinycolormap_fwd.hpp>
 
 #include <QString>
-#include <QProcess>
 #include <QSharedPointer>
 #include <QColor>
 
@@ -36,14 +35,10 @@ class AssemblyGraph;
 class AnnotationsManager;
 
 enum GraphScope {WHOLE_GRAPH, AROUND_NODE, AROUND_PATHS, AROUND_BLAST_HITS, DEPTH_RANGE};
-enum ContiguityStatus {STARTING, CONTIGUOUS_STRAND_SPECIFIC,
-                       CONTIGUOUS_EITHER_STRAND, MAYBE_CONTIGUOUS,
-                       NOT_CONTIGUOUS};
 enum NodeDragging {ONE_PIECE, NEARBY_PIECES, ALL_PIECES, NO_DRAGGING};
 enum ZoomSource {MOUSE_WHEEL, SPIN_BOX, KEYBOARD, GESTURE};
-enum UiState {NO_GRAPH_LOADED, GRAPH_LOADED, GRAPH_DRAWN};
 enum NodeLengthMode {AUTO_NODE_LENGTH, MANUAL_NODE_LENGTH};
-enum GraphFileType {LAST_GRAPH, FASTG, GFA, TRINITY, ASQG, PLAIN_FASTA, ANY_FILE_TYPE,
+enum GraphFileType {FASTG, GFA, TRINITY, ASQG, PLAIN_FASTA, ANY_FILE_TYPE,
                     UNKNOWN_FILE_TYPE};
 enum SequenceType {NUCLEOTIDE, PROTEIN, EITHER_NUCLEOTIDE_OR_PROTEIN};
 enum BlastUiState {BLAST_DB_NOT_YET_BUILT, BLAST_DB_BUILD_IN_PROGRESS,
@@ -52,8 +47,6 @@ enum BlastUiState {BLAST_DB_NOT_YET_BUILT, BLAST_DB_BUILD_IN_PROGRESS,
                    BLAST_SEARCH_COMPLETE};
 enum CommandLineCommand {NO_COMMAND, BANDAGE_LOAD, BANDAGE_INFO, BANDAGE_IMAGE,
                          BANDAGE_DISTANCE, BANDAGE_QUERY_PATHS, BANDAGE_REDUCE};
-enum EdgeOverlapType {UNKNOWN_OVERLAP, EXACT_OVERLAP,
-                      AUTO_DETERMINED_EXACT_OVERLAP, JUMP};
 enum NodeNameStatus {NODE_NAME_OKAY, NODE_NAME_TAKEN, NODE_NAME_CONTAINS_TAB,
                      NODE_NAME_CONTAINS_NEWLINE, NODE_NAME_CONTAINS_COMMA,
                      NODE_NAME_CONTAINS_SPACE};

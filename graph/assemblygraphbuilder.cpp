@@ -50,11 +50,6 @@ static bool checkFirstLineOfFile(const QString& fullFileName, const QString& reg
     return false;
 }
 
-// Cursory look to see if file appears to be a LastGraph file.
-static bool checkFileIsLastGraph(const QString& fullFileName) {
-    return checkFirstLineOfFile(fullFileName, R"(^\d+\s+\d+\s+\d+\s+\d+)");
-}
-
 //Cursory look to see if file appears to be a FASTG file.
 static bool checkFileIsFastG(const QString& fullFileName) {
     return checkFirstLineOfFile(fullFileName, "^>(NODE|EDGE).*;");
@@ -1070,109 +1065,12 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
     }
 };
 
-class LastGraphAssemblyGraphBuilder : public AssemblyGraphBuilder {
-    using AssemblyGraphBuilder::AssemblyGraphBuilder;
-
-    // This function takes a normal number string like "5" or "-6" and changes
-    // it to "5+" or "6-" - the format of Bandage node names.
-    [[nodiscard]] static QString convertNormalNumberStringToBandageNodeName(QString number) {
-        if (number.at(0) == '-') {
-            number.remove(0, 1);
-            return number + "-";
-        }
-
-        return number + "+";
-    }
-
-    bool build(AssemblyGraph &graph) override {
-        graph.m_graphFileType = LAST_GRAPH;
-        graph.m_filename = fileName_;
-        graph.m_depthTag = "KC";
-
-        bool firstLine = true;
-        QFile inputFile(fileName_);
-        if (inputFile.open(QIODevice::ReadOnly)) {
-            QTextStream in(&inputFile);
-            while (!in.atEnd()) {
-                QString line = in.readLine();
-
-                if (firstLine) {
-                    QStringList firstLineParts = line.split(QRegularExpression("\\s+"));
-                    if (firstLineParts.size() > 2)
-                        graph.m_kmer = firstLineParts[2].toInt();
-                    firstLine = false;
-                }
-
-                if (line.startsWith("NODE")) {
-                    QStringList nodeDetails = line.split(QRegularExpression("\\s+"));
-
-                    if (nodeDetails.size() < 4)
-                        throw "load error";
-
-                    const QString& nodeName = nodeDetails.at(1);
-                    QString posNodeName = nodeName + "+";
-                    QString negNodeName = nodeName + "-";
-
-                    int nodeLength = nodeDetails.at(2).toInt();
-
-                    double nodeDepth;
-                    if (nodeLength > 0)
-                        nodeDepth = double(nodeDetails.at(3).toInt()) / nodeLength; //IS THIS COLUMN ($COV_SHORT1) THE BEST ONE TO USE?
-                    else
-                        nodeDepth = double(nodeDetails.at(3).toInt());
-
-                    Sequence sequence{in.readLine().toLocal8Bit()};
-                    Sequence revCompSequence{in.readLine().toLocal8Bit()};
-
-                    if (sequence.GetReverseComplement() != revCompSequence) {
-                        throw AssemblyGraphError{"Invalid reverse-complement sequence in file."};
-                    }
-
-                    auto node = new DeBruijnNode(posNodeName, nodeDepth, sequence);
-                    auto reverseComplementNode = new DeBruijnNode(negNodeName, nodeDepth, revCompSequence);
-                    node->setReverseComplement(reverseComplementNode);
-                    reverseComplementNode->setReverseComplement(node);
-                    graph.m_deBruijnGraphNodes.emplace(posNodeName.toStdString(), node);
-                    graph.m_deBruijnGraphNodes.emplace(negNodeName.toStdString(), reverseComplementNode);
-                }
-
-                //ARC lines contain edges.
-                else if (line.startsWith("ARC")) {
-                    QStringList arcDetails = line.split(QRegularExpression("\\s+"));
-
-                    if (arcDetails.size() < 3)
-                        throw "load error";
-
-                    QString node1Name = convertNormalNumberStringToBandageNodeName(arcDetails.at(1));
-                    QString node2Name = convertNormalNumberStringToBandageNodeName(arcDetails.at(2));
-
-                    graph.createDeBruijnEdge(node1Name, node2Name);
-                }
-
-                //NR lines occur after ARC lines, so we can quit looking when we see one.
-                else if (line.startsWith("NR"))
-                    break;
-            }
-            inputFile.close();
-
-            graph.setAllEdgesExactOverlap(0);
-        }
-
-        if (graph.m_deBruijnGraphNodes.empty())
-            throw "load error";
-
-        return true;
-    }
-};
-
 std::unique_ptr<AssemblyGraphBuilder>
 AssemblyGraphBuilder::get(const QString &fullFileName) {
     std::unique_ptr<AssemblyGraphBuilder> res;
 
     if (checkFileIsGfa(fullFileName))
         res.reset(new GFAAssemblyGraphBuilder(fullFileName));
-    else if (checkFileIsLastGraph(fullFileName))
-        res.reset(new LastGraphAssemblyGraphBuilder(fullFileName));
     else if (checkFileIsFastG(fullFileName))
         res.reset(new FastgAssemblyGraphBuilder(fullFileName));
     else if (checkFileIsTrinityFasta(fullFileName))

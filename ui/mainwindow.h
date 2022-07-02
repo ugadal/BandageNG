@@ -19,9 +19,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "program/globals.h"
-#include "layout/graphlayout.h"
+#include "graph/debruijnnode.h"
 #include "graph/nodecolorer.h"
+
+#include "layout/graphlayout.h"
+#include "program/globals.h"
 
 #include <QMainWindow>
 #include <QGraphicsScene>
@@ -39,6 +41,8 @@ class MyGraphicsScene;
 class DeBruijnNode;
 class DeBruijnEdge;
 class BlastSearchDialog;
+
+enum UiState {NO_GRAPH_LOADED, GRAPH_LOADED, GRAPH_DRAWN};
 
 namespace Ui {
 class MainWindow;

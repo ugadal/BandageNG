@@ -17,10 +17,6 @@
 
 #pragma once
 
-#include "program/globals.h"
-#include "program/settings.h"
-#include "blast/blasthitpart.h"
-
 #include "llvm/ADT/iterator_range.h"
 #include "seq/sequence.hpp"
 #include "small_vector/small_pod_vector.hpp"
@@ -29,10 +25,14 @@
 #include <QByteArray>
 #include <vector>
 
-class OgdfNode;
 class DeBruijnEdge;
 class GraphicsItemNode;
-class BlastHit;
+
+enum ContiguityStatus {
+    STARTING, CONTIGUOUS_STRAND_SPECIFIC,
+    CONTIGUOUS_EITHER_STRAND, MAYBE_CONTIGUOUS,
+    NOT_CONTIGUOUS
+};
 
 class DeBruijnNode
 {
@@ -56,7 +56,7 @@ public:
 
     int getLength() const {return m_length;}
     QByteArray getSequenceForGfa() const;
-    int getFullLength() const;
+
     int getLengthWithoutTrailingOverlap() const;
     QByteArray getFasta(bool sign, bool newLines = true, bool evenIfEmpty = true) const;
     char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE

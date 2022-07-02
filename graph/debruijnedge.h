@@ -22,6 +22,10 @@
 
 class GraphicsItemEdge;
 
+enum EdgeOverlapType {
+    UNKNOWN_OVERLAP, EXACT_OVERLAP,
+    AUTO_DETERMINED_EXACT_OVERLAP, JUMP};
+
 class DeBruijnEdge
 {
     static constexpr unsigned OVERLAP_BITS = 29;
