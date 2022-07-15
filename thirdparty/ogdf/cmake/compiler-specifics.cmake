@@ -15,11 +15,11 @@ if(MSVC)
 endif()
 
 # use native arch (ie, activate things like SSE)
-check_cxx_compiler_flag(-march=native COMPILER_SUPPORTS_MARCH_NATIVE)
-if(COMPILER_SUPPORTS_MARCH_NATIVE)
-  # cannot use add_definitions() here because it does not work with check-sse3.cmake
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-endif()
+#check_cxx_compiler_flag(-march=native COMPILER_SUPPORTS_MARCH_NATIVE)
+#if(COMPILER_SUPPORTS_MARCH_NATIVE)
+#  # cannot use add_definitions() here because it does not work with check-sse3.cmake
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+#endif()
 
 # set default warning flags for OGDF and tests
 set(available_default_warning_flags "")
