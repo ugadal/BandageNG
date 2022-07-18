@@ -118,7 +118,8 @@ public:
     void determineGraphInfo();
     void clearGraphInfo();
     void recalculateAllDepthsRelativeToDrawnMean();
-    void recalculateAllNodeWidths();
+    void recalculateAllNodeWidths(double averageNodeWidth,
+                                  double depthPower, double depthEffectOnWidth);
 
     bool loadGraphFromFile(const QString& filename);
     void markNodesToDraw(const std::vector<DeBruijnNode *>& startingNodes,

@@ -897,15 +897,15 @@ void MainWindow::drawGraph()
 }
 
 
-void MainWindow::graphLayoutFinished(const GraphLayout &layout)
-{
+void MainWindow::graphLayoutFinished(const GraphLayout &layout) {
     m_scene->addGraphicsItemsToScene(*g_assemblyGraph, layout);
     m_scene->setSceneRectangle();
     zoomToFitScene();
 
-    g_settings->averageNodeWidth = g_settings->averageNodeWidth / pow(g_absoluteZoom, 0.75);
-    ui->nodeWidthSpinBox->setValue(g_settings->averageNodeWidth);
-    g_assemblyGraph->recalculateAllNodeWidths();
+    double averageNodeWidth = g_settings->averageNodeWidth / pow(g_absoluteZoom, 0.75);
+    ui->nodeWidthSpinBox->setValue(averageNodeWidth);
+    g_assemblyGraph->recalculateAllNodeWidths(averageNodeWidth,
+                                              g_settings->depthPower, g_settings->depthEffectOnWidth);
     g_graphicsView->viewport()->update();
 
     selectionChanged();
@@ -1557,6 +1557,8 @@ std::vector<DeBruijnNode *> MainWindow::addComplementaryNodes(std::vector<DeBrui
 
 void MainWindow::openSettingsDialog() {
     SettingsDialog settingsDialog(this);
+    // FIXME: provide better way to deal with settings
+    g_settings->averageNodeWidth = ui->nodeWidthSpinBox->value();
     settingsDialog.setWidgetsFromSettings();
 
     if (!settingsDialog.exec()) //The user clicked OK
@@ -1564,7 +1566,8 @@ void MainWindow::openSettingsDialog() {
 
     settingsDialog.setSettingsFromWidgets();
 
-    g_assemblyGraph->recalculateAllNodeWidths();
+    g_assemblyGraph->recalculateAllNodeWidths(g_settings->averageNodeWidth,
+                                              g_settings->depthPower, g_settings->depthEffectOnWidth);
     g_graphicsView->setAntialiasing(g_settings->antialiasing);
     g_settings->nodeColorer->reset();
 
@@ -2343,8 +2346,8 @@ void MainWindow::setSelectedEdgesWidgetsVisibility(bool visible)
 
 void MainWindow::nodeWidthChanged()
 {
-    g_settings->averageNodeWidth = ui->nodeWidthSpinBox->value();
-    g_assemblyGraph->recalculateAllNodeWidths();
+    g_assemblyGraph->recalculateAllNodeWidths(ui->nodeWidthSpinBox->value(),
+                                              g_settings->depthPower, g_settings->depthEffectOnWidth);
     g_graphicsView->viewport()->update();
 }
 
@@ -2643,8 +2646,7 @@ void MainWindow::changeNodeName()
 void MainWindow::changeNodeDepth()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedPositiveNodes();
-    if (selectedNodes.empty())
-    {
+    if (selectedNodes.empty()) {
         QMessageBox::information(this, "Improper selection", "You must select at least one node in the graph before using this function.");
         return;
     }
@@ -2653,14 +2655,16 @@ void MainWindow::changeNodeDepth()
     ChangeNodeDepthDialog changeNodeDepthDialog(this, &selectedNodes,
                                                 oldDepth);
 
-    if (changeNodeDepthDialog.exec()) { //The user clicked OK
-        g_assemblyGraph->changeNodeDepth(selectedNodes,
-                                         changeNodeDepthDialog.getNewDepth());
-        selectionChanged();
-        g_assemblyGraph->recalculateAllDepthsRelativeToDrawnMean();
-        g_assemblyGraph->recalculateAllNodeWidths();
-        g_graphicsView->viewport()->update();
-    }
+    if (!changeNodeDepthDialog.exec())
+        return;
+
+    g_assemblyGraph->changeNodeDepth(selectedNodes,
+                                     changeNodeDepthDialog.getNewDepth());
+    selectionChanged();
+    g_assemblyGraph->recalculateAllDepthsRelativeToDrawnMean();
+    g_assemblyGraph->recalculateAllNodeWidths(ui->nodeWidthSpinBox->value(),
+                                              g_settings->depthPower, g_settings->depthEffectOnWidth);
+    g_graphicsView->viewport()->update();
 }
 
 

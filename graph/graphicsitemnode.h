@@ -76,7 +76,8 @@ public:
     std::vector<QPointF> getCentres() const;
     void setNodeColour(QColor color) { m_colour = color; }
     QStringList getNodeText() const;
-    void setWidth();
+    void setWidth(double averageNodeWidth = 5.0,
+                  double depthPower = 0.5, double depthEffectOnWidth = 0.5);
     QPainterPath makePartialPath(double startFraction, double endFraction);
     double getNodePathLength();
     QPointF findLocationOnPath(double fraction);

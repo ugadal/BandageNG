@@ -677,10 +677,10 @@ QSize GraphicsItemNode::getNodeTextSize(const QString& text)
     return fontMetrics.size(0, text);
 }
 
-void GraphicsItemNode::setWidth()
-{
-    m_width = getNodeWidth(m_deBruijnNode->getDepthRelativeToMeanDrawnDepth(), g_settings->depthPower,
-                           g_settings->depthEffectOnWidth, g_settings->averageNodeWidth);
+void GraphicsItemNode::setWidth(double averageNodeWidth,
+                                double depthPower, double depthEffectOnWidth) {
+    m_width = getNodeWidth(m_deBruijnNode->getDepthRelativeToMeanDrawnDepth(),
+                           depthPower, depthEffectOnWidth, averageNodeWidth);
     if (m_width < 0.0)
         m_width = 0.0;
 }

@@ -418,7 +418,9 @@ void MyGraphicsScene::duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruij
 
     newGraphicsItemNode->setNodeColour(originalGraphicsItemNode->m_colour);
 
-    originalGraphicsItemNode->setWidth();
+    // FIXME: why do we need this?
+    originalGraphicsItemNode->setWidth(g_settings->averageNodeWidth,
+                            g_settings->depthPower,g_settings->depthEffectOnWidth);
 
     addItem(newGraphicsItemNode);
 

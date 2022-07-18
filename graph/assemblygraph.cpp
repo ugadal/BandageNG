@@ -989,11 +989,11 @@ void AssemblyGraph::recalculateAllDepthsRelativeToDrawnMean()
 }
 
 
-void AssemblyGraph::recalculateAllNodeWidths()
-{
+void AssemblyGraph::recalculateAllNodeWidths(double averageNodeWidth,
+                                             double depthPower, double depthEffectOnWidth) {
     for (auto &entry : m_deBruijnGraphNodes) {
         if (GraphicsItemNode * graphicsItemNode = entry->getGraphicsItemNode())
-            graphicsItemNode->setWidth();
+            graphicsItemNode->setWidth(averageNodeWidth, depthPower, depthEffectOnWidth);
     }
 }
 
@@ -1482,7 +1482,8 @@ int AssemblyGraph::mergeAllPossible(MyGraphicsScene * scene,
     }
 
     recalculateAllDepthsRelativeToDrawnMean();
-    recalculateAllNodeWidths();
+    recalculateAllNodeWidths(g_settings->averageNodeWidth,
+                             g_settings->depthPower, g_settings->depthEffectOnWidth);
 
     return allMerges.size();
 }
