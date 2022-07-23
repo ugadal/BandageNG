@@ -109,6 +109,7 @@ private slots:
     void blastSearch();
     void blastSearchFilters();
     void graphScope();
+    void graphLayout();
     void commandLineSettings();
     void sciNotComparisons();
     void graphEdits();
@@ -751,6 +752,50 @@ void BandageTests::graphScope()
     layout::apply(*g_assemblyGraph, layout);
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 42);
+}
+
+
+void BandageTests::graphLayout() {
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
+
+    QString errorTitle;
+    QString errorMessage;
+
+    {
+        g_settings->graphScope = WHOLE_GRAPH;
+        g_settings->nodeDistance = 0;
+        g_settings->doubleMode = false;
+        auto startingNodes =
+                g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode,
+                                                  g_settings->startingNodes, "", "");
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
+        QCOMPARE(g_assemblyGraph->getDrawnNodeCount(), 44);
+
+        auto layout = GraphLayoutWorker(g_settings->graphLayoutQuality,
+                                        g_settings->linearLayout,
+                                        g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
+
+        QCOMPARE(layout.size(), 44);
+    }
+
+    {
+        g_settings->graphScope = WHOLE_GRAPH;
+        g_settings->nodeDistance = 0;
+        g_settings->doubleMode = true;
+        auto startingNodes =
+                g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode,
+                                                  g_settings->startingNodes, "", "");
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
+        QCOMPARE(g_assemblyGraph->getDrawnNodeCount(), 88);
+
+        auto layout = GraphLayoutWorker(g_settings->graphLayoutQuality,
+                                        g_settings->linearLayout,
+                                        g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
+
+        QCOMPARE(layout.size(), 88);
+    }
 }
 
 void BandageTests::commandLineSettings()

@@ -611,6 +611,14 @@ GraphLayout GraphLayoutWorker::layoutGraph(const AssemblyGraph &graph) {
             res.add(entry.first, { GA.x(node), GA.y(node) });
         }
     }
+    // In double mode add layout for the reverse-complement nodes (in opposite direction)
+    for (const auto & entry : layout) {
+        auto *rcNode = entry.first->getReverseComplement();
+        if (!rcNode->isDrawn())
+            continue;
+        for (auto rIt = entry.second.rbegin(); rIt != entry.second.rend(); ++rIt)
+            res.add(rcNode, { GA.x(*rIt), GA.y(*rIt) });
+    }
 
     return res;
 }
