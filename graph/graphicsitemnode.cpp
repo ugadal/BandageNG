@@ -64,7 +64,7 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
                                    const std::vector<QPointF> &linePoints,
                                    QGraphicsItem * parent) :
     QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
-    m_hasArrow(g_settings->doubleMode),
+    m_hasArrow(g_settings->doubleMode || g_settings->arrowheadsInSingleMode),
     m_grabIndex(0)
 {
     m_linePoints.assign(linePoints.begin(), linePoints.end());
@@ -76,7 +76,7 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
                                    const adt::SmallPODVector<QPointF> &linePoints,
                                    QGraphicsItem * parent) :
         QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
-        m_hasArrow(g_settings->doubleMode),
+        m_hasArrow(g_settings->doubleMode || g_settings->arrowheadsInSingleMode),
         m_grabIndex(0)
 {
     m_linePoints.assign(linePoints.begin(), linePoints.end());
