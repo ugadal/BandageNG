@@ -401,25 +401,20 @@ rotateComponentsAndCalculateBoundingRectangles(
     int numCCs = nodesInCC.size();
     const ogdf::Graph &G = const_cast<ogdf::Graph &>(GA.constGraph());
 
-    ogdf::Array<ogdf::NodeArray<ogdf::DPoint> > best_coords(numCCs);
-    ogdf::Array<ogdf::NodeArray<ogdf::DPoint> > old_coords(numCCs);
-
-    fmmm::Rectangle r_act, r_best;
-    ogdf::DPoint new_pos, new_dlc;
-
     ogdf::List<fmmm::Rectangle> R;
 
     for (int i = 0; i < numCCs; i++) {
+        fmmm::Rectangle r_act, r_best;
+        ogdf::DPoint new_pos, new_dlc;
+
+        ogdf::NodeArray<ogdf::DPoint> best_coords(G), old_coords(G);
         //init r_best, best_area and best_(old)coords
         r_best = calculateBoundingRectangle(GA, nodesInCC[i],
                                             graphLayoutComponentSeparation, i);
         double best_area = calculateArea(r_best.get_width(), r_best.get_height(),
                                          numCCs, aspectRatio);
-        best_coords[i].init(G);
-        old_coords[i].init(G);
-
         for (ogdf::node v: nodesInCC[i])
-            old_coords[i][v] = best_coords[i][v] = GA.point(v);
+            old_coords[v] = best_coords[v] = GA.point(v);
 
         //rotate the components
         for (int j = 1; j <= stepsForRotatingComponents; j++) {
@@ -428,10 +423,10 @@ rotateComponentsAndCalculateBoundingRectangles(
             double sin_j = sin(angle);
             double cos_j = cos(angle);
             for (ogdf::node v: nodesInCC[i]) {
-                new_pos.m_x = cos_j * old_coords[i][v].m_x
-                              - sin_j * old_coords[i][v].m_y;
-                new_pos.m_y = sin_j * old_coords[i][v].m_x
-                              + cos_j * old_coords[i][v].m_y;
+                new_pos.m_x = cos_j * old_coords[v].m_x
+                              - sin_j * old_coords[v].m_y;
+                new_pos.m_y = sin_j * old_coords[v].m_x
+                              + cos_j * old_coords[v].m_y;
                 GA.x(v) = new_pos.m_x;
                 GA.y(v) = new_pos.m_y;
             }
@@ -453,13 +448,13 @@ rotateComponentsAndCalculateBoundingRectangles(
                 r_best = r_act;
                 best_area = act_area;
                 for (ogdf::node v: nodesInCC[i])
-                    best_coords[i][v] = GA.point(v);
+                    best_coords[v] = GA.point(v);
             } else if ((numCCs == 1) && (act_area_PI_half_rotated <
                                          best_area)) { //test if rotating further with PI_half would be an improvement
                 r_best = r_act;
                 best_area = act_area_PI_half_rotated;
                 for (ogdf::node v: nodesInCC[i])
-                    best_coords[i][v] = GA.point(v);
+                    best_coords[v] = GA.point(v);
                 //the needed rotation step follows in the next if statement
             }
         }
@@ -469,9 +464,9 @@ rotateComponentsAndCalculateBoundingRectangles(
         double ratio = r_best.get_width() / r_best.get_height();
         if ((aspectRatio < 1 && ratio > 1) || (aspectRatio >= 1 && ratio < 1)) {
             for (ogdf::node v: nodesInCC[i]) {
-                new_pos.m_x = best_coords[i][v].m_y * (-1);
-                new_pos.m_y = best_coords[i][v].m_x;
-                best_coords[i][v] = new_pos;
+                new_pos.m_x = best_coords[v].m_y * (-1);
+                new_pos.m_y = best_coords[v].m_x;
+                best_coords[v] = new_pos;
             }
 
             //calculate new rectangle
@@ -487,8 +482,8 @@ rotateComponentsAndCalculateBoundingRectangles(
 
         //save the computed information in A_sub and R
         for (ogdf::node v: nodesInCC[i]) {
-            GA.x(v) = best_coords[i][v].m_x;
-            GA.y(v) = best_coords[i][v].m_y;
+            GA.x(v) = best_coords[v].m_x;
+            GA.y(v) = best_coords[v].m_y;
         }
 
         R.pushBack(r_best);
