@@ -42,11 +42,13 @@ public:
     void clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove);
     void searchOccurred();
     void clearSearchResults();
-    int getQueryCount();
-    int getQueryCountWithAtLeastOnePath();
-    int getQueryPathCount();
-    int getQueryCount(QuerySequenceType sequenceType);
-    bool isQueryPresent(BlastQuery * query);
+
+    int getQueryCount() const;
+    int getQueryCountWithAtLeastOnePath() const;
+    int getQueryPathCount() const ;
+    int getQueryCount(QuerySequenceType sequenceType) const ;
+    bool isQueryPresent(const BlastQuery * query) const;
+
     void findQueryPaths();
 
     std::vector<QColor> m_presetColours;

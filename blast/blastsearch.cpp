@@ -31,6 +31,7 @@
 #include <QApplication>
 #include <QProcess>
 #include <cmath>
+#include <unordered_set>
 
 BlastSearch::BlastSearch(const QDir &workDir) :
     m_blastQueries(), m_tempDirectory(workDir.filePath("bandage_temp_XXXXXX")) {}
@@ -95,7 +96,7 @@ void BlastSearch::buildHitsFromBlastOutput()
 
         node = it.value();
 
-        BlastQuery * query = g_blastSearch->m_blastQueries.getQueryFromName(queryName);
+        BlastQuery * query = m_blastQueries.getQueryFromName(queryName);
         if (query == nullptr)
             continue;
 
@@ -223,13 +224,12 @@ bool BlastSearch::findProgram(const QString &programName, QString * command)
 
 void BlastSearch::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove)
 {
-    //Remove any hits that are for queries that will be deleted.
-    auto it = m_allHits.begin();
-    while (it != m_allHits.end())
-    {
+    // Remove any hits that are for queries that will be deleted.
+    std::unordered_set<BlastQuery*> toRemove(queriesToRemove.begin(), queriesToRemove.end());
+
+    for (auto it = m_allHits.begin(); it != m_allHits.end(); ) {
         BlastQuery * hitQuery = (*it)->m_query;
-        bool hitIsForDeletedQuery = (std::find(queriesToRemove.begin(), queriesToRemove.end(), hitQuery) != queriesToRemove.end());
-        if (hitIsForDeletedQuery)
+        if (toRemove.count(hitQuery))
             it = m_allHits.erase(it);
         else
             ++it;
@@ -238,8 +238,6 @@ void BlastSearch::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRem
     //Now actually delete the queries.
     m_blastQueries.clearSomeQueries(queriesToRemove);
 }
-
-
 
 void BlastSearch::emptyTempDirectory() const
 {
@@ -289,7 +287,7 @@ QString BlastSearch::doAutoBlastSearch()
 //This function returns the number of queries loaded from the FASTA file.
 int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName)
 {
-    int queriesBefore = int(g_blastSearch->m_blastQueries.m_queries.size());
+    int queriesBefore = int(m_blastQueries.m_queries.size());
 
     std::vector<QString> queryNames;
     std::vector<QByteArray> querySequences;
@@ -305,11 +303,11 @@ int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName)
         if (!queryNameParts.empty())
             queryName = cleanQueryName(queryNameParts[0]);
 
-        g_blastSearch->m_blastQueries.addQuery(new BlastQuery(queryName,
-                                                              querySequences[i]));
+        m_blastQueries.addQuery(new BlastQuery(queryName,
+                                querySequences[i]));
     }
 
-    int queriesAfter = int(g_blastSearch->m_blastQueries.m_queries.size());
+    int queriesAfter = int(m_blastQueries.m_queries.size());
     return queriesAfter - queriesBefore;
 }
 
@@ -337,12 +335,12 @@ void BlastSearch::blastQueryChanged(const QString &queryName)
 
     //If "all" is selected, then we'll display each of the BLAST queries
     if (queryName == "all")
-        queries = g_blastSearch->m_blastQueries.m_queries;
+        queries = m_blastQueries.m_queries;
 
     //If only one query is selected, then just display that one.
     else
     {
-        BlastQuery * query = g_blastSearch->m_blastQueries.getQueryFromName(queryName);
+        BlastQuery * query = m_blastQueries.getQueryFromName(queryName);
         if (query != nullptr)
             queries.push_back(query);
     }

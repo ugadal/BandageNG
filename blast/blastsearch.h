@@ -51,9 +51,9 @@ public:
 
     static QString getNodeNameFromString(const QString& nodeString);
     static bool findProgram(const QString& programName, QString * command);
-    static int loadBlastQueriesFromFastaFile(QString fullFileName);
+    int loadBlastQueriesFromFastaFile(QString fullFileName);
     static QString cleanQueryName(QString queryName);
-    static void blastQueryChanged(const QString& queryName);
+    void blastQueryChanged(const QString& queryName);
 
     void clearBlastHits();
     void cleanUp();

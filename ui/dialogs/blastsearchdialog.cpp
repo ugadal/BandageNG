@@ -471,17 +471,16 @@ void BlastSearchDialog::loadBlastQueriesFromFastaFile(const QString& fullFileNam
 void BlastSearchDialog::enterQueryManually()
 {
     EnterOneBlastQueryDialog enterOneBlastQueryDialog(this);
+    if (!enterOneBlastQueryDialog.exec())
+        return;
 
-    if (enterOneBlastQueryDialog.exec())
-    {
-        QString queryName = g_blastSearch->cleanQueryName(enterOneBlastQueryDialog.getName());
-        g_blastSearch->m_blastQueries.addQuery(new BlastQuery(queryName,
-                                                              enterOneBlastQueryDialog.getSequence()));
-        clearBlastHits();
-        fillQueriesTable();
+    QString queryName = g_blastSearch->cleanQueryName(enterOneBlastQueryDialog.getName());
+    g_blastSearch->m_blastQueries.addQuery(new BlastQuery(queryName,
+                                                          enterOneBlastQueryDialog.getSequence()));
+    clearBlastHits();
+    fillQueriesTable();
 
-        setUiStep(READY_FOR_BLAST_SEARCH);
-    }
+    setUiStep(READY_FOR_BLAST_SEARCH);
 }
 
 
@@ -510,11 +509,9 @@ void BlastSearchDialog::clearSelectedQueries()
     QItemSelectionModel * select = ui->blastQueriesTableWidget->selectionModel();
     QModelIndexList selection = select->selectedIndexes();
     QSet<int> rowsWithSelectionSet;
-    for (auto & i : selection)
+    for (const auto & i : selection)
         rowsWithSelectionSet.insert(i.row());
-    for (QSet<int>::const_iterator i = rowsWithSelectionSet.constBegin(); i != rowsWithSelectionSet.constEnd(); ++i)
-    {
-        int row = *i;
+    for (auto row : rowsWithSelectionSet) {
         QTableWidgetItem * tableWidgetItem = ui->blastQueriesTableWidget->item(row, 2);
         auto * queryNameItem = dynamic_cast<TableWidgetItemName *>(tableWidgetItem);
         if (queryNameItem == nullptr)
@@ -1027,17 +1024,16 @@ void BlastSearchDialog::queryPathSelectionChangedSlot()
     emit queryPathSelectionChanged();
 }
 
-
 void BlastSearchDialog::openFiltersDialog()
 {
     BlastHitFiltersDialog filtersDialog(this);
     filtersDialog.setWidgetsFromSettings();
 
-    if (filtersDialog.exec()) //The user clicked OK
-    {
-        filtersDialog.setSettingsFromWidgets();
-        setFilterText();
-    }
+    if (!filtersDialog.exec())
+        return; //The user did not click OK
+
+    filtersDialog.setSettingsFromWidgets();
+    setFilterText();
 }
 
 void BlastSearchDialog::setFilterText()

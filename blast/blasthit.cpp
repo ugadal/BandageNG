@@ -45,12 +45,6 @@ BlastHit::BlastHit(BlastQuery * query, DeBruijnNode * node,
 }
 
 
-bool BlastHit::compareTwoBlastHitPointers(const BlastHit *a, const BlastHit *b)
-{
-    return a->m_queryStart < b->m_queryStart;
-}
-
-
 double BlastHit::getQueryCoverageFraction() const
 {
     int queryRegionSize = m_queryEnd - m_queryStart + 1;

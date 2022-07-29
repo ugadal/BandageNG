@@ -22,6 +22,7 @@
 #include "program/globals.h"
 #include "program/settings.h"
 #include <QTextStream>
+#include <unordered_set>
 
 BlastQueries::BlastQueries()
 : m_presetColours{getPresetColours()} {}
@@ -32,14 +33,15 @@ BlastQueries::~BlastQueries()
 }
 
 
-BlastQuery * BlastQueries::getQueryFromName(QString queryName)
-{
-    for (size_t i = 0; i < m_queries.size(); ++i)
-    {
-        if (m_queries[i]->getName() == queryName)
-            return m_queries[i];
-    }
-    return 0;
+BlastQuery *BlastQueries::getQueryFromName(QString queryName) {
+    auto res =
+            std::find_if(m_queries.begin(), m_queries.end(),
+                         [&](const auto *query) { return queryName == query->getName(); });
+
+    if (res == m_queries.end())
+        return nullptr;
+
+    return *res;
 }
 
 
@@ -95,86 +97,65 @@ void BlastQueries::clearAllQueries()
     m_queries.clear();
 }
 
-void BlastQueries::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove)
-{
-    for (size_t i = 0; i < queriesToRemove.size(); ++i)
-    {
-        m_queries.erase(std::remove(m_queries.begin(), m_queries.end(), queriesToRemove[i]), m_queries.end());
-        delete queriesToRemove[i];
-    }
+void BlastQueries::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove) {
+    std::unordered_set<BlastQuery *> queries(queriesToRemove.begin(), queriesToRemove.end());
+    m_queries.erase(std::remove_if(m_queries.begin(), m_queries.end(),
+                                   [&](auto *query) { return queries.count(query); }),
+                    m_queries.end());
+
+    for (auto *query: queriesToRemove)
+        delete query;
 }
 
-void BlastQueries::searchOccurred()
-{
-    for (size_t i = 0; i < m_queries.size(); ++i)
-        m_queries[i]->setAsSearchedFor();
-}
-
-
-void BlastQueries::clearSearchResults()
-{
-    for (size_t i = 0; i < m_queries.size(); ++i)
-        m_queries[i]->clearSearchResults();
+void BlastQueries::searchOccurred() {
+    for (auto *query : m_queries)
+        query->setAsSearchedFor();
 }
 
 
-int BlastQueries::getQueryCount()
+void BlastQueries::clearSearchResults() {
+    for (auto *query : m_queries)
+        query->clearSearchResults();
+}
+
+
+int BlastQueries::getQueryCount() const
 {
     return int(m_queries.size());
 }
 
-int BlastQueries::getQueryCountWithAtLeastOnePath()
-{
+int BlastQueries::getQueryCountWithAtLeastOnePath() const {
     int count = 0;
-
-    for (size_t i = 0; i < m_queries.size(); ++i)
-    {
-        if (m_queries[i]->getPathCount() > 0)
-            ++count;
-    }
+    for (const auto *query : m_queries)
+        count += (query->getPathCount() > 0);
 
     return count;
 }
 
-int BlastQueries::getQueryPathCount()
-{
+int BlastQueries::getQueryPathCount() const {
     int count = 0;
-
-    for (size_t i = 0; i < m_queries.size(); ++i)
-        count += m_queries[i]->getPathCount();
+    for (const auto *query : m_queries)
+        count += query->getPathCount();
     return count;
 }
 
-int BlastQueries::getQueryCount(QuerySequenceType sequenceType)
-{
+int BlastQueries::getQueryCount(QuerySequenceType sequenceType) const {
     int count = 0;
-    for (size_t i = 0; i < m_queries.size(); ++i)
-    {
-        if (m_queries[i]->getSequenceType() == sequenceType)
-            ++count;
-    }
+    for (const auto *query : m_queries)
+        count += (query->getSequenceType() == sequenceType);
     return count;
 }
 
 //This function looks to see if a query pointer is in the list
 //of queries.  The query pointer given may or may not still
 //actually exist, so it can't be dereferenced.
-bool BlastQueries::isQueryPresent(BlastQuery * query)
-{
-    for (size_t i = 0; i < m_queries.size(); ++i)
-    {
-        if (query == m_queries[i])
-            return true;
-    }
-
-    return false;
+bool BlastQueries::isQueryPresent(const BlastQuery * query) const {
+    return std::find(m_queries.begin(), m_queries.end(), query) != m_queries.end();
 }
-
 
 //This function looks at each BLAST query and tries to find a path through
 //the graph which covers the maximal amount of the query.
-void BlastQueries::findQueryPaths()
-{
-    for (size_t i = 0; i < m_queries.size(); ++i)
-        m_queries[i]->findQueryPaths();
+void BlastQueries::findQueryPaths() {
+    for (auto *query : m_queries)
+        query->findQueryPaths();
 }

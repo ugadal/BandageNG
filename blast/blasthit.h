@@ -55,8 +55,6 @@ public:
     double m_queryStartFraction;
     double m_queryEndFraction;
 
-    static bool compareTwoBlastHitPointers(const BlastHit *a, const BlastHit *b);
-
     double getQueryCoverageFraction() const;
     GraphLocation getHitStart() const;
     GraphLocation getHitEnd() const;

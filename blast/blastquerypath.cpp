@@ -51,7 +51,9 @@ BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
         }
 
         std::sort(hitsThisNode.begin(), hitsThisNode.end(),
-                  BlastHit::compareTwoBlastHitPointers);
+                  [](const BlastHit *a, const BlastHit *b) {
+                      return a->m_queryStart < b->m_queryStart;
+                  });
 
         for (auto *hit : hitsThisNode)
         {

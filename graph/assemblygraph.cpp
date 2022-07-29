@@ -617,13 +617,9 @@ static std::vector<DeBruijnNode *> getNodesFromBlastHits(const QString& queryNam
         queries.push_back(g_blastSearch->m_blastQueries.getQueryFromName(queryName));
 
     //Add pointers to nodes that have a hit for the selected target(s).
-    for (auto currentQuery : queries)
-    {
-        for (auto & m_allHit : g_blastSearch->m_allHits)
-        {
-            if (m_allHit->m_query == currentQuery)
-                returnVector.push_back(m_allHit->m_node);
-        }
+    for (auto *currentQuery: queries) {
+        for (const auto &hit: currentQuery->getHits())
+            returnVector.push_back(hit->m_node);
     }
 
     return returnVector;
