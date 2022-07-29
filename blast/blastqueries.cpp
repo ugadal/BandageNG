@@ -95,7 +95,7 @@ void BlastQueries::clearAllQueries()
     m_queries.clear();
 }
 
-void BlastQueries::clearSomeQueries(std::vector<BlastQuery *> queriesToRemove)
+void BlastQueries::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove)
 {
     for (size_t i = 0; i < queriesToRemove.size(); ++i)
     {

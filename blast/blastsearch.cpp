@@ -23,7 +23,6 @@
 #include "program/settings.h"
 
 #include "graph/assemblygraph.h"
-#include "graph/debruijnnode.h"
 #include "graph/annotationsmanager.h"
 #include "io/fileutils.h"
 
@@ -222,7 +221,7 @@ bool BlastSearch::findProgram(const QString &programName, QString * command)
 
 
 
-void BlastSearch::clearSomeQueries(std::vector<BlastQuery *> queriesToRemove)
+void BlastSearch::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove)
 {
     //Remove any hits that are for queries that will be deleted.
     auto it = m_allHits.begin();

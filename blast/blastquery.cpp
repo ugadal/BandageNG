@@ -72,10 +72,7 @@ void BlastQuery::autoSetSequenceType()
 
 QString BlastQuery::getTypeString() const
 {
-    if (m_sequenceType == NUCLEOTIDE)
-        return "nucl";
-    else
-        return "prot";
+    return (m_sequenceType == NUCLEOTIDE ? "nucl" : "prot");
 }
 
 

@@ -59,7 +59,7 @@ public:
     void cleanUp();
     void buildHitsFromBlastOutput();
     void findQueryPaths();
-    void clearSomeQueries(std::vector<BlastQuery *> queriesToRemove);
+    void clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove);
     void emptyTempDirectory() const;
     QString doAutoBlastSearch();
 };

@@ -39,7 +39,7 @@ public:
     void addQuery(BlastQuery * newQuery);
     QString renameQuery(BlastQuery * newQuery, QString newName);
     void clearAllQueries();
-    void clearSomeQueries(std::vector<BlastQuery *> queriesToRemove);
+    void clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove);
     void searchOccurred();
     void clearSearchResults();
     int getQueryCount();
