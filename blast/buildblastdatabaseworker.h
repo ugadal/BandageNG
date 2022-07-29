@@ -38,7 +38,7 @@ private:
     QString m_makeblastdbCommand;
 
 public slots:
-    void buildBlastDatabase();
+    bool buildBlastDatabase();
 
 signals:
     void finishedBuild(QString error);

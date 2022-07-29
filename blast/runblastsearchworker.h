@@ -44,7 +44,7 @@ private:
     QString runOneBlastSearch(QuerySequenceType sequenceType, bool * success);
 
 public slots:
-    void runBlastSearch();
+    bool runBlastSearch();
 
 signals:
     void finishedSearch(QString error);

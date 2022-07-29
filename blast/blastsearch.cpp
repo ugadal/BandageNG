@@ -251,8 +251,7 @@ void BlastSearch::emptyTempDirectory() const
 
 //This function carries out the entire BLAST search procedure automatically, without user input.
 //It returns an error string which is empty if all goes well.
-QString BlastSearch::doAutoBlastSearch()
-{
+QString BlastSearch::doAutoBlastSearch() {
     cleanUp();
 
     QString makeblastdbCommand;
@@ -260,8 +259,7 @@ QString BlastSearch::doAutoBlastSearch()
         return "Error: The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.";
 
     BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand);
-    buildBlastDatabaseWorker.buildBlastDatabase();
-    if (buildBlastDatabaseWorker.m_error != "")
+    if (!buildBlastDatabaseWorker.buildBlastDatabase())
         return buildBlastDatabaseWorker.m_error;
 
     loadBlastQueriesFromFastaFile(g_settings->blastQueryFilename);
@@ -274,8 +272,7 @@ QString BlastSearch::doAutoBlastSearch()
         return "Error: The program tblastn was not found.  Please install NCBI BLAST to use this feature.";
 
     RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand, g_settings->blastSearchParameters);
-    runBlastSearchWorker.runBlastSearch();
-    if (runBlastSearchWorker.m_error != "")
+    if (!runBlastSearchWorker.runBlastSearch())
         return runBlastSearchWorker.m_error;
 
     blastQueryChanged("all");
@@ -293,8 +290,7 @@ int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName)
     std::vector<QByteArray> querySequences;
     utils::readFastxFile(fullFileName, queryNames, querySequences);
 
-    for (size_t i = 0; i < queryNames.size(); ++i)
-    {
+    for (size_t i = 0; i < queryNames.size(); ++i) {
         QApplication::processEvents();
 
         //We only use the part of the query name up to the first space.
