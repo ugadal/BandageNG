@@ -56,16 +56,40 @@ void BlastSearch::cleanUp()
     emptyTempDirectory();
 }
 
-//This function uses the contents of m_blastOutput (the raw output from the
-//BLAST search) to construct the BlastHit objects.
-//It looks at the filters to possibly exclude hits which fail to meet user-
-//defined thresholds.
+static QString getNodeNameFromString(const QString &nodeString) {
+    QStringList nodeStringParts = nodeString.split("_");
+
+    // The node string format should look like this:
+    // NODE_nodename_length_123_cov_1.23
+    if (nodeStringParts.size() < 6)
+        return "";
+
+    if (nodeStringParts.size() == 6)
+        return nodeStringParts[1];
+
+    // If the code got here, there are more than 6 parts.  This means there are
+    // underscores in the node name (happens a lot with Trinity graphs).  So we
+    // need to pull out the parts which constitute the name.
+    int underscoreCount = nodeStringParts.size() - 6;
+    QString nodeName = "";
+    for (int i = 0; i <= underscoreCount; ++i) {
+        nodeName += nodeStringParts[1+i];
+        if (i < underscoreCount)
+            nodeName += "_";
+    }
+
+    return nodeName;
+}
+
+// This function uses the contents of m_blastOutput (the raw output from the
+// BLAST search) to construct the BlastHit objects.
+// It looks at the filters to possibly exclude hits which fail to meet user-
+// defined thresholds.
 void BlastSearch::buildHitsFromBlastOutput()
 {
     QStringList blastHitList = m_blastOutput.split("\n", Qt::SkipEmptyParts);
 
-    for (const auto &hitString : blastHitList)
-    {
+    for (const auto &hitString : blastHitList) {
         QStringList alignmentParts = hitString.split('\t');
 
         if (alignmentParts.size() < 12)
@@ -136,35 +160,6 @@ void BlastSearch::findQueryPaths()
 {
     m_blastQueries.findQueryPaths();
 }
-
-
-QString BlastSearch::getNodeNameFromString(const QString &nodeString)
-{
-    QStringList nodeStringParts = nodeString.split("_");
-
-    //The node string format should look like this:
-    //NODE_nodename_length_123_cov_1.23
-
-    if (nodeStringParts.size() < 6)
-        return "";
-
-    if (nodeStringParts.size() == 6)
-        return nodeStringParts[1];
-
-    //If the code got here, there are more than 6 parts.  This means there are
-    //underscores in the node name (happens a lot with Trinity graphs).  So we
-    //need to pull out the parts which consitute the name.
-    int underscoreCount = nodeStringParts.size() - 6;
-    QString nodeName = "";
-    for (int i = 0; i <= underscoreCount; ++i)
-    {
-        nodeName += nodeStringParts[1+i];
-        if (i < underscoreCount)
-            nodeName += "_";
-    }
-    return nodeName;
-}
-
 
 #ifdef Q_OS_WIN32
 //On Windows, we use the WHERE command to find a program.

@@ -49,7 +49,6 @@ public:
     QTemporaryDir m_tempDirectory;
     std::vector<std::shared_ptr<BlastHit>> m_allHits;
 
-    static QString getNodeNameFromString(const QString& nodeString);
     static bool findProgram(const QString& programName, QString * command);
     int loadBlastQueriesFromFastaFile(QString fullFileName);
     static QString cleanQueryName(QString queryName);
