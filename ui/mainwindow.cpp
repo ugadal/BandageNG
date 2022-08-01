@@ -1546,8 +1546,6 @@ std::vector<DeBruijnNode *> MainWindow::addComplementaryNodes(std::vector<DeBrui
 
 void MainWindow::openSettingsDialog() {
     SettingsDialog settingsDialog(this);
-    // FIXME: provide better way to deal with settings
-    g_settings->averageNodeWidth = ui->nodeWidthSpinBox->value();
     settingsDialog.setWidgetsFromSettings();
 
     if (!settingsDialog.exec()) //The user clicked OK
@@ -1555,7 +1553,7 @@ void MainWindow::openSettingsDialog() {
 
     settingsDialog.setSettingsFromWidgets();
 
-    g_assemblyGraph->recalculateAllNodeWidths(g_settings->averageNodeWidth,
+    g_assemblyGraph->recalculateAllNodeWidths(ui->nodeWidthSpinBox->value(),
                                               g_settings->depthPower, g_settings->depthEffectOnWidth);
     g_graphicsView->setAntialiasing(g_settings->antialiasing);
     g_settings->nodeColorer->reset();
@@ -2260,8 +2258,6 @@ void MainWindow::setWidgetsFromSettings()
     ui->singleNodesRadioButton->setChecked(!g_settings->doubleMode);
     ui->doubleNodesRadioButton->setChecked(g_settings->doubleMode);
 
-    ui->nodeWidthSpinBox->setValue(g_settings->averageNodeWidth);
-
     ui->nodeNamesCheckBox->setChecked(g_settings->displayNodeNames);
     ui->nodeLengthsCheckBox->setChecked(g_settings->displayNodeLengths);
     ui->nodeDepthCheckBox->setChecked(g_settings->displayNodeDepth);
@@ -2532,11 +2528,9 @@ void MainWindow::duplicateSelectedNodes()
     resetAllNodeColours();
 }
 
-void MainWindow::mergeSelectedNodes()
-{
+void MainWindow::mergeSelectedNodes() {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.size() < 2)
-    {
+    if (selectedNodes.size() < 2) {
         QMessageBox::information(this, "Not enough nodes selected", "You must first select two or more nodes before using the 'Merge selected nodes' function.");
         return;
     }
@@ -2544,25 +2538,20 @@ void MainWindow::mergeSelectedNodes()
     //Nodes are always merged in pairs (both positive and negative), so we
     //want to compile a list of only positive nodes.
     QList<DeBruijnNode *> nodesToMerge;
-    for (auto node : selectedNodes)
-    {
+    for (auto node : selectedNodes) {
         if (node->isNegativeNode())
             node = node->getReverseComplement();
         if (!nodesToMerge.contains(node))
             nodesToMerge.push_back(node);
     }
 
-    if (nodesToMerge.size() < 2)
-    {
+    if (nodesToMerge.size() < 2) {
         QMessageBox::information(this, "Not enough nodes selected", "You must first select two or more nodes before using the 'Merge selected nodes' function. "
                                                                     "Note that two complementary nodes only count as a single node regarding a merge.");
         return;
     }
 
-    bool success = g_assemblyGraph->mergeNodes(nodesToMerge, m_scene, true);
-
-    if (!success)
-    {
+    if (!g_assemblyGraph->mergeNodes(nodesToMerge, m_scene)) {
         QMessageBox::information(this, "Nodes cannot be merged", "You can only merge nodes that are in a single, unbranching path with no extra edges.");
         return;
     }
@@ -2667,7 +2656,6 @@ void MainWindow::changeNodeDepth()
     g_assemblyGraph->changeNodeDepth(selectedNodes,
                                      changeNodeDepthDialog.getNewDepth());
     selectionChanged();
-    g_assemblyGraph->recalculateAllDepthsRelativeToDrawnMean();
     g_assemblyGraph->recalculateAllNodeWidths(ui->nodeWidthSpinBox->value(),
                                               g_settings->depthPower, g_settings->depthEffectOnWidth);
     g_graphicsView->viewport()->update();

@@ -32,10 +32,9 @@
 
 //The length parameter is optional.  If it is set, then the node will use that
 //for its length.  If not set, it will just use the sequence length.
-DeBruijnNode::DeBruijnNode(QString name, double depth, const Sequence& sequence, int length) :
+DeBruijnNode::DeBruijnNode(QString name, float depth, const Sequence& sequence, int length) :
     m_name(std::move(name)),
     m_depth(depth),
-    m_depthRelativeToMeanDrawnDepth(1.0),
     m_sequence(sequence),
     m_length(sequence.size()),
     m_contiguityStatus(NOT_CONTIGUOUS),

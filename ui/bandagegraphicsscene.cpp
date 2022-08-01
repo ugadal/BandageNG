@@ -212,11 +212,10 @@ void BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
         if (!node->isDrawn())
             continue;
 
-        // FIXME: it does not seem to belong here!
-        node->setDepthRelativeToMeanDrawnDepth(meanDrawnDepth== 0 ?
-                                               1.0 : node->getDepth() / meanDrawnDepth);
-
-        auto *graphicsItemNode = new GraphicsItemNode(node, entry.second);
+        auto *graphicsItemNode =
+                new GraphicsItemNode(node,
+                                     meanDrawnDepth == 0 ? 1.0 : node->getDepth() / meanDrawnDepth,
+                                     entry.second);
         // If we are in double mode and this node's complement is also drawn,
         // then we should shift the points so the two nodes are not drawn directly
         // on top of each other.
@@ -356,7 +355,7 @@ void BandageGraphicsScene::duplicateGraphicsNode(DeBruijnNode * originalNode, De
     if (originalGraphicsItemNode == nullptr)
         return;
 
-    auto * newGraphicsItemNode = new GraphicsItemNode(newNode, originalGraphicsItemNode);
+    auto *newGraphicsItemNode = new GraphicsItemNode(newNode, originalGraphicsItemNode);
 
     newNode->setGraphicsItemNode(newGraphicsItemNode);
     newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
@@ -365,12 +364,6 @@ void BandageGraphicsScene::duplicateGraphicsNode(DeBruijnNode * originalNode, De
     originalGraphicsItemNode->shiftPointsLeft();
     newGraphicsItemNode->shiftPointsRight();
     originalGraphicsItemNode->fixEdgePaths();
-
-    newGraphicsItemNode->setNodeColour(originalGraphicsItemNode->m_colour);
-
-    // FIXME: why do we need this?
-    originalGraphicsItemNode->setWidth(g_settings->averageNodeWidth,
-                            g_settings->depthPower,g_settings->depthEffectOnWidth);
 
     addItem(newGraphicsItemNode);
 

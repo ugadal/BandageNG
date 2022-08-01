@@ -50,38 +50,56 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
                                    GraphicsItemNode * toCopy,
                                    QGraphicsItem * parent) :
     QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
+    m_linePoints(toCopy->m_linePoints),
+    m_colour(toCopy->m_colour),
+    m_width(toCopy->m_width),
     m_grabIndex(toCopy->m_grabIndex),
-    m_hasArrow(toCopy->m_hasArrow),
-    m_linePoints(toCopy->m_linePoints)
-{
-    setWidth();
+    m_hasArrow(toCopy->m_hasArrow) {
     remakePath();
 }
 
-//This constructor makes a new GraphicsItemNode with a specific collection of
-//line points.
-GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
+// This constructor makes a new GraphicsItemNode with a specific collection of
+// line points.
+GraphicsItemNode::GraphicsItemNode(DeBruijnNode *deBruijnNode,
+                                   double depthRelativeToMeanDrawnDepth,
                                    const std::vector<QPointF> &linePoints,
-                                   QGraphicsItem * parent) :
-    QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
-    m_hasArrow(g_settings->doubleMode || g_settings->arrowheadsInSingleMode),
-    m_grabIndex(0)
-{
+                                   QGraphicsItem *parent)
+        : QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
+          m_width(0),
+          m_grabIndex(0),
+          m_hasArrow(g_settings->doubleMode || g_settings->arrowheadsInSingleMode) {
     m_linePoints.assign(linePoints.begin(), linePoints.end());
-    setWidth();
+    setWidth(depthRelativeToMeanDrawnDepth);
     remakePath();
 }
 
-GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
+GraphicsItemNode::GraphicsItemNode(DeBruijnNode *deBruijnNode,
+                                   double depthRelativeToMeanDrawnDepth,
                                    const adt::SmallPODVector<QPointF> &linePoints,
-                                   QGraphicsItem * parent) :
-        QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
-        m_hasArrow(g_settings->doubleMode || g_settings->arrowheadsInSingleMode),
-        m_grabIndex(0)
-{
+                                   QGraphicsItem *parent)
+        : QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
+          m_width(0),
+          m_grabIndex(0),
+          m_hasArrow(g_settings->doubleMode || g_settings->arrowheadsInSingleMode) {
     m_linePoints.assign(linePoints.begin(), linePoints.end());
-    setWidth();
+    setWidth(depthRelativeToMeanDrawnDepth);
     remakePath();
+}
+
+float GraphicsItemNode::getNodeWidth(double depthRelativeToMeanDrawnDepth, double depthPower,
+                                     double depthEffectOnWidth, double averageNodeWidth) {
+    if (depthRelativeToMeanDrawnDepth < 0.0)
+        depthRelativeToMeanDrawnDepth = 0.0;
+    double widthRelativeToAverage = (pow(depthRelativeToMeanDrawnDepth, depthPower) - 1.0) * depthEffectOnWidth + 1.0;
+    return float(averageNodeWidth * widthRelativeToAverage);
+}
+
+void GraphicsItemNode::setWidth(double depthRelativeToMeanDrawnDepth, double averageNodeWidth,
+                                double depthPower, double depthEffectOnWidth) {
+    m_width = getNodeWidth(depthRelativeToMeanDrawnDepth,
+                           depthPower, depthEffectOnWidth, averageNodeWidth);
+    if (m_width < 0.0)
+        m_width = 0.0;
 }
 
 static double distance(QPointF p1, QPointF p2) {
@@ -667,16 +685,6 @@ QSize GraphicsItemNode::getNodeTextSize(const QString& text)
     return fontMetrics.size(0, text);
 }
 
-void GraphicsItemNode::setWidth(double averageNodeWidth,
-                                double depthPower, double depthEffectOnWidth) {
-    m_width = getNodeWidth(m_deBruijnNode->getDepthRelativeToMeanDrawnDepth(),
-                           depthPower, depthEffectOnWidth, averageNodeWidth);
-    if (m_width < 0.0)
-        m_width = 0.0;
-}
-
-
-
 //The bounding rectangle of a node has to be a little bit bigger than
 //the node's path, because of the outline.  The selection outline is
 //the largest outline we can expect, so use that to define the bounding
@@ -692,16 +700,6 @@ QRectF GraphicsItemNode::boundingRect() const
     bound.setRight(bound.right() + extraSize);
 
     return bound;
-}
-
-
-double GraphicsItemNode::getNodeWidth(double depthRelativeToMeanDrawnDepth, double depthPower,
-                                      double depthEffectOnWidth, double averageNodeWidth)
-{
-    if (depthRelativeToMeanDrawnDepth < 0.0)
-        depthRelativeToMeanDrawnDepth = 0.0;
-    double widthRelativeToAverage = (pow(depthRelativeToMeanDrawnDepth, depthPower) - 1.0) * depthEffectOnWidth + 1.0;
-    return averageNodeWidth * widthRelativeToAverage;
 }
 
 

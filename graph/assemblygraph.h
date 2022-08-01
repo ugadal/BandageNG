@@ -123,7 +123,7 @@ public:
     void resetNodeContiguityStatus();
     void determineGraphInfo();
     void clearGraphInfo();
-    void recalculateAllDepthsRelativeToDrawnMean();
+
     void recalculateAllNodeWidths(double averageNodeWidth,
                                   double depthPower, double depthEffectOnWidth);
 
@@ -153,8 +153,7 @@ public:
     void deleteNodes(const std::vector<DeBruijnNode *> &nodes);
     void deleteEdges(const std::vector<DeBruijnEdge *> &edges);
     void duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene * scene);
-    bool mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene * scene,
-                    bool recalulateDepth);
+    bool mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene * scene);
 
     int mergeAllPossible(BandageGraphicsScene * scene = 0,
                          MyProgressDialog * progressDialog = 0);

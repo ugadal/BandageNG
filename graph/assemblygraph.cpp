@@ -970,32 +970,21 @@ QString AssemblyGraph::getUniqueNodeName(QString baseName) const {
     return baseName;
 }
 
-void AssemblyGraph::recalculateAllDepthsRelativeToDrawnMean()
-{
-    double meanDrawnDepth = getMeanDepth(true);
-    for (auto *node : m_deBruijnGraphNodes) {
-        double depthRelativeToMeanDrawnDepth;
-        if (meanDrawnDepth == 0)
-            depthRelativeToMeanDrawnDepth = 1.0;
-        else
-            depthRelativeToMeanDrawnDepth = node->getDepth() / meanDrawnDepth;
-
-        node->setDepthRelativeToMeanDrawnDepth(depthRelativeToMeanDrawnDepth);
-    }
-}
-
 
 void AssemblyGraph::recalculateAllNodeWidths(double averageNodeWidth,
                                              double depthPower, double depthEffectOnWidth) {
-    for (auto &entry : m_deBruijnGraphNodes) {
-        if (GraphicsItemNode * graphicsItemNode = entry->getGraphicsItemNode())
-            graphicsItemNode->setWidth(averageNodeWidth, depthPower, depthEffectOnWidth);
+    double meanDrawnDepth = getMeanDepth(true);
+
+    for (auto *node : m_deBruijnGraphNodes) {
+        if (GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode())
+            graphicsItemNode->setWidth(meanDrawnDepth== 0 ? 1.0 : node->getDepth() / meanDrawnDepth,
+                                       averageNodeWidth,
+                                       depthPower, depthEffectOnWidth);
     }
 }
 
 
-int AssemblyGraph::getDrawnNodeCount() const
-{
+int AssemblyGraph::getDrawnNodeCount() const {
     int nodeCount = 0;
     for (auto *node : m_deBruijnGraphNodes)
         nodeCount += node->isDrawn();
@@ -1104,18 +1093,6 @@ void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene 
     originalPosNode->setDepth(newDepth);
     originalNegNode->setDepth(newDepth);
 
-    double meanDrawnDepth = getMeanDepth(true);
-    double depthRelativeToMeanDrawnDepth;
-    if (meanDrawnDepth == 0)
-        depthRelativeToMeanDrawnDepth = 1.0;
-    else
-        depthRelativeToMeanDrawnDepth = originalPosNode->getDepth() / meanDrawnDepth;
-
-    originalPosNode->setDepthRelativeToMeanDrawnDepth(depthRelativeToMeanDrawnDepth);
-    originalNegNode->setDepthRelativeToMeanDrawnDepth(depthRelativeToMeanDrawnDepth);
-    newPosNode->setDepthRelativeToMeanDrawnDepth(depthRelativeToMeanDrawnDepth);
-    newPosNode->setDepthRelativeToMeanDrawnDepth(depthRelativeToMeanDrawnDepth);
-
     scene->duplicateGraphicsNode(originalPosNode, newPosNode);
     scene->duplicateGraphicsNode(originalNegNode, newNegNode);
 }
@@ -1166,9 +1143,7 @@ static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
 //This function will merge the given nodes, if possible.  Nodes can only be
 //merged if they are in a simple, unbranching path with no extra edges.  If the
 //merge is successful, it returns true, otherwise false.
-bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene * scene,
-                               bool recalulateDepth)
-{
+bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene * scene) {
     if (nodes.empty())
         return true;
 
@@ -1178,16 +1153,13 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
     nodes.pop_front();
 
     bool addedNode;
-    do
-    {
+    do {
         addedNode = false;
-        for (int i = 0; i < nodes.size(); ++i)
-        {
+        for (int i = 0; i < nodes.size(); ++i) {
             DeBruijnNode * potentialNextNode = nodes[i];
 
             //Check if the node can be added to the end of the list.
-            if (canAddNodeToEndOfMergeList(mergeList.back(), potentialNextNode))
-            {
+            if (canAddNodeToEndOfMergeList(mergeList.back(), potentialNextNode)) {
                 mergeList.push_back(potentialNextNode);
                 nodes.removeAt(i);
                 addedNode = true;
@@ -1195,8 +1167,7 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
             }
 
             //Check if the node can be added to the front of the list.
-            if (canAddNodeToStartOfMergeList(mergeList.front(), potentialNextNode))
-            {
+            if (canAddNodeToStartOfMergeList(mergeList.front(), potentialNextNode)) {
                 mergeList.push_front(potentialNextNode);
                 nodes.removeAt(i);
                 addedNode = true;
@@ -1206,15 +1177,13 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
             //If neither of those worked, then we should try the node's reverse
             //complement.
             DeBruijnNode * potentialNextNodeRevComp = potentialNextNode->getReverseComplement();
-            if (canAddNodeToEndOfMergeList(mergeList.back(), potentialNextNodeRevComp))
-            {
+            if (canAddNodeToEndOfMergeList(mergeList.back(), potentialNextNodeRevComp)) {
                 mergeList.push_back(potentialNextNodeRevComp);
                 nodes.removeAt(i);
                 addedNode = true;
                 break;
             }
-            if (canAddNodeToStartOfMergeList(mergeList.front(), potentialNextNodeRevComp))
-            {
+            if (canAddNodeToStartOfMergeList(mergeList.front(), potentialNextNodeRevComp)) {
                 mergeList.push_front(potentialNextNodeRevComp);
                 nodes.removeAt(i);
                 addedNode = true;
@@ -1224,7 +1193,6 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
 
         if (nodes.empty())
             break;
-
     } while (addedNode);
 
     //If there are still nodes left in the first list, then they don't form a
@@ -1264,41 +1232,20 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
     m_deBruijnGraphNodes.emplace(newPosNodeName.toStdString(), newPosNode);
     m_deBruijnGraphNodes.emplace(newNegNodeName.toStdString(), newNegNode);
 
-    std::vector<DeBruijnEdge *> leavingEdges = orderedList.back()->getLeavingEdges();
-    for (auto leavingEdge : leavingEdges)
-    {
+    for (auto *leavingEdge : orderedList.back()->getLeavingEdges())
         createDeBruijnEdge(newPosNodeName, leavingEdge->getEndingNode()->getName(), leavingEdge->getOverlap(),
                            leavingEdge->getOverlapType());
-    }
 
-    std::vector<DeBruijnEdge *> enteringEdges = orderedList.front()->getEnteringEdges();
-    for (auto enteringEdge : enteringEdges)
-    {
+    for (auto *enteringEdge : orderedList.front()->getEnteringEdges())
         createDeBruijnEdge(enteringEdge->getStartingNode()->getName(), newPosNodeName, enteringEdge->getOverlap(),
                            enteringEdge->getOverlapType());
-    }
-
-    if (recalulateDepth)
-    {
-        double meanDrawnDepth = getMeanDepth(true);
-        double depthRelativeToMeanDrawnDepth;
-        if (meanDrawnDepth == 0)
-            depthRelativeToMeanDrawnDepth = 1.0;
-        else
-            depthRelativeToMeanDrawnDepth = newPosNode->getDepth() / meanDrawnDepth;
-
-        newPosNode->setDepthRelativeToMeanDrawnDepth(depthRelativeToMeanDrawnDepth);
-        newNegNode->setDepthRelativeToMeanDrawnDepth(depthRelativeToMeanDrawnDepth);
-    }
-    else
-    {
-        newPosNode->setDepthRelativeToMeanDrawnDepth(1.0);
-        newNegNode->setDepthRelativeToMeanDrawnDepth(1.0);
-    }
 
     mergeGraphicsNodes(orderedList, revCompOrderedList, newPosNode, scene);
 
     deleteNodes(orderedList);
+
+    recalculateAllNodeWidths(g_settings->averageNodeWidth,
+                             g_settings->depthPower, g_settings->depthEffectOnWidth);
 
     return true;
 }
@@ -1306,25 +1253,21 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
 
 static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes,
                                 DeBruijnNode * newNode,
-                                BandageGraphicsScene * scene)
-{
+                                BandageGraphicsScene * scene) {
     bool success = true;
     std::vector<QPointF> linePoints;
 
-    for (auto *node : originalNodes)
-    {
+    for (auto *node : originalNodes) {
         //If we are in single mode, then we should check for a GraphicsItemNode only
         //in the positive nodes.
         bool opposite = false;
-        if (!g_settings->doubleMode && node->isNegativeNode())
-        {
+        if (!g_settings->doubleMode && node->isNegativeNode()) {
             node = node->getReverseComplement();
             opposite = true;
         }
 
         GraphicsItemNode * originalGraphicsItemNode = node->getGraphicsItemNode();
-        if (originalGraphicsItemNode == nullptr)
-        {
+        if (originalGraphicsItemNode == nullptr) {
             success = false;
             break;
         }
@@ -1343,7 +1286,8 @@ static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes
     }
 
     if (success) {
-        auto * newGraphicsItemNode = new GraphicsItemNode(newNode, linePoints);
+        // We pass dummy width here, as node widths will be recalculated later
+        auto * newGraphicsItemNode = new GraphicsItemNode(newNode, 0, linePoints);
 
         newNode->setGraphicsItemNode(newGraphicsItemNode);
         newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
@@ -1366,8 +1310,7 @@ static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes
 static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
                                const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
-                               BandageGraphicsScene * scene)
-{
+                               BandageGraphicsScene * scene) {
     bool success = mergeGraphicsNodes2(originalNodes, newNode, scene);
     if (success)
         newNode->setAsDrawn();
@@ -1472,12 +1415,11 @@ int AssemblyGraph::mergeAllPossible(BandageGraphicsScene * scene,
         if (progressDialog != nullptr && progressDialog->wasCancelled())
             break;
 
-        mergeNodes(allMerges[i], scene, false);
+        mergeNodes(allMerges[i], scene);
         emit setMergeCompletedCount(i+1);
         QApplication::processEvents();
     }
 
-    recalculateAllDepthsRelativeToDrawnMean();
     recalculateAllNodeWidths(g_settings->averageNodeWidth,
                              g_settings->depthPower, g_settings->depthEffectOnWidth);
 

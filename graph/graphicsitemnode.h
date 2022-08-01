@@ -41,9 +41,11 @@ public:
                      GraphicsItemNode * toCopy,
                      QGraphicsItem * parent = nullptr);
     GraphicsItemNode(DeBruijnNode * deBruijnNode,
+                     double depthRelativeToMeanDrawnDepth,
                      const std::vector<QPointF> &linePoints,
                      QGraphicsItem * parent = nullptr);
     GraphicsItemNode(DeBruijnNode * deBruijnNode,
+                     double depthRelativeToMeanDrawnDepth,
                      const adt::SmallPODVector<QPointF> &linePoints,
                      QGraphicsItem * parent = nullptr);
 
@@ -56,10 +58,10 @@ public:
     bool m_hasArrow : 1;
 
     static QSize getNodeTextSize(const QString& text);
-    static double getNodeWidth(double depthRelativeToMeanDrawnDepth,
-                               double depthPower,
-                               double depthEffectOnWidth,
-                               double averageNodeWidth);
+    static float getNodeWidth(double depthRelativeToMeanDrawnDepth,
+                              double depthPower,
+                              double depthEffectOnWidth,
+                              double averageNodeWidth);
     static void drawTextPathAtLocation(QPainter *painter, const QPainterPath& textPath, QPointF centre);
 
     void mousePressEvent(QGraphicsSceneMouseEvent * event) override;
@@ -76,7 +78,8 @@ public:
     std::vector<QPointF> getCentres() const;
     void setNodeColour(QColor color) { m_colour = color; }
     QStringList getNodeText() const;
-    void setWidth(double averageNodeWidth = 5.0,
+    void setWidth(double depthRelativeToMeanDrawnDepth,
+                  double averageNodeWidth = 5.0,
                   double depthPower = 0.5, double depthEffectOnWidth = 0.5);
     QPainterPath makePartialPath(double startFraction, double endFraction);
     double getNodePathLength();

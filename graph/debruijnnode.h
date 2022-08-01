@@ -38,7 +38,7 @@ class DeBruijnNode
 {
 public:
     //CREATORS
-    DeBruijnNode(QString name, double depth, const Sequence &sequence, int length = 0);
+    DeBruijnNode(QString name, float depth, const Sequence &sequence, int length = 0);
     ~DeBruijnNode() = default;
 
     //ACCESSORS
@@ -47,7 +47,6 @@ public:
     QString getSign() const {if (m_name.length() > 0) return m_name.right(1); else return "+";}
 
     double getDepth() const {return m_depth;}
-    double getDepthRelativeToMeanDrawnDepth() const {return m_depthRelativeToMeanDrawnDepth;}
 
     float getGC() const;
 
@@ -93,8 +92,6 @@ public:
     DeBruijnEdge *getSelfLoopingEdge() const;
     int getDeadEndCount() const;
 
-    //MODIFERS
-    void setDepthRelativeToMeanDrawnDepth(double newVal) {m_depthRelativeToMeanDrawnDepth = newVal;}
     void setSequence(const QByteArray &newSeq) {m_sequence = Sequence(newSeq); m_length = m_sequence.size();}
     void setSequence(const Sequence &newSeq) {m_sequence = newSeq; m_length = m_sequence.size();}
     void upgradeContiguityStatus(ContiguityStatus newStatus);
@@ -122,7 +119,6 @@ private:
     GraphicsItemNode * m_graphicsItemNode;
 
     float m_depth;
-    float m_depthRelativeToMeanDrawnDepth;
 
     int m_length : 27;
     ContiguityStatus m_contiguityStatus : 3;
