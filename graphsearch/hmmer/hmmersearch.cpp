@@ -120,6 +120,17 @@ QString HmmerSearch::buildDatabase(const AssemblyGraph &graph, bool includePaths
             for (unsigned shift = 0; shift < 3; ++shift)
                 out << node->getAAFasta(shift, true, false, false);
         }
+
+        if (includePaths) {
+            for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
+                if (m_cancelBuildDatabase)
+                    return (m_lastError = "Build cancelled.");
+
+                for (unsigned shift = 0; shift < 3; ++shift)
+                    out << it.value()->getAAFasta(shift, it.key().c_str());
+            }
+        }
+
     }
 
     return m_lastError;
@@ -487,6 +498,23 @@ buildHitsFromDomTblOut(QString hmmerOutput,
                                           nodeStart, nodeEnd,
                                           eValue, bitScore));
         }
+
+        auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(nodeLabel.chopped(2).toStdString());
+        if (pathIt != g_assemblyGraph->m_deBruijnGraphPaths.end()) {
+            bool ok = false;
+            unsigned shift = nodeLabel.last(1).toInt(&ok);
+            if (!ok || shift > 2)
+                continue;
+
+            nodeStart = (nodeStart - 1) * 3 + shift + 1;
+            nodeEnd = (nodeEnd - 1) * 3 + shift + 1;
+
+
+            pathHits.emplace_back(query, pathIt.value(),
+                                  Path::MappingRange{queryStart, queryEnd,
+                                                     nodeStart, nodeEnd});
+        }
+
     }
 
     return { nodeHits, pathHits };
