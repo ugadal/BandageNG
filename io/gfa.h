@@ -26,6 +26,7 @@
 #include <vector>
 #include <ostream>
 #include <algorithm>
+#include <limits>
 
 #include <cstdio>
 #include <cstdlib>
