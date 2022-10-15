@@ -19,6 +19,8 @@
 #include <lexy/callback.hpp>     // lexy callbacks
 #include <lexy/grammar.hpp>
 
+#include <string>
+
 namespace cigar::grammar {
     namespace dsl = lexy::dsl;
 
@@ -61,13 +63,15 @@ namespace cigar::grammar {
         };
 
         struct tag_name : lexy::token_production {
+            static constexpr auto name = "tag name";
+
             static constexpr auto rule = dsl::capture(dsl::token(dsl::ascii::alpha + dsl::ascii::alpha_digit));
             static constexpr auto value = lexy::as_string<std::string_view>;
         };
 
         static constexpr auto rule = [] {
             auto colon = dsl::lit_c<':'>;
-            return dsl::p < tag_name > +colon +
+            return dsl::p<tag_name> >> colon +
                    (
                            dsl::capture(LEXY_LIT("A")) >> colon + dsl::p < tag_character > |
                            dsl::capture(LEXY_LIT("i")) >> colon + dsl::p < tag_integer > |
@@ -114,8 +118,10 @@ namespace cigar::grammar {
     static constexpr auto tab = dsl::lit_c<'\t'>;
 
     struct opt_tags {
+        static constexpr auto name = "tags";
+
         static constexpr auto rule = [] {
-            auto tags = dsl::list(dsl::p<tag>, dsl::sep(tab));
+            auto tags = dsl::list(dsl::p<tag>, dsl::trailing_sep(tab));
             return dsl::eof | (tab >> tags + dsl::eof);
         }();
         static constexpr auto value = lexy::as_list<std::vector<cigar::tag>>;
