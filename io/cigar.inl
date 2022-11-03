@@ -69,6 +69,10 @@ namespace cigar::grammar {
             static constexpr auto value = lexy::as_string<std::string_view>;
         };
 
+        struct invalid_tag_type {
+            static constexpr auto name = "invalid tag type";
+        };
+
         static constexpr auto rule = [] {
             auto colon = dsl::lit_c<':'>;
             return dsl::p<tag_name> >> colon +
@@ -79,7 +83,8 @@ namespace cigar::grammar {
                            dsl::capture(LEXY_LIT("Z")) >> colon + dsl::p < tag_string > |
                            dsl::capture(LEXY_LIT("J")) >> colon + dsl::p < tag_string > |
                            dsl::capture(LEXY_LIT("H")) >> colon + dsl::p < tag_string > |
-                           dsl::capture(LEXY_LIT("B")) >> colon + dsl::p < tag_string >
+                           dsl::capture(LEXY_LIT("B")) >> colon + dsl::p < tag_string > |
+                           dsl::error<invalid_tag_type>
                    );
         }();
 
