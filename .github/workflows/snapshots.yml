@@ -64,6 +64,7 @@ jobs:
           export EXTRA_PLATFORM_PLUGINS="libqoffscreen.so;libqminimal.so"
 
           ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
+          mv BandageNG*.AppImage BandageNG-Linux-${{steps.commit.outputs.short}}.AppImage
         shell: bash
 
       - name: '📤 Upload artifact: AppImage'
@@ -105,9 +106,11 @@ jobs:
 
       - name: '📦 Make DMG'
         working-directory: ${{github.workspace}}/build
-        run: macdeployqt BandageNG.app -dmg
+        run: |
+          macdeployqt BandageNG.app -dmg
+          mv *.dmg BandageNG-macOS-${{steps.commit.outputs.short}}.dmg
 
-      - name: '📤 Upload artifact: AppImage'
+      - name: '📤 Upload artifact: DMG'
         uses: actions/upload-artifact@v3
         with:
           name: BandageNG-macOS-${{steps.commit.outputs.short}}.dmg
@@ -119,8 +122,10 @@ jobs:
       needs:
         - build-linux
         - build-mac
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-20.04
       steps:
+      - name: '⚙️ Install dependencies'
+        run: sudo apt-get install -y libfuse2
       - name: '📥 Download artifacts'
         uses: actions/download-artifact@v2
       - name: '🗂 Inspect directory after downloading artifacts'
