@@ -118,6 +118,7 @@ jobs:
           path: ${{github.workspace}}/build/BandageNG*.dmg
 
   build-windows:
+    if: ${{ false }}  # disable for now
     runs-on: windows-latest
     name: '🧊 Windows'
     steps:
