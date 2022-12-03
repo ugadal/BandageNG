@@ -22,19 +22,19 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
 
       - name: '🧰 Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: '⚙️ Cache Qt'
         id: cache-qt
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ../Qt
           key: ${{ runner.os }}-QtCache
 
       - name: '⚙️ Install Qt'
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v3
         with:
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
           version: ${{env.QT_VERSION}}
@@ -82,19 +82,19 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
 
       - name: '🧰 Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: '⚙️ Cache Qt'
         id: cache-qt
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ../Qt
           key: ${{ runner.os }}-QtCache
 
       - name: '⚙️ Install Qt'
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v3
         with:
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
           version: ${{env.QT_VERSION}}
@@ -126,7 +126,7 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
 
       - name: '🧰 Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -138,13 +138,13 @@ jobs:
 
       - name: '⚙️ Cache Qt'
         id: cache-qt
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ../Qt
           key: ${{ runner.os }}-QtCache
 
       - name: '⚙️ Install Qt'
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v3
         with:
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
           version: ${{env.QT_VERSION}}
@@ -166,7 +166,7 @@ jobs:
       - name: '⚙️ Install dependencies'
         run: sudo apt-get install -y libfuse2
       - name: '📥 Download artifacts'
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
       - name: '🗂 Inspect directory after downloading artifacts'
         run: ls -alFR
       - name: '🚀 Create release and upload artifacts'
