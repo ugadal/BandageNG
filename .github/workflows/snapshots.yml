@@ -36,7 +36,7 @@ jobs:
       - name: '⚙️ Install Qt'
         uses: jurplel/install-qt-action@v3
         with:
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          manually-cached: ${{ steps.cache-qt.outputs.cache-hit }}
           version: ${{env.QT_VERSION}}
 
       - name: '⚙️ Install dependencies'
@@ -96,7 +96,7 @@ jobs:
       - name: '⚙️ Install Qt'
         uses: jurplel/install-qt-action@v3
         with:
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          manually-cached: ${{ steps.cache-qt.outputs.cache-hit }}
           version: ${{env.QT_VERSION}}
 
       - name: '⚙️ Configure CMake'
