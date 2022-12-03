@@ -26,17 +26,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: '⚙️ Cache Qt'
-        id: cache-qt
-        uses: actions/cache@v3
-        with:
-          path: ../Qt
-          key: ${{ runner.os }}-QtCache
-
       - name: '⚙️ Install Qt'
         uses: jurplel/install-qt-action@v3
         with:
-          manually-cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          cache: true
+          cache-key-prefix: ${{ runner.os }}-QtCache
           version: ${{env.QT_VERSION}}
 
       - name: '⚙️ Install dependencies'
@@ -86,17 +80,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: '⚙️ Cache Qt'
-        id: cache-qt
-        uses: actions/cache@v3
-        with:
-          path: ../Qt
-          key: ${{ runner.os }}-QtCache
-
       - name: '⚙️ Install Qt'
         uses: jurplel/install-qt-action@v3
         with:
-          manually-cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          cache: true
+          cache-key-prefix: ${{ runner.os }}-QtCache
           version: ${{env.QT_VERSION}}
 
       - name: '⚙️ Configure CMake'
@@ -136,17 +124,11 @@ jobs:
           arch: x64
           spectre: true
 
-      - name: '⚙️ Cache Qt'
-        id: cache-qt
-        uses: actions/cache@v3
-        with:
-          path: ../Qt
-          key: ${{ runner.os }}-QtCache
-
       - name: '⚙️ Install Qt'
         uses: jurplel/install-qt-action@v3
         with:
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          cache: true
+          cache-key-prefix: ${{ runner.os }}-QtCache
           version: ${{env.QT_VERSION}}
 
       - name: '⚙️ Configure CMake'
