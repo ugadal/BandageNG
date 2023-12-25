@@ -4,6 +4,7 @@
 #pragma once
 
 #include <llvm/ADT/PointerIntPair.h>
+#include <llvm/Support/Compiler.h>
 
 #include <cstring>
 #include <vector>
@@ -58,18 +59,18 @@ struct SmallPODVectorData {
         data_.setInt(0);
     }
 
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     bool empty() const {
         return data_.getInt() == 0 && data_.getPointer() == nullptr;
     }
 
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     vector_type *vector() const {
         return (data_.getInt() == 0 ?
                 static_cast<vector_type *>(data_.getPointer()) : nullptr);
     }
 
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     size_type size() const {
         const auto v = vector();
         if (LLVM_UNLIKELY(v != nullptr))
@@ -78,7 +79,7 @@ struct SmallPODVectorData {
         return data_.getInt();
     }
 
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     pointer data() {
         const auto v = vector();
         if (LLVM_UNLIKELY(v != nullptr))
@@ -87,7 +88,7 @@ struct SmallPODVectorData {
         return pointer(data_.getPointer());
     }
 
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     const_pointer cdata() const {
         const auto v = vector();
         if (LLVM_UNLIKELY(v != nullptr))
@@ -263,7 +264,7 @@ struct HybridAllocatedStorage : public SmallPODVectorData<T> {
         void *data = that.data_.getPointer(), *new_data = data;
         memcpy(new_data, data, this->size() * sizeof(T));
     }
-    
+
     HybridAllocatedStorage(HybridAllocatedStorage &&that) {
         void *data = that.data_.getPointer(), *new_data = data;
         size_t sz = that.data_.getInt(), new_sz = sz;
@@ -420,15 +421,15 @@ public:
 
     size_type max_size() const { return size_type(-1) / sizeof(T); }
 
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     bool empty() const { return data_.empty(); }
 
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     size_type size() const { return data_.size(); }
 
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     pointer data() { return data_.data(); }
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     const_pointer cdata() const { return data_.cdata(); }
     size_t capacity() const { return data_.capacity(); }
 
@@ -446,12 +447,12 @@ public:
     reverse_iterator rend() { return reverse_iterator(begin()); }
     const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
 
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     reference operator[](size_type idx) {
         return begin()[idx];
     }
 
-    __attribute__((always_inline))
+    LLVM_ATTRIBUTE_ALWAYS_INLINE
     const_reference operator[](size_type idx) const {
         return begin()[idx];
     }
