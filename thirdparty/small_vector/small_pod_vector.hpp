@@ -11,9 +11,6 @@
 
 namespace adt {
 
-#define LIKELY(EXPR) __builtin_expect((bool)(EXPR), true)
-#define UNLIKELY(EXPR) __builtin_expect((bool)(EXPR), false)
-
 namespace impl {
 // Class holding the data for SmallPOD vector. It is expected that descendants
 // could implement different memory allocation policies.
@@ -75,7 +72,7 @@ struct SmallPODVectorData {
     __attribute__((always_inline))
     size_type size() const {
         const auto v = vector();
-        if (UNLIKELY(v != nullptr))
+        if (LLVM_UNLIKELY(v != nullptr))
             return v->size();
 
         return data_.getInt();
@@ -84,7 +81,7 @@ struct SmallPODVectorData {
     __attribute__((always_inline))
     pointer data() {
         const auto v = vector();
-        if (UNLIKELY(v != nullptr))
+        if (LLVM_UNLIKELY(v != nullptr))
             return v->data();
 
         return pointer(data_.getPointer());
@@ -93,7 +90,7 @@ struct SmallPODVectorData {
     __attribute__((always_inline))
     const_pointer cdata() const {
         const auto v = vector();
-        if (UNLIKELY(v != nullptr))
+        if (LLVM_UNLIKELY(v != nullptr))
             return v->data();
 
         return const_pointer(data_.getPointer());
@@ -101,7 +98,7 @@ struct SmallPODVectorData {
 
     size_t capacity() const {
         const auto v = vector();
-        if (UNLIKELY(v != nullptr))
+        if (LLVM_UNLIKELY(v != nullptr))
             return v->capacity();
 
         return data_.getInt();
@@ -123,7 +120,7 @@ struct HeapAllocatedStorage : public SmallPODVectorData<T> {
         void *data = this->data_.getPointer(), *new_data = data;
         size_t sz = this->data_.getInt(), new_sz = N;
 
-        if (UNLIKELY(sz == 0 && data != nullptr)) { // vector case
+        if (LLVM_UNLIKELY(sz == 0 && data != nullptr)) { // vector case
             vector_type *v = static_cast<vector_type *>(data);
             if (N > MaxSmall) {
                 v->resize(N);
@@ -140,7 +137,7 @@ struct HeapAllocatedStorage : public SmallPODVectorData<T> {
                 }
                 delete v;
             }
-        } else if (UNLIKELY(N > MaxSmall)) {
+        } else if (LLVM_UNLIKELY(N > MaxSmall)) {
             // Ok, we have to grow too much - allocate new vector
             vector_type *new_vector = new vector_type((T *) data, (T *) data + sz);
             new_vector->resize(N);
@@ -204,7 +201,7 @@ struct PreAllocatedStorage : public SmallPODVectorData<T> {
         void *data = this->data_.getPointer(), *new_data = data;
         size_t sz = this->data_.getInt(), new_sz = N;
 
-        if (UNLIKELY(sz == 0 && data != nullptr)) { // vector case
+        if (LLVM_UNLIKELY(sz == 0 && data != nullptr)) { // vector case
             vector_type *v = static_cast<vector_type *>(data);
             if (N > PreAllocated) {
                 v->resize(N);
@@ -221,7 +218,7 @@ struct PreAllocatedStorage : public SmallPODVectorData<T> {
                 }
                 delete v;
             }
-        } else if (UNLIKELY(N > PreAllocated)) {
+        } else if (LLVM_UNLIKELY(N > PreAllocated)) {
             // Ok, we have to grow too much - allocate new vector
             vector_type *new_vector = new vector_type((T *) data, (T *) data + sz);
             new_vector->resize(N);
@@ -294,7 +291,7 @@ struct HybridAllocatedStorage : public SmallPODVectorData<T> {
         if (sz == 0 && data == nullptr && N == 0)
             return;
 
-        if (UNLIKELY(sz == 0 && data != nullptr)) { // vector case
+        if (LLVM_UNLIKELY(sz == 0 && data != nullptr)) { // vector case
             vector_type *v = static_cast<vector_type *>(data);
             if (N > MaxSmall) {
                 v->resize(N);
@@ -315,14 +312,14 @@ struct HybridAllocatedStorage : public SmallPODVectorData<T> {
                 }
                 delete v;
             }
-        } else if (UNLIKELY(N > MaxSmall)) { // Ok, we have to grow too much - allocate new vector
+        } else if (LLVM_UNLIKELY(N > MaxSmall)) { // Ok, we have to grow too much - allocate new vector
             vector_type *new_vector = new vector_type((T *) data, (T *) data + sz);
             new_vector->resize(N);
             new_data = new_vector;
             new_sz = 0;
             if (sz > PreAllocated)
                 free(data);
-        } else if (UNLIKELY(sz > PreAllocated)) { // Heap-allocated storage
+        } else if (LLVM_UNLIKELY(sz > PreAllocated)) { // Heap-allocated storage
             if (N > sz) { // Realloc if necessary
                 new_data = realloc(data, N * sizeof(T));
                 new_sz = N;
@@ -337,7 +334,7 @@ struct HybridAllocatedStorage : public SmallPODVectorData<T> {
                 new_sz = 0;
             }
         } else { // Pre-allocated storage
-            if (UNLIKELY(N > PreAllocated)) { // Turn to heap-allocated storage
+            if (LLVM_UNLIKELY(N > PreAllocated)) { // Turn to heap-allocated storage
                 new_data = malloc(N * sizeof(T));
                 new_sz = N;
                 memcpy(new_data, data, sz * sizeof(T));
@@ -477,7 +474,7 @@ public:
 
     void push_back(const T &value) {
         const auto v = data_.vector();
-        if (UNLIKELY(v != nullptr)) {
+        if (LLVM_UNLIKELY(v != nullptr)) {
             v->push_back(value);
             return;
         }
@@ -595,9 +592,6 @@ public:
                                             rhs.begin(), rhs.end());
     }
 };
-
-#undef LIKELY
-#undef UNLIKELY
 
 } //adt
 #endif // __ADT_SMALL_POD_VECTOR__
