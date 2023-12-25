@@ -153,7 +153,7 @@ int handleQueryPathsCmd(QApplication *app,
     QList<QByteArray> hitSequences;
 
     auto maybeNA = [](auto val) -> QString {
-        using ValT = typeof(val);
+        using ValT = decltype(val);
         if constexpr (std::is_same_v<ValT, double>) {
             if (std::isnan(val))
             return "N/A";
