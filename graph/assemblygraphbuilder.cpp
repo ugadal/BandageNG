@@ -495,7 +495,14 @@ namespace io {
 
             for (const auto &node: record.segments)
                 pathNodes.push_back(graph.m_deBruijnGraphNodes.at(node));
-            graph.m_deBruijnGraphPaths.emplace(record.name, Path(Path::makeFromOrderedNodes(pathNodes, false)));
+            Path p(Path::makeFromOrderedNodes(pathNodes, false));
+            if (p.nodes().size() != pathNodes.size()) {
+                // We were unable to build path through the graph, likely the input
+                // file is invalid
+                throw AssemblyGraphError(std::string("malformed path string, cannot reconstruct path through the graph"));
+            }
+
+            graph.m_deBruijnGraphPaths.emplace(record.name, std::move(p));
         }
 
         void handleWalk(const gfa::walk &record,
