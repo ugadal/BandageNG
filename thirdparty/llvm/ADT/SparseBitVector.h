@@ -5,10 +5,11 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-//
-// This file defines the SparseBitVector class.  See the doxygen comment for
-// SparseBitVector for more details on the algorithm used.
-//
+///
+/// \file
+/// This file defines the SparseBitVector class.  See the doxygen comment for
+/// SparseBitVector for more details on the algorithm used.
+///
 //===----------------------------------------------------------------------===//
 
 #ifndef LLVM_ADT_SPARSEBITVECTOR_H
@@ -17,13 +18,11 @@
 // because raw_ostream need many dependencies
 #define DISABLE_RAW_OSTREAM
 
+#include "llvm/ADT/bit.h"
 #include "llvm/Support/ErrorHandling.h"
-#include "llvm/Support/MathExtras.h"
-
 #ifndef DISABLE_RAW_OSTREAM
 #include "llvm/Support/raw_ostream.h"
 #endif
-
 #include <cassert>
 #include <climits>
 #include <cstring>
@@ -126,7 +125,7 @@ public:
   size_type count() const {
     unsigned NumBits = 0;
     for (unsigned i = 0; i < BITWORDS_PER_ELEMENT; ++i)
-      NumBits += countPopulation(Bits[i]);
+      NumBits += llvm::popcount(Bits[i]);
     return NumBits;
   }
 
@@ -134,7 +133,7 @@ public:
   int find_first() const {
     for (unsigned i = 0; i < BITWORDS_PER_ELEMENT; ++i)
       if (Bits[i] != 0)
-        return i * BITWORD_SIZE + countTrailingZeros(Bits[i]);
+        return i * BITWORD_SIZE + llvm::countr_zero(Bits[i]);
     llvm_unreachable("Illegal empty element");
   }
 
@@ -144,7 +143,7 @@ public:
       unsigned Idx = BITWORDS_PER_ELEMENT - I - 1;
       if (Bits[Idx] != 0)
         return Idx * BITWORD_SIZE + BITWORD_SIZE -
-               countLeadingZeros(Bits[Idx]) - 1;
+               llvm::countl_zero(Bits[Idx]) - 1;
     }
     llvm_unreachable("Illegal empty element");
   }
@@ -165,12 +164,12 @@ public:
     Copy &= ~0UL << BitPos;
 
     if (Copy != 0)
-      return WordPos * BITWORD_SIZE + countTrailingZeros(Copy);
+      return WordPos * BITWORD_SIZE + llvm::countr_zero(Copy);
 
     // Check subsequent words.
     for (unsigned i = WordPos+1; i < BITWORDS_PER_ELEMENT; ++i)
       if (Bits[i] != 0)
-        return i * BITWORD_SIZE + countTrailingZeros(Bits[i]);
+        return i * BITWORD_SIZE + llvm::countr_zero(Bits[i]);
     return -1;
   }
 
