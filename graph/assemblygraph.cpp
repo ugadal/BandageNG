@@ -19,6 +19,7 @@
 #include "assemblygraph.h"
 #include "debruijnedge.h"
 #include "graph/debruijnnode.h"
+#include "parallel_hashmap/phmap.h"
 #include "path.h"
 #include "io.h"
 #include "graphicsitemedge.h"
@@ -82,9 +83,17 @@ void AssemblyGraph::cleanUp() {
     m_deBruijnGraphPaths.clear();
     m_deBruijnGraphWalks.clear();
 
+    // There might be duplicate entries due to self-rc nodes, so we need to
+    // track what was already deleted :(
+    // FIXME: Allocate all nodes from common arena, we should be fine with
+    // LLVM's BumpPtr allocator
+    phmap::parallel_flat_hash_set<DeBruijnNode*> deleted;
     {
         for (auto &entry : m_deBruijnGraphNodes) {
+            if (deleted.contains(entry))
+                continue;
             delete entry;
+            deleted.insert(entry);
         }
         m_deBruijnGraphNodes.clear();
     }
@@ -92,6 +101,7 @@ void AssemblyGraph::cleanUp() {
     {
         for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
             delete edge;
+            edge = nullptr;
         }
         m_deBruijnGraphEdges.clear();
     }

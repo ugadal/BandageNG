@@ -319,10 +319,18 @@ namespace io {
             if (!nodePtr)
                 return llvm::createStringError("Duplicate segment named: " + nodeName);
 
-            auto oppositeNodePtr =
-                    maybeAddSegment(getOppositeNodeName(nodeName), nodeDepth, sequence.GetReverseComplement(), graph);
-            if (!oppositeNodePtr)
-                return llvm::createStringError("Duplicate segment named: " + oppositeNodeName);
+            // Handle self-rc nodes. We record the same node under different names
+            DeBruijnNode *oppositeNodePtr = nullptr;
+            auto rcSeq = sequence.GetReverseComplement();
+            if (!sequence.empty() && !sequence.missing() && sequence == rcSeq) {
+                oppositeNodePtr = nodePtr;
+                graph.m_deBruijnGraphNodes[oppositeNodeName] = oppositeNodePtr;
+            } else {
+                oppositeNodePtr =
+                    maybeAddSegment(getOppositeNodeName(nodeName), nodeDepth, rcSeq, graph);
+                if (!oppositeNodePtr)
+                    return llvm::createStringError("Duplicate segment named: " + oppositeNodeName);
+            }
 
             nodePtr->setReverseComplement(oppositeNodePtr);
             oppositeNodePtr->setReverseComplement(nodePtr);
