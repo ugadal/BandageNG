@@ -53,7 +53,7 @@ namespace io {
         bool jumpsAsLinks_ = false;
     };
 
-    bool handleStandargGFAEdgeTags(const DeBruijnEdge *edgePtr,
+    bool handleStandardGFAEdgeTags(const DeBruijnEdge *edgePtr,
                                    const DeBruijnEdge *rcEdgePtr,
                                    const std::vector<cigar::tag> &tags,
                                    AssemblyGraph &graph);

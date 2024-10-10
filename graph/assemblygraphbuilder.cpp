@@ -257,7 +257,7 @@ static bool maybeAddCustomColor(const Entity *e,
 }
 
 namespace io {
-    bool handleStandargGFAEdgeTags(const DeBruijnEdge *edgePtr,
+    bool handleStandardGFAEdgeTags(const DeBruijnEdge *edgePtr,
                                    const DeBruijnEdge *rcEdgePtr,
                                    const std::vector<gfa::tag> &tags,
                                    AssemblyGraph &graph) {
@@ -283,6 +283,26 @@ namespace io {
             maybeAddGFATags(rcEdgePtr, graph.m_edgeTags, tags, false);
 
         return hasCustomColours;
+    }
+
+    std::pair<bool, bool> handleStandardGFANodeTags(const DeBruijnNode *nodePtr,
+                                                    const DeBruijnNode *rcNodePtr,
+                                                    const std::vector<gfa::tag> &tags,
+                                                    AssemblyGraph &graph) {
+        bool hasCustomColours = false, hasCustomLabels = false;
+        hasCustomColours |= maybeAddCustomColor(nodePtr, tags, "CB", graph);
+        hasCustomColours |= maybeAddCustomColor(rcNodePtr, tags, "C2", graph);
+
+        auto lb = gfa::getTag<std::string>("LB", tags);
+        auto l2 = gfa::getTag<std::string>("L2", tags);
+        hasCustomLabels = lb || l2;
+        if (lb) graph.setCustomLabel(nodePtr, lb->c_str());
+        if (l2) graph.setCustomLabel(rcNodePtr, l2->c_str());
+
+        maybeAddGFATags(nodePtr, graph.m_nodeTags, tags);
+        maybeAddGFATags(rcNodePtr, graph.m_nodeTags, tags);
+
+        return { hasCustomColours, hasCustomLabels };
     }
 
     class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
@@ -400,6 +420,10 @@ namespace io {
 
             auto [nodePtr, oppositeNodePtr] = nodePairOrErr.get();
 
+            auto [hasCustomColors, hasCustomLabels] =
+                    handleStandardGFANodeTags(nodePtr, oppositeNodePtr, record.tags, graph);
+            hasCustomColours_ |= hasCustomColors;
+            hasCustomLabels_ |= hasCustomLabels;
 
             return sequencesAreMissing;
         }
@@ -459,8 +483,8 @@ namespace io {
                 graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
             }
 
-            hasCustomColours_ =
-                    handleStandargGFAEdgeTags(edgePtr, rcEdgePtr, tags, graph);
+            hasCustomColours_ |=
+                    handleStandardGFAEdgeTags(edgePtr, rcEdgePtr, tags, graph);
 
             return std::pair{edgePtr, rcEdgePtr};
         }

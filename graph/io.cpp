@@ -63,7 +63,7 @@ namespace {
             graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
         }
 
-        handleStandargGFAEdgeTags(edgePtr, rcEdgePtr, tags, graph);
+        handleStandardGFAEdgeTags(edgePtr, rcEdgePtr, tags, graph);
 
         edgePtr->setOverlap(0);
         edgePtr->setOverlapType(EdgeOverlapType::EXTRA_LINK);
