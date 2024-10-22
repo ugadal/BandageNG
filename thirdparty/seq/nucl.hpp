@@ -9,6 +9,8 @@
 #define NUCL_HPP_
 
 #include "utils/verify.hpp"
+
+#include <llvm/Support/Compiler.h>
 #include <cstdint>
 
 /**
@@ -38,13 +40,10 @@ static const char INVALID_NUCL = char(-1);
  * @return true if c is 'A/a/0', 'C/c/1', 'G/g/2', 'T/t/3'.
  */
 
-#define likely(x)       __builtin_expect((x),1)
-#define unlikely(x)     __builtin_expect((x),0)
-
 // WARNING: These functions were carefully crafted for speed
 // Change only if you know what you're doing
 inline bool is_nucl(char c) {
-    if (unlikely(c>= 0 && c < 4))
+    if (LLVM_UNLIKELY(c>= 0 && c < 4))
         return true;
 
     switch (c) {
@@ -78,7 +77,7 @@ inline bool is_N(char c) {
  * @return complement symbol, i.e. 'A/a/0' => 'T/t/3', 'C/c/1' => 'G/g/2', 'G/g/2' => 'C/c/1', 'T/t/3' => 'A/a/0', 'N' => 'N'
  */
 inline char nucl_complement(char c) {
-    if (unlikely(c>= 0 && c < 4))
+    if (LLVM_UNLIKELY(c>= 0 && c < 4))
         return complement(c);
 
     switch (c) {
@@ -114,7 +113,7 @@ inline char nucl_complement(char c) {
  * @return 'A/a/0' => 'A', 'C/c/1' => 'C', 'G/g/2' => 'G', 'T/t/3' => 'T'
  */
 inline char nucl(char c) {
-    if (likely(c >= 0 && c < 4)) {
+    if (LLVM_LIKELY(c >= 0 && c < 4)) {
         const uint32_t nucl_map = 'A' + ('C' << 8) + ('G' << 16) + ('T' << 24);
         return (char)((nucl_map >> (8*c)) & 0xFF);
     } else if ('A' <= c && c <= 'T')
@@ -129,9 +128,9 @@ inline char nucl(char c) {
  * @return A => 0, C => 1, G => 2, T => 3
  */
 inline char dignucl(char c) {
-    if (unlikely(c>= 0 && c < 4)) {
+    if (LLVM_UNLIKELY(c>= 0 && c < 4)) {
         return c;
-    } else if (unlikely('a' <= c && c <= 't')) {
+    } else if (LLVM_UNLIKELY('a' <= c && c <= 't')) {
         c = (char)(c - 'a' + 'A');
     }
 
@@ -139,8 +138,5 @@ inline char dignucl(char c) {
             (c == 'A' ? 0 : 1) :
             (c == 'G' ? 2 : 3));
 }
-
-#undef likely
-#undef unlikely
 
 #endif /* NUCL_HPP_ */

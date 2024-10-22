@@ -37,9 +37,10 @@ AboutDialog::AboutDialog(QWidget *parent) :
 
     QString versionCopyrightText =
             "<html><head/><body><p>Version: " + QApplication::applicationVersion() + "</p>"+
-            "<p>Copyright 2017-2021 Ryan Wick</p>"+
-            "<p>Copyright 2021-2022 Anton Korobeynikov</p>"+
-            "<p>Copyright 2022 Andrey Zakharov</p></body></html>";
+            "<p>Copyright 2021-now Anton Korobeynikov</p>"
+            "<p>Copyright 2022 Andrey Zakharov</p>"
+            "<p>Copyright 2017-2021 Ryan Wick</p>"
+            "</body></html>";
     ui->versionCopyrightLabel->setText(versionCopyrightText);
 
     layout()->setSizeConstraint(QLayout::SetFixedSize);

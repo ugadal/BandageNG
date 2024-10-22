@@ -15,6 +15,7 @@
 
 
 #include "mainwindow.h"
+#include "graph/graphscope.h"
 #include "ui_mainwindow.h"
 
 #include "ui/dialogs/settingsdialog.h"
@@ -29,6 +30,7 @@
 #include "ui/dialogs/changenodedepthdialog.h"
 #include "ui/dialogs/graphinfodialog.h"
 #include "ui/dialogs/pathlistdialog.h"
+#include "ui/dialogs/walklistdialog.h"
 
 #include "graphsearch/blast/blastsearch.h"
 #include "graphsearch/minimap2/minimap2search.h"
@@ -38,6 +40,7 @@
 #include "graph/debruijnedge.h"
 #include "graph/graphicsitemnode.h"
 #include "graph/graphicsitemedge.h"
+#include "graph/graphicsitemlink.h"
 #include "graph/path.h"
 #include "graph/sequenceutils.h"
 #include "graph/io.h"
@@ -137,6 +140,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->actionLoad_CSV, SIGNAL(triggered(bool)), this, SLOT(loadCSV()));
     connect(ui->actionLoad_layout, SIGNAL(triggered()), this, SLOT(loadGraphLayout()));
     connect(ui->actionLoad_paths, SIGNAL(triggered()), this, SLOT(loadGraphPaths()));
+    connect(ui->actionLoad_links, SIGNAL(triggered()), this, SLOT(loadGraphLinks()));
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->graphScopeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(graphScopeChanged()));
     connect(ui->zoomSpinBox, SIGNAL(valueChanged(double)), this, SLOT(zoomSpinBoxChanged()));
@@ -164,6 +168,8 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->selectNodesButton, SIGNAL(clicked()), this, SLOT(selectUserSpecifiedNodes()));
     connect(ui->pathSelectButton, SIGNAL(clicked()), this, SLOT(selectPathNodes()));
     connect(ui->pathListButton, &QPushButton::clicked, this, &MainWindow::showPathListDialog);
+    connect(ui->walkSelectButton, SIGNAL(clicked()), this, SLOT(selectWalkNodes()));
+    connect(ui->walkListButton, &QPushButton::clicked, this, &MainWindow::showWalkListDialog);
     connect(ui->selectionSearchNodesLineEdit, SIGNAL(returnPressed()), this, SLOT(selectUserSpecifiedNodes()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(openAboutDialog()));
     connect(ui->blastSearchButton, SIGNAL(clicked()), this, SLOT(openBlastSearchDialog()));
@@ -335,6 +341,7 @@ void MainWindow::loadGraph(QString fullFileName) {
                              "Cannot load file. The selected file's format was not recognised as any supported graph type.");
         return;
     }
+    builder->treatJumpsAsLinks(g_settings->jumpsAsLinks);
 
     resetScene();
     cleanUp();
@@ -344,65 +351,57 @@ void MainWindow::loadGraph(QString fullFileName) {
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    auto *watcher = new QFutureWatcher<bool>;
+    auto *watcher = new QFutureWatcher<llvm::Error>;
     connect(watcher, &QFutureWatcher<bool>::finished,
-            this, [=]() {
-        try {
-            // Note that this will rethrow the exceptions, if any
-            bool loaded = watcher->result();
-            if (builder->hasComplexOverlaps())
-                QMessageBox::warning(this, "Unsupported CIGAR",
-                                     "This GFA file contains "
-                                     "links with complex CIGAR strings (containing "
-                                     "operators other than M).\n\n"
-                                     "Bandage does not support edge overlaps that are not "
-                                     "perfect, so the behaviour of such edges in this graph "
-                                     "is undefined.");
+            this,
+            [=]() {
+                if (auto E = watcher->future().takeResult()) {
+                    QString errorTitle = "Error loading graph";
+                    QString errorMessage = "There was an error when attempting to load\n"
+                                           + fullFileName + ":\n"
+                                           + QString::fromStdString(llvm::toString(std::move(E))) + "\n\n"
+                                           + "Please verify that this file has the correct format.";
+                    QMessageBox::warning(this, errorTitle, errorMessage);
+                    resetScene();
+                    cleanUp();
+                    clearGraphDetails();
+                    setUiState(NO_GRAPH_LOADED);
+                    return;
+                }
 
-            setUiState(GRAPH_LOADED);
-            setWindowTitle("BandageNG - " + fullFileName);
+                if (builder->hasComplexOverlaps())
+                    QMessageBox::warning(this, "Unsupported CIGAR",
+                                         "This GFA file contains "
+                                         "links with complex CIGAR strings (containing "
+                                         "operators other than M).\n\n"
+                                         "Bandage does not support edge overlaps that are not "
+                                         "perfect, so the behaviour of such edges in this graph "
+                                         "is undefined.");
 
-            g_assemblyGraph->determineGraphInfo();
-            displayGraphDetails();
-            g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
-            g_memory->clearGraphSpecificMemory();
+                setUiState(GRAPH_LOADED);
+                setWindowTitle("BandageNG - " + fullFileName);
 
-            bool customColours = builder->hasCustomColours(),
-                    customLabels = builder->hasCustomLabels();
+                g_assemblyGraph->determineGraphInfo();
+                displayGraphDetails();
+                g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
+                g_memory->clearGraphSpecificMemory();
 
-            // If the graph has custom colours, automatically switch the colour scheme to custom colours.
-            if (customColours)
-                switchColourScheme(CUSTOM_COLOURS);
+                bool customColours = builder->hasCustomColours(),
+                      customLabels = builder->hasCustomLabels();
 
-            // If the graph doesn't have custom colours, but the colour scheme is on 'Custom', automatically switch it back
-            // to the default of 'Random colours'.
-            if (!customColours && ui->coloursComboBox->currentIndex() == 6)
-                ui->coloursComboBox->setCurrentIndex(0);
+                // If the graph has custom colours, automatically switch the colour scheme to custom colours.
+                if (customColours)
+                    switchColourScheme(CUSTOM_COLOURS);
 
-            setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
-            setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
-        }  catch (const AssemblyGraphError &err) {
-            QString errorTitle = "Error loading graph";
-            QString errorMessage = "There was an error when attempting to load\n"
-                                   + fullFileName + ":\n"
-                                   + err.what() + "\n\n"
-                                   + "Please verify that this file has the correct format.";
-            QMessageBox::warning(this, errorTitle, errorMessage);
-            resetScene();
-            cleanUp();
-            clearGraphDetails();
-            setUiState(NO_GRAPH_LOADED);
-        } catch (...) {
-            QString errorTitle = "Error loading graph";
-            QString errorMessage = "There was an error when attempting to load:\n"
-                                   + fullFileName + "\n\n"
-                                   + "Please verify that this file has the correct format.";
-            QMessageBox::warning(this, errorTitle, errorMessage);
-            resetScene();
-            cleanUp();
-            clearGraphDetails();
-            setUiState(NO_GRAPH_LOADED);
-        }
+                // If the graph doesn't have custom colours, but the colour scheme is on 'Custom', automatically switch it back
+                // to the default of 'Random colours'.
+                if (!customColours && ui->coloursComboBox->currentIndex() == 6)
+                    ui->coloursComboBox->setCurrentIndex(0);
+
+                setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
+                setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
+                setupWalkSelectionLineEdit(ui->walkSelectionLineEdit);
+                setupWalkSelectionLineEdit(ui->walkSelectionLineEdit2);
     });
     connect(watcher, SIGNAL(finished()), progress, SLOT(deleteLater()));
     connect(watcher, SIGNAL(finished()), watcher, SLOT(deleteLater()));
@@ -473,11 +472,73 @@ void MainWindow::loadGraphPaths(QString fullFileName) {
     setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
 }
 
+void MainWindow::loadGraphLinks(QString fullFileName) {
+    QString selectedFilter = "Links in tab-separated format (*.tsv)";
+    if (fullFileName.isEmpty())
+        fullFileName = QFileDialog::getOpenFileName(this, "Load additional links", "",
+                                                    "Links in tab-separated format (*.tsv);;GFA links (*.gfa)",
+                                                    &selectedFilter);
+
+    if (fullFileName.isEmpty())
+        return; // user clicked on cancel
+
+    std::vector<DeBruijnEdge*> newEdges;
+    try {
+        if (selectedFilter == "Links in tab-separated format (*.tsv)")
+            io::loadLinks(*g_assemblyGraph, fullFileName, &newEdges);
+        if (selectedFilter == "GFA links (*.gfa)")
+            io::loadGFALinks(*g_assemblyGraph, fullFileName, &newEdges);
+    } catch (std::exception &e) {
+        QString errorTitle = "Error loading graph links";
+        QString errorMessage = "There was an error when attempting to load:\n"
+                               + fullFileName + ":\n"
+                               + e.what() + "\n\n"
+                               + "Please verify that this file has the correct format.";
+        QMessageBox::warning(this, errorTitle, errorMessage);
+        return;
+    }
+
+    // FIXME: ugly!
+    g_assemblyGraph->determineGraphInfo();
+    displayGraphDetails();
+
+    if (m_uiState == GRAPH_LOADED)
+        return;
+
+    // Now we need to iterate over new edges and add them to scene
+    m_scene->blockSignals(true);
+    for (DeBruijnEdge *edge : newEdges) {
+        edge->determineIfDrawn();
+        if (!edge->isDrawn())
+            continue;
+
+        auto *graphicsItemEdge =
+                edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK ?
+                new GraphicsItemLink(edge, *g_assemblyGraph) :
+                new GraphicsItemEdge(edge, *g_assemblyGraph);
+
+        graphicsItemEdge->setZValue(-1.0);
+        edge->setGraphicsItemEdge(graphicsItemEdge);
+        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
+        m_scene->addItem(graphicsItemEdge);
+    }
+    m_scene->blockSignals(false);
+
+    m_scene->setSceneRectangle();
+    zoomToFitScene();
+    g_graphicsView->viewport()->update();
+    selectionChanged();
+
+    // Move the focus to the view so the user can use keyboard controls to navigate.
+    g_graphicsView->setFocus();
+}
+
 void MainWindow::displayGraphDetails()
 {
     ui->nodeCountLabel->setText(formatIntForDisplay(g_assemblyGraph->m_nodeCount));
     ui->edgeCountLabel->setText(formatIntForDisplay(g_assemblyGraph->m_edgeCount));
     ui->pathCountLabel->setText(formatIntForDisplay(g_assemblyGraph->pathCount()));
+    ui->walkCountLabel->setText(formatIntForDisplay(g_assemblyGraph->walkCount()));
     ui->totalLengthLabel->setText(formatIntForDisplay(g_assemblyGraph->m_totalLength));
 }
 
@@ -609,19 +670,36 @@ QString MainWindow::getSelectedEdgeListText()
     std::sort(selectedEdges.begin(), selectedEdges.end(), DeBruijnEdge::compareEdgePointers);
 
     QString edgeText;
-    for (size_t i = 0; i < selectedEdges.size(); ++i)
-    {
-        edgeText += selectedEdges[i]->getStartingNode()->getName();
+    for (size_t i = 0; i < selectedEdges.size(); ++i) {
+        const auto *edge = selectedEdges[i];
+        edgeText += edge->getStartingNode()->getName();
         edgeText += " to ";
-        edgeText += selectedEdges[i]->getEndingNode()->getName();
-        int overlap = selectedEdges[i]->getOverlap();
-        if (selectedEdges[i]->getOverlapType() != EdgeOverlapType::JUMP)
-            edgeText += QString(" (%1bp)").arg(overlap);
-        else {
-            edgeText += " (jump link" +
-                        (overlap ? QString(" %1bp)").arg(overlap)
-                                 : ")");
+        edgeText += edge->getEndingNode()->getName();
+        int overlap = edge->getOverlap();
+
+        switch (edge->getOverlapType()) {
+            case EdgeOverlapType::EXTRA_LINK: {
+                edgeText += " (link";
+                auto tags = g_assemblyGraph->m_edgeTags.find(edge);
+                if (tags != g_assemblyGraph->m_edgeTags.end()) {
+                    if (auto wt = gfa::getTag<float>("WT", tags->second))
+                        edgeText += QString(", weight: %1").arg(*wt);
+                    if (auto wt = gfa::getTag<int64_t>("WT", tags->second))
+                        edgeText += QString(", weight: %1").arg(*wt);
+                }
+
+                edgeText += ")";
+                break;
+            }
+            case EdgeOverlapType::JUMP:
+                edgeText += " (jump link" +
+                            (overlap ? QString(" %1bp)").arg(overlap)
+                             : ")");
+                break;
+            default:
+                edgeText += QString(" (%1bp)").arg(overlap);
         }
+
         if (i != selectedEdges.size() - 1)
             edgeText += ", ";
     }
@@ -658,6 +736,7 @@ void MainWindow::graphScopeChanged()
         setNodeDistanceWidgetVisibility(false);
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(false);
+        setWalkSelectionWidgetVisibility(false);
 
         ui->graphDrawingGridLayout->addWidget(ui->nodeStyleInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->nodeStyleLabel, 1, 1, 1, 1);
@@ -674,6 +753,7 @@ void MainWindow::graphScopeChanged()
         setNodeDistanceWidgetVisibility(true);
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(false);
+        setWalkSelectionWidgetVisibility(false);
 
         ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they are specified in the above list or are "
                                               "within this many steps of those nodes.<br><br>"
@@ -705,8 +785,9 @@ void MainWindow::graphScopeChanged()
         setNodeDistanceWidgetVisibility(true);
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(true);
+        setWalkSelectionWidgetVisibility(false);
 
-        ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they are specified in the above list or are "
+        ui->nodeDistanceInfoText->setToolTip("<html>Path nodes will be drawn if they are specified in the above list or are "
                                               "within this many steps of those nodes.<br><br>"
                                               "A value of 0 will result in only the specified nodes being drawn. "
                                               "A large value will result in large sections of the graph around "
@@ -727,12 +808,42 @@ void MainWindow::graphScopeChanged()
         break;
 
     case 3:
+        g_settings->graphScope = AROUND_WALKS;
+
+        setStartingNodesWidgetVisibility(false);
+        setNodeDistanceWidgetVisibility(true);
+        setDepthRangeWidgetVisibility(false);
+        setPathSelectionWidgetVisibility(false);
+        setWalkSelectionWidgetVisibility(true);
+
+        ui->nodeDistanceInfoText->setToolTip("<html>Walk nodes will be drawn if they are specified in the above list or are "
+                                              "within this many steps of those nodes.<br><br>"
+                                              "A value of 0 will result in only the specified nodes being drawn. "
+                                              "A large value will result in large sections of the graph around "
+                                              "the specified nodes being drawn.</html>");
+
+        ui->graphDrawingGridLayout->addWidget(ui->walkSelectionInfoText, 1, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->walkSelectionLabel,    1, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->walkSelectionLineEdit,  1, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceInfoText, 2, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceLabel, 2, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceSpinBox, 2, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeStyleInfoText, 3, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeStyleLabel, 3, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeStyleWidget, 3, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->drawGraphInfoText, 4, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->drawGraphButton, 4, 1, 1, 2);
+
+        break;
+
+    case 4:
         g_settings->graphScope = AROUND_BLAST_HITS;
 
         setStartingNodesWidgetVisibility(false);
         setNodeDistanceWidgetVisibility(true);
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(false);
+        setWalkSelectionWidgetVisibility(false);
 
         ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they contain a BLAST hit or are within this "
                                               "many steps of nodes with a BLAST hit.<br><br>"
@@ -751,13 +862,14 @@ void MainWindow::graphScopeChanged()
 
         break;
 
-    case 4:
+    case 5:
         g_settings->graphScope = DEPTH_RANGE;
 
         setStartingNodesWidgetVisibility(false);
         setNodeDistanceWidgetVisibility(false);
         setDepthRangeWidgetVisibility(true);
         setPathSelectionWidgetVisibility(false);
+        setWalkSelectionWidgetVisibility(false);
 
         ui->graphDrawingGridLayout->addWidget(ui->minDepthInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->minDepthLabel, 1, 1, 1, 1);
@@ -808,6 +920,13 @@ void MainWindow::setPathSelectionWidgetVisibility(bool visible)
     ui->pathSelectionLineEdit->setVisible(visible);
 }
 
+void MainWindow::setWalkSelectionWidgetVisibility(bool visible)
+{
+    ui->walkSelectionInfoText->setVisible(visible);
+    ui->walkSelectionLabel->setVisible(visible);
+    ui->walkSelectionLineEdit->setVisible(visible);
+}
+
 void MainWindow::setupPathSelectionLineEdit(QLineEdit *lineEdit) {
     lineEdit->clear();
 
@@ -843,6 +962,42 @@ void MainWindow::setupPathSelectionLineEdit(QLineEdit *lineEdit) {
     lineEdit->setEnabled(true);
 }
 
+// FIXME: dedup with path search
+void MainWindow::setupWalkSelectionLineEdit(QLineEdit *lineEdit) {
+    lineEdit->clear();
+
+    if (g_assemblyGraph->m_deBruijnGraphWalks.empty())
+        return;
+
+    auto *matchedPaths = new QStringListModel(this);
+    auto *completer = new QCompleter(matchedPaths);
+    completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
+    lineEdit->setCompleter(completer);
+
+    connect(lineEdit, &QLineEdit::textEdited,
+            [matchedPaths](const QString &text) {
+                QStringList res;
+
+                auto prefix_range = g_assemblyGraph->m_deBruijnGraphWalks.equal_prefix_range(text.toStdString());
+                size_t sz = std::distance(prefix_range.first, prefix_range.second);
+                if (sz > 1000) {
+                    res << "Too many walks to show";
+                } else {
+                    for (auto it = prefix_range.first; it != prefix_range.second; ++it)
+                        res.push_back(it.key().c_str());
+                }
+
+                if (res.empty())
+                    res << "No walks matching prefix";
+
+                res.sort();
+
+                matchedPaths->setStringList(res);
+            });
+
+    lineEdit->setEnabled(true);
+}
+
 
 void MainWindow::drawGraph() {
     QString errorTitle;
@@ -855,7 +1010,8 @@ void MainWindow::drawGraph() {
                          ui->minDepthSpinBox->value(), ui->maxDepthSpinBox->value(),
                          m_blastSearchDialog ? &m_blastSearchDialog->search()->queries() : nullptr,
                          ui->blastQueryComboBox->currentText(),
-                         ui->pathSelectionLineEdit->displayText(),
+                         g_settings->graphScope == GraphScope::AROUND_PATHS ?
+                         ui->pathSelectionLineEdit->displayText() : ui->walkSelectionLineEdit->displayText(),
                          ui->nodeDistanceSpinBox->value());
 
     auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
@@ -912,7 +1068,7 @@ void MainWindow::resetScene() {
 
 std::vector<DeBruijnNode *> MainWindow::getNodesFromLineEdit(QLineEdit * lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph)
 {
-    return g_assemblyGraph->getNodesFromString(lineEdit->text(), exactMatch, nodesNotInGraph);
+    return g_assemblyGraph->getNodesFromStringList(lineEdit->text(), exactMatch, nodesNotInGraph);
 }
 
 
@@ -1641,8 +1797,7 @@ void MainWindow::selectUserSpecifiedNodes()
     doSelectNodes(nodesToSelect, nodesNotInGraph);
 }
 
-void MainWindow::selectPathNodes()
-{
+void MainWindow::selectPathNodes() {
     std::vector<QString> nodesNotInGraph;
     std::vector<DeBruijnNode *> nodesToSelect;
 
@@ -1653,11 +1808,11 @@ void MainWindow::selectPathNodes()
         return;
     }
 
-    Path *p = *pathIt;
+    const Path &p = *pathIt;
 
     QString posText = ui->pathSelectionPositionLineEdit->text();
     if (posText.isEmpty()) {
-        for (auto *node : p->nodes())
+        for (auto *node : p.nodes())
             nodesToSelect.push_back(node);
     } else {
         bool ok = true;
@@ -1682,10 +1837,57 @@ void MainWindow::selectPathNodes()
             }
         }
 
-        nodesToSelect = p->getNodesAt(startPos, endPos);
+        nodesToSelect = p.getNodesAt(startPos, endPos);
     }
 
     doSelectNodes(nodesToSelect, nodesNotInGraph, ui->pathSelectionRecolorRadioButton->isChecked());
+}
+
+// FIXME: deduplicate
+void MainWindow::selectWalkNodes() {
+    std::vector<QString> nodesNotInGraph;
+    std::vector<DeBruijnNode *> nodesToSelect;
+
+    QString walkName = ui->walkSelectionLineEdit2->displayText();
+    auto walkIt = g_assemblyGraph->m_deBruijnGraphWalks.find(walkName.toStdString());
+    if (walkIt == g_assemblyGraph->m_deBruijnGraphWalks.end()) {
+        QMessageBox::information(this, "Sequence walk not found", "Sequence named \"" + walkName + "\" is not found. Maybe you wanted to select nodes instead?");
+        return;
+    }
+
+    const auto &p = *walkIt;
+
+    QString posText = ui->walkSelectionPositionLineEdit->text();
+    if (posText.isEmpty()) {
+        for (auto *node : p.walk.nodes())
+            nodesToSelect.push_back(node);
+    } else {
+        bool ok = true;
+        auto posParts = posText.split(":");
+        if (posParts.size() != 1 && posParts.size() != 2) {
+            QMessageBox::information(this, "Invalid position", "Invalid sequence walk position: " + posText);
+            return;
+        }
+
+        int startPos = posParts.front().toInt(&ok);
+        if (!ok) {
+            QMessageBox::information(this, "Invalid position", "Invalid sequence walk position: " + posParts.front());
+            return;
+        }
+
+        int endPos = startPos;
+        if (posParts.size() == 2) {
+            endPos = posParts.back().toInt(&ok);
+            if (!ok) {
+                QMessageBox::information(this, "Invalid position", "Invalid sequence walk position: " + posParts.back());
+                return;
+            }
+        }
+
+        nodesToSelect = p.walk.getNodesAt(startPos, endPos);
+    }
+
+    doSelectNodes(nodesToSelect, nodesNotInGraph, ui->walkSelectionRecolorRadioButton->isChecked());
 }
 
 
@@ -1812,6 +2014,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->actionLoad_CSV->setEnabled(false);
         ui->actionLoad_layout->setEnabled(false);
         ui->actionLoad_paths->setEnabled(false);
+        ui->actionLoad_links->setEnabled(false);
         ui->actionExport_layout->setEnabled(false);
         break;
     case GRAPH_LOADED:
@@ -1822,10 +2025,11 @@ void MainWindow::setUiState(UiState uiState)
         ui->blastSearchWidget->setEnabled(true);
         ui->bedWidget->setEnabled(true);
         ui->annotationSelectorWidget->setEnabled(true);
-        ui->selectionScrollAreaWidgetContents->setEnabled(false);
+        ui->selectionScrollAreaWidgetContents->setEnabled(true);
         ui->actionLoad_CSV->setEnabled(true);
         ui->actionLoad_layout->setEnabled(true);
         ui->actionLoad_paths->setEnabled(true);
+        ui->actionLoad_links->setEnabled(true);
         ui->actionExport_layout->setEnabled(false);
         break;
     case GRAPH_DRAWN:
@@ -1841,6 +2045,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->actionLoad_CSV->setEnabled(true);
         ui->actionLoad_layout->setEnabled(true);
         ui->actionLoad_paths->setEnabled(true);
+        ui->actionLoad_links->setEnabled(true);
         ui->actionExport_layout->setEnabled(true);
         break;
     }
@@ -2541,4 +2746,18 @@ void MainWindow::showPathListDialog() {
 
     PathListDialog pathListDialog(*g_assemblyGraph, selectedNodes, this);
     pathListDialog.exec();
+}
+
+// FIXME: dedup
+void MainWindow::showWalkListDialog() {
+    std::vector<DeBruijnNode*> selectedNodes;
+    for (auto *node : m_scene->getSelectedNodes()) {
+        selectedNodes.push_back(node);
+        // In single mode add also reverse-complements
+        if (!g_settings->doubleMode)
+            selectedNodes.push_back(node->getReverseComplement());
+    }
+
+    WalkListDialog walkListDialog(*g_assemblyGraph, selectedNodes, this);
+    walkListDialog.exec();
 }

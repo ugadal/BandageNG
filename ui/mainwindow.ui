@@ -141,6 +141,23 @@
                </widget>
               </item>
               <item row="3" column="0">
+               <widget class="QLabel" name="label_6w">
+                <property name="text">
+                 <string>Walks:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLabel" name="walkCountLabel">
+                <property name="text">
+                 <string>0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
                <widget class="QLabel" name="label_8">
                 <property name="text">
                  <string>Total length:</string>
@@ -150,7 +167,7 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="1">
+              <item row="4" column="1">
                <widget class="QLabel" name="totalLengthLabel">
                 <property name="text">
                  <string>0</string>
@@ -460,7 +477,7 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                </widget>
               </item>
               <item row="4" column="0">
-               <widget class="InfoTextWidget" name="nodeDistanceInfoText" native="true">
+               <widget class="InfoTextWidget" name="walkSelectionInfoText" native="true">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -479,6 +496,51 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                </widget>
               </item>
               <item row="4" column="1">
+               <widget class="QLabel" name="walkSelectionLabel">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="text">
+                 <string>Sequence:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="2">
+               <widget class="QLineEdit" name="walkSelectionLineEdit">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::StrongFocus</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="InfoTextWidget" name="nodeDistanceInfoText" native="true">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>16</width>
+                  <height>16</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
                <widget class="QLabel" name="nodeDistanceLabel">
                 <property name="enabled">
                  <bool>true</bool>
@@ -488,7 +550,7 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                 </property>
                </widget>
               </item>
-              <item row="4" column="2">
+              <item row="5" column="2">
                <widget class="QSpinBox" name="nodeDistanceSpinBox">
                 <property name="enabled">
                  <bool>true</bool>
@@ -665,6 +727,11 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                 <item>
                  <property name="text">
                   <string>Around paths</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Around sequence walk</string>
                  </property>
                 </item>
                 <item>
@@ -1024,8 +1091,8 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                  </size>
                 </property>
                 <property name="toolTip">
-                 <string>Select one or more nodes and then click this button. Bandage will 
-then colour which other nodes in the graph are likely to be contiguous 
+                 <string>Select one or more nodes and then click this button. Bandage will
+then colour which other nodes in the graph are likely to be contiguous
                                         with your selected node(s).</string>
                 </property>
                </widget>
@@ -2074,6 +2141,182 @@ then colour which other nodes in the graph are likely to be contiguous
           </property>
          </widget>
         </item>
+
+        <item>
+         <widget class="QLabel" name="label_115">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Find walks</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line_102">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+
+        <item>
+         <widget class="QWidget" name="walkSelectionWidget" native="true">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_22">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item row="2" column="0">
+            <widget class="InfoTextWidget" name="walkSelectionTypeInfoText" native="true">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>16</width>
+               <height>16</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2" colspan="2">
+            <widget class="QLineEdit" name="walkSelectionLineEdit2">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="focusPolicy">
+              <enum>Qt::StrongFocus</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_113">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Sequence:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QRadioButton" name="walkSelectionRecolorRadioButton">
+             <property name="focusPolicy">
+              <enum>Qt::StrongFocus</enum>
+             </property>
+             <property name="text">
+              <string>Recolor</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLabel" name="label_117">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>Action:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QRadioButton" name="walkSelectionSelectRadioButton">
+             <property name="focusPolicy">
+              <enum>Qt::StrongFocus</enum>
+             </property>
+             <property name="text">
+              <string>Select</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="InfoTextWidget" name="walkSelectionInfoText2" native="true">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>16</width>
+               <height>16</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="label2">
+             <property name="text">
+              <string>Position:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2" colspan="2">
+            <widget class="QLineEdit" name="walkSelectionPositionLineEdit"/>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="walkSelectButton">
+          <property name="focusPolicy">
+           <enum>Qt::StrongFocus</enum>
+          </property>
+          <property name="text">
+           <string>Find walk</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="walkListButton">
+          <property name="text">
+           <string>Walks...</string>
+          </property>
+         </widget>
+        </item>
+        
         <item>
          <widget class="QWidget" name="selectedNodesSpacerWidget" native="true">
           <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -2372,6 +2615,7 @@ then colour which other nodes in the graph are likely to be contiguous
     <addaction name="actionLoad_CSV"/>
     <addaction name="actionLoad_layout"/>
     <addaction name="actionLoad_paths"/>
+    <addaction name="actionLoad_links"/>
     <addaction name="separator"/>
     <addaction name="actionSave_image_current_view"/>
     <addaction name="actionSave_image_entire_scene"/>
@@ -2849,6 +3093,16 @@ then colour which other nodes in the graph are likely to be contiguous
    </property>
    <property name="text">
     <string>Load paths</string>
+   </property>
+  </action>
+  <action name="actionLoad_links">
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/load-256.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Load links</string>
    </property>
   </action>
   <action name="actionZoom_to_fit_graph">

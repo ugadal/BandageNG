@@ -18,6 +18,8 @@
 
 #include "assemblygraph.h"
 #include "debruijnedge.h"
+#include "graph/debruijnnode.h"
+#include "parallel_hashmap/phmap.h"
 #include "path.h"
 #include "io.h"
 #include "graphicsitemedge.h"
@@ -78,24 +80,28 @@ template<typename T> double getValueUsingFractionalIndex(const std::vector<T> &v
 }
 
 void AssemblyGraph::cleanUp() {
-    {
-        for (auto &entry : m_deBruijnGraphPaths) {
-            delete entry;
-        }
-        m_deBruijnGraphPaths.clear();
-    }
+    m_deBruijnGraphPaths.clear();
+    m_deBruijnGraphWalks.clear();
 
-
+    // There might be duplicate entries due to self-rc nodes, so we need to
+    // track what was already deleted :(
+    // FIXME: Allocate all nodes from common arena, we should be fine with
+    // LLVM's BumpPtr allocator
+    phmap::parallel_flat_hash_set<DeBruijnNode*> deleted;
     {
         for (auto &entry : m_deBruijnGraphNodes) {
+            if (deleted.contains(entry))
+                continue;
             delete entry;
+            deleted.insert(entry);
         }
         m_deBruijnGraphNodes.clear();
     }
 
     {
-        for (auto &entry : m_deBruijnGraphEdges) {
-            delete entry.second;
+        for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+            delete edge;
+            edge = nullptr;
         }
         m_deBruijnGraphEdges.clear();
     }
@@ -105,7 +111,7 @@ void AssemblyGraph::cleanUp() {
     m_nodeColors.clear();
     m_nodeLabels.clear();
     m_nodeCSVData.clear();
-    
+
     clearGraphInfo();
 }
 
@@ -168,9 +174,9 @@ void AssemblyGraph::createDeBruijnEdge(const QString& node1Name, const QString& 
     forwardEdge->setOverlapType(overlapType);
     backwardEdge->setOverlapType(overlapType);
 
-    m_deBruijnGraphEdges.emplace(std::make_pair(forwardEdge->getStartingNode(), forwardEdge->getEndingNode()), forwardEdge);
+    m_deBruijnGraphEdges.emplace(forwardEdge);
     if (!isOwnPair)
-        m_deBruijnGraphEdges.emplace(std::make_pair(backwardEdge->getStartingNode(), backwardEdge->getEndingNode()), backwardEdge);
+        m_deBruijnGraphEdges.emplace(backwardEdge);
 
     (*node1)->addEdge(forwardEdge);
     (*node2)->addEdge(forwardEdge);
@@ -186,8 +192,8 @@ void AssemblyGraph::resetNodes()
 
 void AssemblyGraph::resetEdges()
 {
-    for (auto &entry : m_deBruijnGraphEdges) {
-        entry.second->reset();
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+        edge->reset();
     }
 }
 
@@ -276,8 +282,7 @@ void AssemblyGraph::determineGraphInfo()
     //Count up the edges that will be shown in single mode (i.e. positive
     //edges).
     int edgeCount = 0;
-    for (auto &entry : m_deBruijnGraphEdges) {
-        DeBruijnEdge * edge = entry.second;
+    for (const DeBruijnEdge * edge : m_deBruijnGraphEdges) {
         if (edge->isPositiveEdge())
             ++edgeCount;
     }
@@ -382,14 +387,14 @@ bool AssemblyGraph::loadCSV(const QString &filename, QStringList *columns, QStri
 
         QStringList cols = utils::splitCsv(in.readLine(), sep);
         QString nodeName(cols[0]);
-        
+
         std::vector<DeBruijnNode *> nodes;
         // See if this is a path name
         // Match using unique prefix of path name. This allows us to load segmented SPAdes
         // scaffold paths (e.g. NODE_1_foo_1) and assign CSV data to all of them
         for (auto range = m_deBruijnGraphPaths.equal_prefix_range(nodeName.toStdString());
              range.first != range.second; ++range.first) {
-            for (auto *node : (*range.first)->nodes()) {
+            for (auto *node : (*range.first).nodes()) {
                 nodes.emplace_back(node);
                 if (!g_settings->doubleMode)
                     nodes.emplace_back(node->getReverseComplement());
@@ -506,16 +511,14 @@ QString AssemblyGraph::getNodeNameFromString(QString string) const
 // Returns true if successful, false if not.
 bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
     cleanUp();
-    
+
     auto builder = io::AssemblyGraphBuilder::get(filename);
     if (!builder)
         return false;
-    
-    try {
-        builder->build(*this);
-    } catch (...) {
+
+    builder->treatJumpsAsLinks(g_settings->jumpsAsLinks);
+    if (auto E = builder->build(*this))
         return false;
-    }
 
     determineGraphInfo();
 
@@ -551,8 +554,8 @@ void AssemblyGraph::markNodesToDraw(const graph::Scope &scope,
     }
 
     // Then loop through each edge determining its drawn status
-    for (auto &entry : m_deBruijnGraphEdges)
-        entry.second->determineIfDrawn();
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges)
+        edge->determineIfDrawn();
 }
 
 static QStringList removeNullStringsFromList(const QStringList& in) {
@@ -572,7 +575,7 @@ bool AssemblyGraph::checkIfStringHasNodes(QString nodesString) {
     return (nodesList.empty());
 }
 
-QString AssemblyGraph::generateNodesNotFoundErrorMessage(std::vector<QString> nodesNotInGraph, bool exact) {
+QString AssemblyGraph::generateNodesNotFoundErrorMessage(const std::vector<QString> &nodesNotInGraph, bool exact) {
     QString errorMessage;
     if (exact)
         errorMessage += "The following nodes are not in the graph:\n";
@@ -590,8 +593,9 @@ QString AssemblyGraph::generateNodesNotFoundErrorMessage(std::vector<QString> no
 }
 
 
-std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromString(QString nodeNamesString, bool exactMatch, std::vector<QString> * nodesNotInGraph) const
-{
+std::vector<DeBruijnNode *>
+AssemblyGraph::getNodesFromStringList(QString nodeNamesString, bool exactMatch,
+                                      std::vector<QString> *nodesNotInGraph) const {
     nodeNamesString = nodeNamesString.simplified();
     QStringList nodesList = nodeNamesString.split(",");
 
@@ -601,86 +605,83 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromString(QString nodeNamesS
         return getNodesFromListPartial(nodesList, nodesNotInGraph);
 }
 
+std::pair<DeBruijnNode*, DeBruijnNode*> AssemblyGraph::getNodes(const QString& nodeName) const {
+    // If the node name ends in +/-, then we assume the user was specifying the exact
+    // node in the pair.  If the node name does not end in +/-, then we assume the
+    // user is asking for either node in the pair.
+    QChar lastChar = nodeName.back();
+    DeBruijnNode *posNode = nullptr, *negNode = nullptr;
+
+    if (lastChar == '+' || lastChar == '-') {
+        auto nodeIt = m_deBruijnGraphNodes.find(nodeName.toStdString());
+
+        if (nodeIt != m_deBruijnGraphNodes.end())
+            posNode = *nodeIt;
+    } else {
+        QString posNodeName = nodeName + "+";
+        QString negNodeName = nodeName + "-";
+
+        auto nodeIt = m_deBruijnGraphNodes.find(posNodeName.toStdString());
+        if (nodeIt != m_deBruijnGraphNodes.end())
+            posNode = *nodeIt;
+
+        nodeIt = m_deBruijnGraphNodes.find(negNodeName.toStdString());
+        if (nodeIt != m_deBruijnGraphNodes.end())
+            negNode = *nodeIt;
+    }
+
+    return { posNode, negNode };
+}
+
 
 //Given a list of node names (as strings), this function will return all nodes which match
 //those names exactly.  The last +/- on the end of the node name is optional - if missing
 //both + and - nodes will be returned.
 std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromListExact(const QStringList& nodesList,
-                                                                 std::vector<QString> * nodesNotInGraph) const
-{
-    std::vector<DeBruijnNode *> returnVector;
-
-    for (const auto & i : nodesList)
-    {
-        QString nodeName = i.simplified();
-        if (nodeName == "")
+                                                                 std::vector<QString> *nodesNotInGraph) const {
+    std::vector<DeBruijnNode *> result;
+    for (const auto &entry : nodesList) {
+        QString nodeName = entry.simplified();
+        if (nodeName.isEmpty())
             continue;
 
-        //If the node name ends in +/-, then we assume the user was specifying the exact
-        //node in the pair.  If the node name does not end in +/-, then we assume the
-        //user is asking for either node in the pair.
-        QChar lastChar = nodeName.at(nodeName.length() - 1);
-        if (lastChar == '+' || lastChar == '-')
-        {
-            if (m_deBruijnGraphNodes.count(nodeName.toStdString()))
-                returnVector.push_back(m_deBruijnGraphNodes.at(nodeName.toStdString()));
-            else if (nodesNotInGraph != nullptr)
-                nodesNotInGraph->push_back(i.trimmed());
-        }
-        else
-        {
-            QString posNodeName = nodeName + "+";
-            QString negNodeName = nodeName + "-";
+        auto [posNode, negNode] = getNodes(nodeName);
+        if (!posNode && !negNode && nodesNotInGraph)
+            nodesNotInGraph->push_back(nodeName);
 
-            bool posNodeFound = false;
-            if (m_deBruijnGraphNodes.count(posNodeName.toStdString()))
-            {
-                returnVector.push_back(m_deBruijnGraphNodes.at(posNodeName.toStdString()));
-                posNodeFound = true;
-            }
-
-            bool negNodeFound = false;
-            if (m_deBruijnGraphNodes.count(negNodeName.toStdString()))
-            {
-                returnVector.push_back(m_deBruijnGraphNodes.at(negNodeName.toStdString()));
-                negNodeFound = true;
-            }
-
-            if (!posNodeFound && !negNodeFound && nodesNotInGraph != nullptr)
-                nodesNotInGraph->push_back(i.trimmed());
-        }
+        if (posNode)
+            result.push_back(posNode);
+        if (negNode)
+            result.push_back(negNode);
     }
 
-    return returnVector;
+    return result;
 }
 
 std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromListPartial(const QStringList& nodesList,
-                                                                   std::vector<QString> * nodesNotInGraph) const
-{
-    std::vector<DeBruijnNode *> returnVector;
+                                                                   std::vector<QString> *nodesNotInGraph) const {
+    std::vector<DeBruijnNode *> result;
 
-    for (const auto & i : nodesList)
-    {
-        QString queryName = i.simplified();
-        if (queryName == "")
+    for (const auto &name : nodesList) {
+        QString queryName = name.simplified();
+        if (queryName.isEmpty())
             continue;
 
         bool found = false;
         for (auto &entry : m_deBruijnGraphNodes) {
             QString nodeName = entry->getName();
 
-            if (nodeName.contains(queryName))
-            {
+            if (nodeName.contains(queryName)) {
                 found = true;
-                returnVector.push_back(entry);
+                result.push_back(entry);
             }
         }
 
-        if (!found && nodesNotInGraph != nullptr)
-            nodesNotInGraph->push_back(queryName.trimmed());
+        if (!found && nodesNotInGraph)
+            nodesNotInGraph->push_back(queryName);
     }
 
-    return returnVector;
+    return result;
 }
 
 std::vector<DeBruijnNode *> AssemblyGraph::getNodesInDepthRange(double min, double max) const {
@@ -694,8 +695,8 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesInDepthRange(double min, doub
 }
 
 void AssemblyGraph::setAllEdgesExactOverlap(int overlap) {
-    for (auto &entry : m_deBruijnGraphEdges) {
-        entry.second->setExactOverlap(overlap);
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+        edge->setExactOverlap(overlap);
     }
 }
 
@@ -708,8 +709,8 @@ void AssemblyGraph::autoDetermineAllEdgesExactOverlap()
         return;
 
     //Determine the overlap for each edge.
-    for (auto &entry : m_deBruijnGraphEdges) {
-        entry.second->autoDetermineExactOverlap();
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+        edge->autoDetermineExactOverlap();
     }
 
     //The expectation here is that most overlaps will be
@@ -751,8 +752,7 @@ void AssemblyGraph::autoDetermineAllEdgesExactOverlap()
 
     //For each edge, see if one of the more common overlaps also works.
     //If so, use that instead.
-    for (auto &entry : m_deBruijnGraphEdges) {
-        DeBruijnEdge * edge = entry.second;
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
         for (int sortedOverlap : sortedOverlaps)
         {
             if (edge->getOverlap() == sortedOverlap)
@@ -775,8 +775,8 @@ std::vector<int> AssemblyGraph::makeOverlapCountVector()
 {
     std::vector<int> overlapCounts;
 
-    for (auto &entry : m_deBruijnGraphEdges) {
-        int overlap = entry.second->getOverlap();
+    for (const DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+        int overlap = edge->getOverlap();
 
         //Add the overlap to the count vector
         if (int(overlapCounts.size()) < overlap + 1)
@@ -867,11 +867,11 @@ void AssemblyGraph::deleteEdges(const std::vector<DeBruijnEdge *> &edges)
     }
 
     //Remove the edges from the graph,
-    for (auto edge : edgesToDelete) {
+    for (DeBruijnEdge *edge : edgesToDelete) {
         DeBruijnNode * startingNode = edge->getStartingNode();
         DeBruijnNode * endingNode = edge->getEndingNode();
 
-        m_deBruijnGraphEdges.erase(QPair<DeBruijnNode*, DeBruijnNode*>(startingNode, endingNode));
+        m_deBruijnGraphEdges.erase(edge);
         startingNode->removeEdge(edge);
         endingNode->removeEdge(edge);
 
@@ -927,8 +927,8 @@ void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene 
     originalPosNode->setDepth(newDepth);
     originalNegNode->setDepth(newDepth);
 
-    scene->duplicateGraphicsNode(originalPosNode, newPosNode);
-    scene->duplicateGraphicsNode(originalNegNode, newNegNode);
+    scene->duplicateGraphicsNode(originalPosNode, newPosNode, *this);
+    scene->duplicateGraphicsNode(originalNegNode, newNegNode, *this);
 }
 
 QString AssemblyGraph::getNewNodeName(QString oldNodeName) const
@@ -972,7 +972,8 @@ static bool canAddNodeToEndOfMergeList(const DeBruijnNode *lastNode,
 static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
                                const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
-                               BandageGraphicsScene * scene);
+                               const AssemblyGraph &graph,
+                               BandageGraphicsScene *scene);
 
 //This function will merge the given nodes, if possible.  Nodes can only be
 //merged if they are in a simple, unbranching path with no extra edges.  If the
@@ -1074,7 +1075,8 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
         createDeBruijnEdge(enteringEdge->getStartingNode()->getName(), newPosNodeName, enteringEdge->getOverlap(),
                            enteringEdge->getOverlapType());
 
-    mergeGraphicsNodes(orderedList, revCompOrderedList, newPosNode, scene);
+    mergeGraphicsNodes(orderedList, revCompOrderedList, newPosNode,
+                       *this, scene);
 
     deleteNodes(orderedList);
 
@@ -1086,8 +1088,9 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
 
 
 static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes,
-                                DeBruijnNode * newNode,
-                                BandageGraphicsScene * scene) {
+                                DeBruijnNode *newNode,
+                                const AssemblyGraph &graph,
+                                BandageGraphicsScene *scene) {
     bool success = true;
     std::vector<QPointF> linePoints;
 
@@ -1131,7 +1134,7 @@ static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes
         scene->addItem(newGraphicsItemNode);
 
         for (auto *newEdge : newNode->edges()) {
-            auto * graphicsItemEdge = new GraphicsItemEdge(newEdge);
+            auto * graphicsItemEdge = new GraphicsItemEdge(newEdge, graph);
             graphicsItemEdge->setZValue(-1.0);
             newEdge->setGraphicsItemEdge(graphicsItemEdge);
             graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
@@ -1144,14 +1147,15 @@ static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes
 static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
                                const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
+                               const AssemblyGraph &graph,
                                BandageGraphicsScene * scene) {
-    bool success = mergeGraphicsNodes2(originalNodes, newNode, scene);
+    bool success = mergeGraphicsNodes2(originalNodes, newNode, graph, scene);
     if (success)
         newNode->setAsDrawn();
 
     if (g_settings->doubleMode) {
         DeBruijnNode * newRevComp = newNode->getReverseComplement();
-        bool revCompSuccess = mergeGraphicsNodes2(revCompOriginalNodes, newRevComp, scene);
+        bool revCompSuccess = mergeGraphicsNodes2(revCompOriginalNodes, newRevComp, graph, scene);
         if (revCompSuccess)
             newRevComp->setAsDrawn();
     }
@@ -1308,7 +1312,7 @@ void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle lineSt
 }
 
 AssemblyGraph::EdgeStyle::EdgeStyle()
- : width(float(g_settings->edgeWidth)), lineStyle(Qt::SolidLine) {}
+ : width(0), lineStyle(Qt::SolidLine) {}
 
 void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, float width) {
     // To simplify upstream code we ignore null edges
@@ -1673,8 +1677,8 @@ QPair<int, int> AssemblyGraph::getOverlapRange() const
 {
     int smallestOverlap = std::numeric_limits<int>::max();
     int largestOverlap = 0;
-    for (auto &entry : m_deBruijnGraphEdges) {
-        int overlap = entry.second->getOverlap();
+    for (const DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+        int overlap = edge->getOverlap();
         if (overlap < smallestOverlap)
             smallestOverlap = overlap;
         if (overlap > largestOverlap)

@@ -41,13 +41,15 @@ namespace graph {
 
                 // Make sure the nodes the user typed in are actually in the graph.
                 std::vector<QString> nodesNotInGraph;
-                std::vector<DeBruijnNode *> nodesInGraph = graph.getNodesFromString(graphScope.nodeList(),
-                                                                                    g_settings->startingNodesExactMatch,
-                                                                                    &nodesNotInGraph);
+                std::vector<DeBruijnNode *> nodesInGraph =
+                        graph.getNodesFromStringList(graphScope.nodeList(),
+                                                     g_settings->startingNodesExactMatch,
+                                                     &nodesNotInGraph);
                 if (!nodesNotInGraph.empty()) {
                     *errorTitle = "Nodes not found";
-                    *errorMessage = AssemblyGraph::generateNodesNotFoundErrorMessage(nodesNotInGraph,
-                                                                                     g_settings->startingNodesExactMatch);
+                    *errorMessage =
+                            AssemblyGraph::generateNodesNotFoundErrorMessage(nodesNotInGraph,
+                                                                             g_settings->startingNodesExactMatch);
                 }
 
                 return nodesInGraph;
@@ -60,7 +62,17 @@ namespace graph {
                     return {};
                 }
 
-                return (*pathIt)->nodes();
+                return pathIt->nodes();
+            }
+            case AROUND_WALKS: {
+                auto pathIt = graph.m_deBruijnGraphWalks.find(graphScope.walk().toStdString());
+                if (pathIt == graph.m_deBruijnGraphWalks.end()) {
+                    *errorTitle = "Invalid walk";
+                    *errorMessage = "No walk with such sequence name is loaded";
+                    return {};
+                }
+
+                return pathIt->walk.nodes();
             }
             case AROUND_BLAST_HITS: {
                 std::vector<DeBruijnNode *> startingNodes;
@@ -102,6 +114,8 @@ namespace graph {
                 return Scope::aroundNodes(nodesList, distance);
             case AROUND_PATHS:
                 return Scope::aroundPath(pathName, distance);
+            case AROUND_WALKS:
+                return Scope::aroundWalk(pathName, distance);
             case AROUND_BLAST_HITS:
                 return Scope::aroundHits(blastQueries, blastQueryName, distance);
             case DEPTH_RANGE:

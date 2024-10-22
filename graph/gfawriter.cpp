@@ -133,14 +133,14 @@ namespace gfa {
         return gfaLinkLine;
     }
 
-    static QByteArray getGfaPathLine(const std::string &name, const Path *path,
+    static QByteArray getGfaPathLine(const std::string &name, const Path &path,
                                      const AssemblyGraph &graph) {
         QByteArray gfaPathLine = "P\t";
         gfaPathLine += name;
         gfaPathLine += '\t';
 
-        const auto &nodes = path->nodes();
-        const auto &edges = path->edges();
+        const auto &nodes = path.nodes();
+        const auto &edges = path.edges();
 
         // edges is one less than nodes for linear paths and of
         // same length for circular paths
@@ -173,8 +173,7 @@ namespace gfa {
         }
 
         QList<const DeBruijnEdge *> edgesToSave;
-        for (auto &entry: graph.m_deBruijnGraphEdges) {
-            const DeBruijnEdge *edge = entry.second;
+        for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
             if (edge->isPositiveEdge())
                 edgesToSave.push_back(edge);
         }
@@ -203,8 +202,7 @@ namespace gfa {
         }
 
         QList<const DeBruijnEdge *> edgesToSave;
-        for (auto &entry: graph.m_deBruijnGraphEdges) {
-            const DeBruijnEdge *edge = entry.second;
+        for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
             if (edge->getStartingNode()->thisNodeOrReverseComplementIsDrawn() &&
                 edge->getEndingNode()->thisNodeOrReverseComplementIsDrawn() &&
                 edge->isPositiveEdge())
